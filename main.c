@@ -1,6 +1,27 @@
 #include <gtk/gtk.h>
+#include <pthread.h>
 #include <string.h>
+#include "serial.h"
+#include "comm.h"
 
+#define DEBUG_PC
+
+extern SERIAL_TX_FNC(SerialTX);
+extern SERIAL_RX_FNC(SerialRX);
+
+struct PortaSerial *ps;
+
+COMM_FNC(CommTX)
+{
+  return Transmitir(ps, (char *)data, size, 0);
+}
+
+COMM_FNC(CommRX)
+{
+  return Receber(ps, (char *)data, size);
+}
+
+// Objeto que contem toda a interface GTK
 GtkBuilder *builder;
 
 // Timers
@@ -43,10 +64,58 @@ void cbQuitCancel(GtkButton *button, gpointer user_data)
   gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), 0);
 }
 
+/****************************************************************************
+ * Thread de comunicacao com o LPC2109 (Power Management)
+ ***************************************************************************/
+void * ihm_update(void *args)
+{
+  struct comm_msg msg;
+
+  /****************************************************************************
+   * Loop
+   ***************************************************************************/
+  while (1) {
+    comm_update();
+    if(comm_ready()) {
+      comm_get(&msg);
+      printf("\nFuncao.: 0x%08x\n", msg.fnc);
+      printf("\tds.....: 0x%08x\n", msg.data.ds     );
+      printf("\tled....: 0x%08x\n", msg.data.led    );
+      printf("\tad.vin.: 0x%08x\n", msg.data.ad.vin );
+      printf("\tad.term: 0x%08x\n", msg.data.ad.term);
+      printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
+    }
+  }
+
+  return NULL;
+}
+
 //Inicia a aplicacao
 int main(int argc, char *argv[])
 {
+  pthread_t tid;
   GtkWidget *wnd;
+
+  ps = SerialInit("/dev/ttyUSB0");
+  if(ps == NULL) {
+    printf("Erro abrindo porta serial!\n");
+    return 1;
+  }
+
+  SerialConfig(ps, 115200, 8, 1, SerialParidadeNenhum, 0);
+
+  ps->txf = SerialTX;
+  ps->rxf = SerialRX;
+
+  comm_init(CommTX, CommRX);
+  comm_put (&(struct comm_msg){ COMM_FNC_LED, { 0xA } });
+  comm_put (&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+
+  /* init threads */
+  g_thread_init (NULL);
+  gdk_threads_init ();
+
+  gdk_threads_enter();
 
   gtk_init( &argc, &argv );
 
@@ -65,8 +134,14 @@ int main(int argc, char *argv[])
   // Iniciando os timers
   g_timeout_add(500, tmrProgress, NULL);
 
+  pthread_create (&tid, NULL, ihm_update, NULL);
+
   //Inicia o loop principal de eventos (GTK MainLoop)
   gtk_main ();
+
+  SerialClose(ps);
+
+  gdk_threads_leave();
 
   return 0;
 }
