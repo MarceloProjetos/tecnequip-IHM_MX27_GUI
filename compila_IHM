@@ -1,7 +1,10 @@
 #!/bin/sh
+gcc -c -o crc.o ../libARM7/src/util/crc.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
+gcc -c -o modbus.o ../libARM7/src/net/modbus.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
 gcc -c -o serial.o serial.c
 gcc -c -o comm.o comm.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
-gcc -export-dynamic -Wall -o IHM main.c serial.o comm.o \
+gcc -pthread -export-dynamic -Wall -o IHM main.c serial.o comm.o \
+    crc.o modbus.o \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
     -I../libARM7/inc -DCONFIG_CPU_lpc21xx

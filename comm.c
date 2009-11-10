@@ -29,9 +29,10 @@ void comm_update()
     COMM_TX_FNC((uint8_t *)&MsgQueueTX[tx_head], sizeof(MsgQueueTX[tx_head]));
 
     // Update head pointer
-    tx_head++;
-    if(tx_head == COMM_QUEUE_SIZE)
+    if(tx_head == COMM_QUEUE_SIZE - 1)
       tx_head = 0;
+    else
+        tx_head++;
     }
 
   rx_count += COMM_RX_FNC((uint8_t *)&rxb+rx_count, sizeof(struct comm_msg) - rx_count);
@@ -87,9 +88,10 @@ bool comm_get(struct comm_msg *msg)
   memcpy(msg, &MsgQueueRX[rx_head], sizeof(struct comm_msg));
 
   // Calculate new head
-  rx_head++;
-  if(rx_head == COMM_QUEUE_SIZE)
+  if(rx_head == COMM_QUEUE_SIZE - 1)
     rx_head = 0;
+  else
+    rx_head++;
 
   return TRUE;
 }
