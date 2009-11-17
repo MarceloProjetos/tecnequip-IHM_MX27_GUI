@@ -1109,9 +1109,44 @@
                           </packing>
                         </child>
                         <child type="tab">
-                          <object class="GtkLabel" id="label47">
+                          <object class="GtkLabel" id="label36">
                             <property name="visible">True</property>
                             <property name="label" translatable="yes">R/W Multiple Registers</property>
+                          </object>
+                          <packing>
+                            <property name="position">9</property>
+                            <property name="tab_fill">False</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox3">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkLabel" id="label50">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Valor</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="lblReadExceptionStatusVal">
+                                <property name="visible">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="position">10</property>
+                          </packing>
+                        </child>
+                        <child type="tab">
+                          <object class="GtkLabel" id="label47">
+                            <property name="visible">True</property>
+                            <property name="label" translatable="yes">Read Exception Status</property>
                           </object>
                           <packing>
                             <property name="position">5</property>
@@ -1169,7 +1204,7 @@
                             </child>
                           </object>
                           <packing>
-                            <property name="position">10</property>
+                            <property name="position">11</property>
                           </packing>
                         </child>
                         <child type="tab">
@@ -1191,7 +1226,7 @@
                             <property name="label" translatable="yes">page 3</property>
                           </object>
                           <packing>
-                            <property name="position">12</property>
+                            <property name="position">13</property>
                             <property name="tab_fill">False</property>
                           </packing>
                         </child>
@@ -1204,7 +1239,7 @@
                             <property name="label" translatable="yes">page 4</property>
                           </object>
                           <packing>
-                            <property name="position">12</property>
+                            <property name="position">13</property>
                             <property name="tab_fill">False</property>
                           </packing>
                         </child>
@@ -1419,6 +1454,10 @@
       <row>
         <col id="0" translatable="yes">Read/Write Multiple Registers</col>
         <col id="1">23</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Read Exception Status</col>
+        <col id="1">7</col>
       </row>
       <row>
         <col id="0" translatable="yes">Read Device Identification</col>

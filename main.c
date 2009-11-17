@@ -394,6 +394,20 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
 
     break;
 
+  case MB_FC_READ_EXCEPTION_STATUS:
+    rp = MB_Send(&mbdev, fc, &data);
+
+    if(!rp.ExceptionCode) {
+      wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblReadExceptionStatusVal"));
+      sprintf(wdgName, "%02x", rp.reply.read_exception_status.status);
+      gtk_label_set_text(GTK_LABEL(wdg), wdgName);
+
+      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
+      offset += sprintf(reply_string+offset, "status: %02x\n", rp.reply.read_exception_status.status);
+    }
+
+    break;
+
   case MB_FC_READ_DEVICE_IDENTIFICATION:
     wdg = GTK_WIDGET(gtk_builder_get_object(builder, "cbxReadDeviceIdentification"));
 
