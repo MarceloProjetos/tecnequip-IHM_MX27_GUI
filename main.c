@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <net/modbus.h>
 #include "serial.h"
-#include "comm.h"
+#include <comm.h>
 
 //#define DEBUG_PC
 
@@ -123,6 +123,40 @@ GtkBuilder *builder;
 gboolean tmrAD(gpointer data)
 {
   comm_put(&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+  return TRUE;
+}
+
+gboolean tmrPowerDown(gpointer data)
+{
+  char msg[15];
+  struct comm_msg cmsg;
+  static GtkDialog *dlg = NULL;
+  static uint32_t timeout=0;
+  GtkDialog *current = *(GtkDialog **)data; // Recebe o ponteiro como parametro nao o endereco apontado.
+
+  if(current != dlg) { // mudou o estado da alimentacao
+    dlg = current;
+    timeout = 30;
+  } else if(dlg != NULL) {
+    gdk_threads_enter();
+    if(!timeout--) {
+      gtk_main_quit();
+    } else {
+      sprintf(msg, "%d segundos", timeout);
+      gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")), msg);
+
+      comm_update();
+      while(comm_ready()) {
+        comm_get(&cmsg);
+        if(cmsg.fnc == COMM_FNC_PWR && cmsg.data.pwr) {
+          gtk_dialog_response(dlg, 2);
+        }
+        comm_update();
+      }
+    }
+    gdk_threads_leave();
+  }
+
   return TRUE;
 }
 
@@ -451,11 +485,15 @@ void * ihm_update(void *args)
   uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1;
   struct comm_msg msg;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
+  GtkStatusbar *sts;
+  GtkDialog *dlg = NULL;
 
   gdk_threads_enter();
+  g_timeout_add(1000, tmrPowerDown, (void *)&dlg);
   pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN" ));
   pgbTERM = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbTERM"));
   pgbVBAT = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"));
+  sts     = GTK_STATUSBAR   (gtk_builder_get_object(builder, "stsMensagem"));
   gdk_threads_leave();
 
   /****************************************************************************
@@ -480,6 +518,24 @@ void * ihm_update(void *args)
         if(msg.data.ad.vbat != ad_vbat) {
           ad_vbat = msg.data.ad.vbat;
           gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/0x3ff);
+        }
+        gdk_threads_leave();
+        break;
+
+      case COMM_FNC_PWR:
+        gdk_threads_enter();
+        if(msg.data.pwr) {
+          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema energizado");
+        } else {
+          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
+
+          dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
+          gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
+              "30 segundos");
+          gtk_widget_show_all(GTK_WIDGET(dlg));
+          printf("Resposta: %d\n", gtk_dialog_run(dlg));
+          gtk_widget_hide_all(GTK_WIDGET(dlg));
+          dlg = NULL;
         }
         gdk_threads_leave();
         break;
