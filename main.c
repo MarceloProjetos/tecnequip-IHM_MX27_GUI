@@ -179,12 +179,14 @@ void cbQuitCancel(GtkButton *button, gpointer user_data)
   gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), 0);
 }
 
+// Carrega aba referente aos controles da funcao de codigo escolhida
 void cbFunctionCodeChanged(GtkComboBox *widget, gpointer user_data)
 {
   GtkNotebook *ntb = GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbFunctionCode"));
   gtk_notebook_set_current_page(ntb, gtk_combo_box_get_active(widget));
 }
 
+// Envia o comando selecionado pelo ModBus
 void cbModBusSend(GtkButton *button, gpointer user_data)
 {
   guint fc;
