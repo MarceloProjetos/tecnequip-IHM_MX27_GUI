@@ -1,10 +1,22 @@
 #!/bin/sh
-gcc -c -o crc.o ../libARM7/src/util/crc.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
-gcc -c -o modbus.o ../libARM7/src/net/modbus.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
-gcc -c -o serial.o serial.c
-gcc -c -o comm.o ../IHM_MX27_PM/comm.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
+echo Iniciando...
+gcc -pthread -c -o crc.o ../libARM7/src/util/crc.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
+gcc -pthread -c -o modbus.o ../libARM7/src/net/modbus.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
+gcc -pthread -c -o serial.o serial.c
+gcc -pthread -c -o GtkUtils.o GtkUtils.c \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
+    -I../libDB
+gcc -pthread -c -o comm.o ../IHM_MX27_PM/comm.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx
+gcc -pthread -c -export-dynamic -o cb_debug.o cb_debug.c -I../libARM7/inc -DCONFIG_CPU_lpc21xx \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0`
+gcc -pthread -c -export-dynamic -o cb_config.o cb_config.c \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
+    -I../libDB
+echo Compilando main.c
 gcc -pthread -export-dynamic -Wall -o IHM main.c serial.o comm.o \
-    crc.o modbus.o \
+    crc.o modbus.o cb_config.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
-    -I../libARM7/inc -I../IHM_MX27_PM -DCONFIG_CPU_lpc21xx
+    -lmysqlclient \
+    -I../libARM7/inc -I../IHM_MX27_PM -I../libDB -DCONFIG_CPU_lpc21xx
+echo Terminado!

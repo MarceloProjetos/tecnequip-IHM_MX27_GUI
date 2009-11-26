@@ -8,16 +8,31 @@
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
-#include <net/modbus.h>
 #include "serial.h"
+#include "defines.h"
+#include "GtkUtils.h"
 #include <comm.h>
-
-//#define DEBUG_PC
+#include <net/modbus.h>
+#include <DB.h>
 
 extern SERIAL_TX_FNC(SerialTX);
 extern SERIAL_RX_FNC(SerialRX);
 
 struct MB_Device mbdev;
+struct strDB     mainDB;
+extern int idUser; // Indica usuário que logou se for diferente de zero.
+
+// Função que salva um log no banco contendo usuário e data que gerou o evento.
+void Log(char *evento, int tipo)
+{
+  char sql[200];
+
+  if(mainDB.res != NULL) // Banco conectado
+    {
+    sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", idUser, tipo, evento);
+    DB_Execute(&mainDB, 0, sql);
+    }
+}
 
 int32_t ihm_connect(char *host, int16_t port)
 {
@@ -161,15 +176,24 @@ gboolean tmrPowerDown(gpointer data)
 }
 
 /****************************************************************************
- * Callbacks do GTK
+ * Callbacks gerais do GTK
  ***************************************************************************/
 
 // Seleciona a aba correspondente ao botao clicado
 void cbFunctionKey(GtkButton *button, gpointer user_data)
 {
+  uint32_t idx;
   const gchar *nome = gtk_widget_get_name(GTK_WIDGET(button));
   GtkWidget *ntb = GTK_WIDGET(gtk_builder_get_object(builder, "ntbWorkArea"));
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), nome[strlen(nome)-1]-'0' - 1);
+
+  idx = nome[strlen(nome)-1]-'0' - 1;
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), idx);
+
+  switch(idx) {
+  case NTB_ABA_CONFIG:
+    AbrirConfig(0);
+    break;
+  }
 }
 
 // Volta para a aba Home se cancelar desligamento
@@ -179,304 +203,23 @@ void cbQuitCancel(GtkButton *button, gpointer user_data)
   gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), 0);
 }
 
-// Carrega aba referente aos controles da funcao de codigo escolhida
-void cbFunctionCodeChanged(GtkComboBox *widget, gpointer user_data)
+void cbLogoff(GtkButton *button, gpointer user_data)
 {
-  GtkNotebook *ntb = GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbFunctionCode"));
-  gtk_notebook_set_current_page(ntb, gtk_combo_box_get_active(widget));
-}
+  GtkWidget *wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
 
-// Envia o comando selecionado pelo ModBus
-void cbModBusSend(GtkButton *button, gpointer user_data)
-{
-  guint fc;
-  uint8_t out[] = { 0, 0 };
-  uint32_t i, offset=0;
-  char wdgName[100], reply_string[2000] = "";
-  GtkComboBox     *cbxFunctionCode ;
-  GtkSpinButton   *spb1, *spb2, *spb3;
-  GtkToggleButton *tgb;
-  GtkTreeIter      iter;
-  GtkWidget       *mdg, *wdg;
+  Log("Saida do sistema", LOG_TIPO_SISTEMA);
 
-  union MB_FCD_Data data;
-  struct MB_Reply rp;
+// Grava zero em idUser para indicar que não há usuário logado
+  idUser = 0;
 
-  cbxFunctionCode   = GTK_COMBO_BOX  (gtk_builder_get_object(builder, "cbxFunctionCode"  ));
+// Carregamento dos usuários cadastrados no MySQL no ComboBox.
+  DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
+  CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
 
-  gtk_combo_box_get_active_iter(cbxFunctionCode, &iter);
-  gtk_tree_model_get(gtk_combo_box_get_model(cbxFunctionCode), &iter, 1, &fc, -1);
+  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop")));
 
-  printf("Enviando mensagem pelo ModBus:\n");
-  switch(fc) {
-  case MB_FC_READ_COILS:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadCoilsStart"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadCoilsQuant"));
-
-    data.read_coils.start = (uint32_t)gtk_spin_button_get_value(spb1);
-    data.read_coils.quant = (uint32_t)gtk_spin_button_get_value(spb2);
-
-    printf("ReadCoils Start: %02x\n", data.read_coils.start);
-    printf("ReadCoils Quant: %02x\n", data.read_coils.quant);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_coils.size);
-      for(i=0; i<rp.reply.read_coils.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_coils.val)[i]);
-    }
-
-    break;
-
-  case MB_FC_READ_DISCRETE_INPUTS:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadDiscreteInputsStart"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadDiscreteInputsQuant"));
-
-    data.read_discrete_inputs.start = (uint32_t)gtk_spin_button_get_value(spb1);
-    data.read_discrete_inputs.quant = (uint32_t)gtk_spin_button_get_value(spb2);
-
-    printf("ReadDiscreteInputs Start: %02x\n", data.read_discrete_inputs.start);
-    printf("ReadDiscreteInputs Quant: %02x\n", data.read_discrete_inputs.quant);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_discrete_inputs.size);
-      for(i=0; i<rp.reply.read_discrete_inputs.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_discrete_inputs.val)[i]);
-    }
-
-    break;
-
-  case MB_FC_READ_HOLDING_REGISTERS:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadHoldingRegistersStart"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadHoldingRegistersQuant"));
-
-    data.read_holding_registers.start = (uint32_t)gtk_spin_button_get_value(spb1);
-    data.read_holding_registers.quant = (uint32_t)gtk_spin_button_get_value(spb2);
-
-    printf("ReadHoldingRegisters Start: %02x\n", data.read_holding_registers.start);
-    printf("ReadHoldingRegisters Quant: %02x\n", data.read_holding_registers.quant);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_holding_registers.size);
-      for(i=0; i<rp.reply.read_holding_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_holding_registers.val)[i]);
-    }
-
-    break;
-
-  case MB_FC_READ_INPUT_REGISTERS:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadInputRegistersStart"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbReadInputRegistersQuant"));
-
-    data.read_input_registers.start = (uint32_t)gtk_spin_button_get_value(spb1);
-    data.read_input_registers.quant = (uint32_t)gtk_spin_button_get_value(spb2);
-
-    printf("ReadInputRegisters Start: %02x\n", data.read_input_registers.start);
-    printf("ReadInputRegisters Quant: %02x\n", data.read_input_registers.quant);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_input_registers.size);
-      for(i=0; i<rp.reply.read_input_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_input_registers.val)[i]);
-    }
-
-    break;
-
-  case MB_FC_WRITE_SINGLE_COIL:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbWriteSingleCoilOutput"));
-    wdg  = GTK_WIDGET     (gtk_builder_get_object(builder, "rdbWriteSingleCoilOn"    ));
-
-    data.write_single_coil.output = (uint16_t)gtk_spin_button_get_value(spb1);
-    data.write_single_coil.val    = (uint8_t )gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(wdg));
-
-    printf("WriteSingleCoil Output: %02x. Val: %s\n",
-        data.write_single_coil.output, data.write_single_coil.val ? "ON" : "OFF");
-
-    rp = MB_Send(&mbdev, fc, &data);
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "output: %d\n", rp.reply.write_single_coil.output);
-      offset += sprintf(reply_string+offset, "val   : %s\n", rp.reply.write_single_coil.val ? "ON" : "OFF");
-    }
-
-    break;
-
-  case MB_FC_WRITE_SINGLE_REGISTER:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbWriteSingleRegisterAddress"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbWriteSingleRegisterVal"    ));
-
-    data.write_single_register.address = (uint16_t)gtk_spin_button_get_value(spb1);
-    data.write_single_register.val     = (uint16_t)gtk_spin_button_get_value(spb2);
-
-    printf("WriteSingleRegister Address: %04x. Val: %04x\n",
-        data.write_single_register.address, data.write_single_register.val);
-
-    rp = MB_Send(&mbdev, fc, &data);
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "address: %04x\n", rp.reply.write_single_register.address);
-      offset += sprintf(reply_string+offset, "val    : %04x\n", rp.reply.write_single_register.val);
-    }
-
-    break;
-
-  case MB_FC_WRITE_MULTIPLE_COILS:
-    for(i=0; i<16; i++) {
-      sprintf(wdgName, "tgbWriteMultipleCoils%02d", i+1);
-      tgb = GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, wdgName));
-      out[i/8] |= ((uint32_t)gtk_toggle_button_get_active(tgb)) << (i%8);
-    }
-
-    data.write_multiple_coils.start = 0;
-    data.write_multiple_coils.quant = 16;
-    data.write_multiple_coils.size  = 2;
-    data.write_multiple_coils.val   = out;
-    printf("WriteMultipleCoils Start: %04x\n", data.write_multiple_coils.start);
-
-    rp = MB_Send(&mbdev, fc, &data);
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.write_multiple_coils.size);
-      for(i=0; i<rp.reply.write_multiple_coils.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %04x\n", i, rp.reply.write_multiple_coils.val[i]);
-    }
-
-    break;
-
-  case MB_FC_WRITE_MULTIPLE_REGISTERS:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbWriteMultipleRegistersStart"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbWriteMultipleRegistersQuant"));
-
-    data.write_multiple_registers.start = (uint32_t)gtk_spin_button_get_value(spb1);
-    data.write_multiple_registers.quant = (uint32_t)gtk_spin_button_get_value(spb2);
-    data.write_multiple_registers.size  = 2;
-    data.write_multiple_registers.val   = out;
-    out[0] = 0xaa;
-    out[1] = 0x55;
-
-    printf("WriteMultipleRegisters Start: %04x\n", data.write_multiple_registers.start);
-    printf("WriteMultipleRegisters Quant: %02x\n", data.write_multiple_registers.quant);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "start: %d\n", rp.reply.write_multiple_registers.start);
-      offset += sprintf(reply_string+offset, "quant: %d\n", rp.reply.write_multiple_registers.quant);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.write_multiple_registers.size);
-      for(i=0; i<rp.reply.write_multiple_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, rp.reply.write_multiple_registers.val[i]);
-    }
-
-    break;
-
-  case MB_FC_MASK_WRITE_REGISTER:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbMaskWriteRegisterAddress"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbMaskWriteRegisterAND"    ));
-    spb3 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbMaskWriteRegisterOR"     ));
-
-    data.mask_write_register.address = (uint16_t)gtk_spin_button_get_value(spb1);
-    data.mask_write_register.and     = (uint16_t)gtk_spin_button_get_value(spb2);
-    data.mask_write_register.or      = (uint16_t)gtk_spin_button_get_value(spb3);
-
-    printf("MaskWriteRegister Address: %04x. AND: %04x. OR = %04x\n",
-        data.mask_write_register.address, data.mask_write_register.and, data.mask_write_register.or);
-
-    rp = MB_Send(&mbdev, fc, &data);
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "address: %04x\n", rp.reply.mask_write_register.address);
-      offset += sprintf(reply_string+offset, "and    : %04x\n", rp.reply.mask_write_register.and);
-      offset += sprintf(reply_string+offset, "or     : %04x\n", rp.reply.mask_write_register.or);
-    }
-
-    break;
-
-  case MB_FC_RW_MULTIPLE_REGISTERS:
-    spb1 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbRWMultipleRegistersStart"));
-    spb2 = GTK_SPIN_BUTTON(gtk_builder_get_object(builder, "spbRWMultipleRegistersQuant"));
-
-    data.rw_multiple_registers.start_read  = (uint32_t)gtk_spin_button_get_value(spb1);
-    data.rw_multiple_registers.quant_read  = (uint32_t)gtk_spin_button_get_value(spb2);
-    data.rw_multiple_registers.start_write = data.rw_multiple_registers.start_read;
-    data.rw_multiple_registers.quant_write = data.rw_multiple_registers.quant_read;
-    data.rw_multiple_registers.size  = 2;
-    data.rw_multiple_registers.val   = out;
-    out[0] = 0xaa;
-    out[1] = 0x55;
-
-    printf("RWMultipleRegisters Start: %04x\n", data.rw_multiple_registers.start_read);
-    printf("RWMultipleRegisters Quant: %02x\n", data.rw_multiple_registers.quant_read);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.rw_multiple_registers.size);
-      for(i=0; i<rp.reply.rw_multiple_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.rw_multiple_registers.val)[i]);
-    }
-
-    break;
-
-  case MB_FC_READ_EXCEPTION_STATUS:
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblReadExceptionStatusVal"));
-      sprintf(wdgName, "%02x", rp.reply.read_exception_status.status);
-      gtk_label_set_text(GTK_LABEL(wdg), wdgName);
-
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "status: %02x\n", rp.reply.read_exception_status.status);
-    }
-
-    break;
-
-  case MB_FC_READ_DEVICE_IDENTIFICATION:
-    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "cbxReadDeviceIdentification"));
-
-    data.read_device_identification.id_code   = 0x01;
-    data.read_device_identification.object_id = gtk_combo_box_get_active(GTK_COMBO_BOX(wdg));
-
-    printf("ReadDeviceIdentification IdCode    : %02x\n", data.read_device_identification.id_code);
-    printf("ReadDeviceIdentification ObjectCode: %02x\n", data.read_device_identification.object_id);
-
-    rp = MB_Send(&mbdev, fc, &data);
-
-    if(!rp.ExceptionCode) {
-      wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblReadDeviceIdentificationVal"));
-      gtk_label_set_text(GTK_LABEL(wdg), (gchar *)&rp.reply.read_device_identification.val);
-
-      offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "string: %s\n", &rp.reply.read_device_identification.val);
-    }
-
-    break;
-
-  default:
-    rp.FunctionCode = fc;
-    rp.ExceptionCode = MB_EXCEPTION_ILLEGAL_FUNCTION;
-  }
-
-  if(rp.ExceptionCode != MB_EXCEPTION_NONE)
-    sprintf(reply_string, "Erro enviando Function Code %02x.\nException Code: %02x",
-        fc, rp.ExceptionCode);
-
-  mdg = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "%s", reply_string);
-  gtk_dialog_run(GTK_DIALOG(mdg));
-  gtk_widget_destroy(mdg);
+  AbrirJanelaModal(wnd);
+  gtk_grab_add(wnd);
 }
 
 /****************************************************************************
@@ -561,6 +304,7 @@ int main(int argc, char *argv[])
 {
   pthread_t tid;
   GtkWidget *wnd;
+  GtkComboBox *cmb;
 
 #ifdef DEBUG_PC
   ps = SerialInit("/dev/ttyUSB0");
@@ -589,6 +333,18 @@ int main(int argc, char *argv[])
   mbdev.mode              = MB_MODE_MASTER;
   mbdev.TX                = IHM_MB_TX;
 
+  // Limpa a estrutura do banco, zerando ponteiros, etc...
+  DB_Clear(&mainDB);
+
+  // Carrega configuracoes do arquivo de configuracao e conecta ao banco
+  if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
+    {
+    mainDB.server  = "192.168.0.2";
+    mainDB.user    = "root";
+    mainDB.passwd  = "y1cGH3WK20";
+    mainDB.nome_db = "cv";
+    }
+
   /* init threads */
   g_thread_init (NULL);
   gdk_threads_init ();
@@ -600,7 +356,8 @@ int main(int argc, char *argv[])
   //Carrega a interface a partir do arquivo glade
   builder = gtk_builder_new();
   gtk_builder_add_from_file(builder, "IHM.glade", NULL);
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
+  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
+  cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
 
   //Conecta Sinais aos Callbacks
   gtk_builder_connect_signals(builder, NULL);
@@ -614,10 +371,21 @@ int main(int argc, char *argv[])
 
   pthread_create (&tid, NULL, ihm_update, NULL);
 
-  //Inicia o loop principal de eventos (GTK MainLoop)
-  gtk_main ();
+  if(DB_Init(&mainDB)) { // Se inicializar o banco, entra no loop do GTK.
+    // Carregamento no ComboBox dos usuários cadastrados no MySQL.
+    DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
+    CarregaCombo(cmb,0, NULL);
+  } else {
+    MessageBox("Erro inicializando banco de dados");
+    // Carregamento de usuário Master para acesso de emergência.
+    CarregaItemCombo(cmb, "Master");
+    gtk_combo_box_set_active(cmb, 0);
+  }
+
+  gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
 
   SerialClose(ps);
+  DB_Close(&mainDB);
 
   gdk_threads_leave();
 

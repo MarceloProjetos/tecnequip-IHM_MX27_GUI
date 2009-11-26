@@ -1,0 +1,24 @@
+#ifndef GTKUTILS_H
+#define GTKUTILS_H
+
+#include <string.h>
+#include <stdlib.h>
+#include <gtk/gtk.h>
+
+#include <DB.h>
+
+// Objeto que contem toda a interface GTK
+extern GtkBuilder *builder;
+
+extern struct strDB mainDB;
+
+extern void MessageBox(gchar *);
+extern void EstadoBotoes(GtkWidget *, guint);
+extern void CarregaCombo(GtkComboBox *, guint, char *);
+extern void CarregaItemCombo(GtkComboBox *cmb, char *txt);
+extern char *LerComboAtivo(GtkComboBox *cmb);
+
+// Função para abrir uma janela em modo modal
+extern void AbrirJanelaModal(GtkWidget *wdg);
+
+#endif /* UTILS_H */

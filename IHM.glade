@@ -89,12 +89,371 @@
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="lstLogin">
+    <columns>
+      <!-- column-name gcaLogin -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkAdjustment" id="adjReadCoilsStart">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadCoilsQuant">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadDiscreteInputsStart">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadDiscreteInputsQuant">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjWriteSingleCoilOutput">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadInputRegistersStart">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadInputRegistersQuant">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadHoldingRegistersStart">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjReadHoldingRegistersQuant">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjWriteSingleRegisterAddress">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjWriteSingleRegisterVal">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjMaskWriteRegisterAddress">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjMaskWriteRegisterAND">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjMaskWriteRegisterOR">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjWriteMultipleRegistersStart">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjWriteMultipleRegistersQuant">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjRWMultipleRegistersStart">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjRWMultipleRegistersQuant">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+    <property name="page_size">10</property>
+  </object>
+  <object class="GtkDialog" id="dlgPowerDown">
+    <property name="border_width">5</property>
+    <property name="modal">True</property>
+    <property name="window_position">center</property>
+    <property name="type_hint">normal</property>
+    <property name="has_separator">False</property>
+    <child internal-child="vbox">
+      <object class="GtkVBox" id="dialog-vbox1">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">2</property>
+        <child>
+          <object class="GtkVBox" id="vbox4">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkLabel" id="label51">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">A energia foi interrompida!
+O sistema ser&#xE1; desligado automaticamente em</property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lblPowerDownMsg">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">30 segundos</property>
+                <property name="justify">center</property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                  <attribute name="size" value="20000"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="label52">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Se preferir cancelar, esteja ciente de que a m&#xE1;quina n&#xE3;o poder&#xE1; operar normalmente.
+Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 horas.</property>
+                <property name="justify">fill</property>
+                <property name="wrap">True</property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child internal-child="action_area">
+          <object class="GtkHButtonBox" id="dialog-action_area1">
+            <property name="visible">True</property>
+            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkButton" id="btnPowerDownOK">
+                <property name="label">gtk-ok</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnPowerDownCancel">
+                <property name="label">gtk-cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+    <action-widgets>
+      <action-widget response="0">btnPowerDownOK</action-widget>
+      <action-widget response="1">btnPowerDownCancel</action-widget>
+    </action-widgets>
+  </object>
+  <object class="GtkWindow" id="wndLogin">
+    <property name="title" translatable="yes">Entrar no Sistema</property>
+    <signal name="destroy" handler="cbFecharLogin"/>
+    <child>
+      <object class="GtkVBox" id="vbox15">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkTable" id="table27">
+            <property name="visible">True</property>
+            <property name="border_width">3</property>
+            <property name="n_rows">2</property>
+            <property name="n_columns">2</property>
+            <property name="column_spacing">3</property>
+            <property name="row_spacing">3</property>
+            <child>
+              <object class="GtkLabel" id="lblLogin">
+                <property name="visible">True</property>
+                <property name="xalign">0</property>
+                <property name="label" translatable="yes">Login</property>
+              </object>
+              <packing>
+                <property name="x_options">GTK_FILL</property>
+                <property name="y_options"></property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lblSenha1">
+                <property name="visible">True</property>
+                <property name="xalign">0</property>
+                <property name="label" translatable="yes">Senha</property>
+              </object>
+              <packing>
+                <property name="top_attach">1</property>
+                <property name="bottom_attach">2</property>
+                <property name="x_options">GTK_FILL</property>
+                <property name="y_options"></property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="entLoginSenha">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="max_length">20</property>
+                <property name="visibility">False</property>
+                <property name="invisible_char">&#x25CF;</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">2</property>
+                <property name="top_attach">1</property>
+                <property name="bottom_attach">2</property>
+                <property name="y_options"></property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBox" id="cmbLoginUser">
+                <property name="visible">True</property>
+                <property name="model">lstLogin</property>
+                <property name="active">0</property>
+                <child>
+                  <object class="GtkCellRendererText" id="crtLogin"/>
+                  <attributes>
+                    <attribute name="text">0</attribute>
+                  </attributes>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">2</property>
+                <property name="x_options">GTK_FILL</property>
+                <property name="y_options">GTK_FILL</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox17">
+            <property name="visible">True</property>
+            <property name="homogeneous">True</property>
+            <child>
+              <object class="GtkButton" id="btnCancelar">
+                <property name="label">gtk-quit</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="gtk_main_quit"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btnLoginOK">
+                <property name="label">gtk-ok</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="cbLoginOk"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkListStore" id="lstConfigClientes">
+    <columns>
+      <!-- column-name gcaName -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="lstCadUserLogin">
+    <columns>
+      <!-- column-name gcaUser -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
+  <object class="GtkListStore" id="lstModNome">
+    <columns>
+      <!-- column-name gcaModNome -->
+      <column type="gchararray"/>
+    </columns>
+  </object>
   <object class="GtkWindow" id="wndDesktop">
     <property name="width_request">800</property>
     <property name="height_request">480</property>
     <property name="resizable">False</property>
     <property name="decorated">False</property>
-    <signal name="destroy" handler="cbLogoff"/>
     <child>
       <object class="GtkVBox" id="vbxDesktop">
         <property name="visible">True</property>
@@ -2648,7 +3007,14 @@ hidr&#xE1;ulico</property>
                                         <child>
                                           <object class="GtkComboBox" id="cmbClientes">
                                             <property name="visible">True</property>
+                                            <property name="model">lstConfigClientes</property>
                                             <signal name="changed" handler="cbClienteSelecionado"/>
+                                            <child>
+                                              <object class="GtkCellRendererText" id="crtConfigClientes"/>
+                                              <attributes>
+                                                <attribute name="text">0</attribute>
+                                              </attributes>
+                                            </child>
                                           </object>
                                           <packing>
                                             <property name="position">1</property>
@@ -2656,46 +3022,12 @@ hidr&#xE1;ulico</property>
                                         </child>
                                         <child>
                                           <object class="GtkButton" id="btnClienteRemover">
+                                            <property name="label">gtk-remove</property>
                                             <property name="visible">True</property>
                                             <property name="can_focus">True</property>
                                             <property name="receives_default">True</property>
+                                            <property name="use_stock">True</property>
                                             <signal name="clicked" handler="cbRemoverCliente"/>
-                                            <child>
-                                              <object class="GtkAlignment" id="alignment28">
-                                                <property name="visible">True</property>
-                                                <property name="xscale">0</property>
-                                                <property name="yscale">0</property>
-                                                <child>
-                                                  <object class="GtkHBox" id="hbox43">
-                                                    <property name="visible">True</property>
-                                                    <property name="spacing">2</property>
-                                                    <child>
-                                                      <object class="GtkImage" id="image22">
-                                                        <property name="visible">True</property>
-                                                        <property name="stock">gtk-remove</property>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="expand">False</property>
-                                                        <property name="fill">False</property>
-                                                        <property name="position">0</property>
-                                                      </packing>
-                                                    </child>
-                                                    <child>
-                                                      <object class="GtkLabel" id="label59">
-                                                        <property name="visible">True</property>
-                                                        <property name="label">Remover</property>
-                                                        <property name="use_underline">True</property>
-                                                      </object>
-                                                      <packing>
-                                                        <property name="expand">False</property>
-                                                        <property name="fill">False</property>
-                                                        <property name="position">1</property>
-                                                      </packing>
-                                                    </child>
-                                                  </object>
-                                                </child>
-                                              </object>
-                                            </child>
                                           </object>
                                           <packing>
                                             <property name="expand">False</property>
@@ -3207,9 +3539,16 @@ hidr&#xE1;ulico</property>
                                 <property name="column_spacing">3</property>
                                 <property name="row_spacing">3</property>
                                 <child>
-                                  <object class="GtkComboBox" id="cmbLogin">
+                                  <object class="GtkComboBox" id="cmbCadUserLogin">
                                     <property name="visible">True</property>
+                                    <property name="model">lstCadUserLogin</property>
                                     <signal name="changed" handler="cbLoginUserSelected"/>
+                                    <child>
+                                      <object class="GtkCellRendererText" id="crtCadUserLogin"/>
+                                      <attributes>
+                                        <attribute name="text">0</attribute>
+                                      </attributes>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -3326,46 +3665,12 @@ hidr&#xE1;ulico</property>
                                 <property name="homogeneous">True</property>
                                 <child>
                                   <object class="GtkButton" id="btnAlterar">
+                                    <property name="label">gtk-apply</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
+                                    <property name="use_stock">True</property>
                                     <signal name="clicked" handler="cbAplicarUsuario"/>
-                                    <child>
-                                      <object class="GtkAlignment" id="alignment31">
-                                        <property name="visible">True</property>
-                                        <property name="xscale">0</property>
-                                        <property name="yscale">0</property>
-                                        <child>
-                                          <object class="GtkHBox" id="hbox46">
-                                            <property name="visible">True</property>
-                                            <property name="spacing">2</property>
-                                            <child>
-                                              <object class="GtkImage" id="image25">
-                                                <property name="visible">True</property>
-                                                <property name="stock">gtk-apply</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label62">
-                                                <property name="visible">True</property>
-                                                <property name="label">Aplicar</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -3388,46 +3693,12 @@ hidr&#xE1;ulico</property>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="btnExcluir">
+                                    <property name="label">gtk-remove</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
+                                    <property name="use_stock">True</property>
                                     <signal name="clicked" handler="cbExcluirUsuario"/>
-                                    <child>
-                                      <object class="GtkAlignment" id="alignment32">
-                                        <property name="visible">True</property>
-                                        <property name="xscale">0</property>
-                                        <property name="yscale">0</property>
-                                        <child>
-                                          <object class="GtkHBox" id="hbox47">
-                                            <property name="visible">True</property>
-                                            <property name="spacing">2</property>
-                                            <child>
-                                              <object class="GtkImage" id="image26">
-                                                <property name="visible">True</property>
-                                                <property name="stock">gtk-remove</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label63">
-                                                <property name="visible">True</property>
-                                                <property name="label">Remover</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -3550,7 +3821,14 @@ hidr&#xE1;ulico</property>
                                 <child>
                                   <object class="GtkComboBox" id="cmbModNome">
                                     <property name="visible">True</property>
+                                    <property name="model">lstModNome</property>
                                     <signal name="changed" handler="cbModeloSelecionado"/>
+                                    <child>
+                                      <object class="GtkCellRendererText" id="crtModNome"/>
+                                      <attributes>
+                                        <attribute name="text">0</attribute>
+                                      </attributes>
+                                    </child>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -3696,46 +3974,12 @@ hidr&#xE1;ulico</property>
                                 <property name="homogeneous">True</property>
                                 <child>
                                   <object class="GtkButton" id="btnModAplicar">
+                                    <property name="label">gtk-apply</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
+                                    <property name="use_stock">True</property>
                                     <signal name="clicked" handler="cbAplicarModelo"/>
-                                    <child>
-                                      <object class="GtkAlignment" id="alignment34">
-                                        <property name="visible">True</property>
-                                        <property name="xscale">0</property>
-                                        <property name="yscale">0</property>
-                                        <child>
-                                          <object class="GtkHBox" id="hbox49">
-                                            <property name="visible">True</property>
-                                            <property name="spacing">2</property>
-                                            <child>
-                                              <object class="GtkImage" id="image28">
-                                                <property name="visible">True</property>
-                                                <property name="stock">gtk-apply</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label65">
-                                                <property name="visible">True</property>
-                                                <property name="label">Aplicar</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -3744,46 +3988,12 @@ hidr&#xE1;ulico</property>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="btnModRemover">
+                                    <property name="label">gtk-remove</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
+                                    <property name="use_stock">True</property>
                                     <signal name="clicked" handler="cbRemoverModelo"/>
-                                    <child>
-                                      <object class="GtkAlignment" id="alignment33">
-                                        <property name="visible">True</property>
-                                        <property name="xscale">0</property>
-                                        <property name="yscale">0</property>
-                                        <child>
-                                          <object class="GtkHBox" id="hbox48">
-                                            <property name="visible">True</property>
-                                            <property name="spacing">2</property>
-                                            <child>
-                                              <object class="GtkImage" id="image27">
-                                                <property name="visible">True</property>
-                                                <property name="stock">gtk-remove</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label64">
-                                                <property name="visible">True</property>
-                                                <property name="label">Remover</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
-                                      </object>
-                                    </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -4031,46 +4241,12 @@ hidr&#xE1;ulico</property>
                         <property name="homogeneous">True</property>
                         <child>
                           <object class="GtkButton" id="btnConfigOk">
+                            <property name="label">gtk-save</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="use_stock">True</property>
                             <signal name="clicked" handler="cbConfigOk"/>
-                            <child>
-                              <object class="GtkAlignment" id="alignment29">
-                                <property name="visible">True</property>
-                                <property name="xscale">0</property>
-                                <property name="yscale">0</property>
-                                <child>
-                                  <object class="GtkHBox" id="hbox44">
-                                    <property name="visible">True</property>
-                                    <property name="spacing">2</property>
-                                    <child>
-                                      <object class="GtkImage" id="image23">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-apply</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="label73">
-                                        <property name="visible">True</property>
-                                        <property name="label">Aplicar</property>
-                                        <property name="use_underline">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -4080,45 +4256,12 @@ hidr&#xE1;ulico</property>
                         </child>
                         <child>
                           <object class="GtkButton" id="btnConfigCancel">
+                            <property name="label">gtk-go-back</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <child>
-                              <object class="GtkAlignment" id="alignment30">
-                                <property name="visible">True</property>
-                                <property name="xscale">0</property>
-                                <property name="yscale">0</property>
-                                <child>
-                                  <object class="GtkHBox" id="hbox45">
-                                    <property name="visible">True</property>
-                                    <property name="spacing">2</property>
-                                    <child>
-                                      <object class="GtkImage" id="image24">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-go-back</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="label74">
-                                        <property name="visible">True</property>
-                                        <property name="label">Voltar</property>
-                                        <property name="use_underline">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbConfigVoltar"/>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -5909,7 +6052,7 @@ hidr&#xE1;ulico</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="image">imgQuitOK</property>
-                            <signal name="clicked" handler="gtk_widget_destroy" object="wndDesktop"/>
+                            <signal name="clicked" handler="cbLogoff"/>
                           </object>
                           <packing>
                             <property name="position">0</property>
@@ -5948,147 +6091,9 @@ hidr&#xE1;ulico</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkVBox" id="vbox12">
+                  <object class="GtkLabel" id="label59">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
-                    <child>
-                      <object class="GtkScrolledWindow" id="scrolledwindow1">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="hscrollbar_policy">never</property>
-                        <property name="vscrollbar_policy">automatic</property>
-                        <child>
-                          <object class="GtkViewport" id="viewport1">
-                            <property name="visible">True</property>
-                            <property name="resize_mode">queue</property>
-                            <child>
-                              <object class="GtkTable" id="tblPerms">
-                                <property name="visible">True</property>
-                                <property name="border_width">3</property>
-                                <property name="n_columns">2</property>
-                                <property name="column_spacing">3</property>
-                                <property name="row_spacing">3</property>
-                                <property name="homogeneous">True</property>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox16">
-                        <property name="visible">True</property>
-                        <property name="homogeneous">True</property>
-                        <child>
-                          <object class="GtkButton" id="btnOK">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <child>
-                              <object class="GtkAlignment" id="alignment37">
-                                <property name="visible">True</property>
-                                <property name="xscale">0</property>
-                                <property name="yscale">0</property>
-                                <child>
-                                  <object class="GtkHBox" id="hbox52">
-                                    <property name="visible">True</property>
-                                    <property name="spacing">2</property>
-                                    <child>
-                                      <object class="GtkImage" id="image31">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-apply</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="label80">
-                                        <property name="visible">True</property>
-                                        <property name="label">Aplicar</property>
-                                        <property name="use_underline">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="btnCancel">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <child>
-                              <object class="GtkAlignment" id="alignment38">
-                                <property name="visible">True</property>
-                                <property name="xscale">0</property>
-                                <property name="yscale">0</property>
-                                <child>
-                                  <object class="GtkHBox" id="hbox53">
-                                    <property name="visible">True</property>
-                                    <property name="spacing">2</property>
-                                    <child>
-                                      <object class="GtkImage" id="image32">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-go-back</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="label81">
-                                        <property name="visible">True</property>
-                                        <property name="label">Voltar</property>
-                                        <property name="use_underline">True</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                </child>
-                              </object>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">False</property>
-                        <property name="position">1</property>
-                      </packing>
-                    </child>
+                    <property name="label" translatable="yes">label</property>
                   </object>
                   <packing>
                     <property name="position">6</property>
@@ -7091,288 +7096,39 @@ hidr&#xE1;ulico</property>
     <property name="visible">True</property>
     <property name="stock">gtk-cancel</property>
   </object>
-  <object class="GtkAdjustment" id="adjReadCoilsStart">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadCoilsQuant">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadDiscreteInputsStart">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadDiscreteInputsQuant">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjWriteSingleCoilOutput">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadInputRegistersStart">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadInputRegistersQuant">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadHoldingRegistersStart">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjReadHoldingRegistersQuant">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjWriteSingleRegisterAddress">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjWriteSingleRegisterVal">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjMaskWriteRegisterAddress">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjMaskWriteRegisterAND">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjMaskWriteRegisterOR">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjWriteMultipleRegistersStart">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjWriteMultipleRegistersQuant">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjRWMultipleRegistersStart">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkAdjustment" id="adjRWMultipleRegistersQuant">
-    <property name="upper">100</property>
-    <property name="step_increment">1</property>
-    <property name="page_increment">10</property>
-    <property name="page_size">10</property>
-  </object>
-  <object class="GtkDialog" id="dlgPowerDown">
-    <property name="border_width">5</property>
-    <property name="modal">True</property>
-    <property name="window_position">center</property>
-    <property name="type_hint">normal</property>
-    <property name="has_separator">False</property>
-    <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox1">
-        <property name="visible">True</property>
-        <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
-        <child>
-          <object class="GtkVBox" id="vbox4">
-            <property name="visible">True</property>
-            <property name="orientation">vertical</property>
-            <child>
-              <object class="GtkLabel" id="label51">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">A energia foi interrompida!
-O sistema ser&#xE1; desligado automaticamente em</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="lblPowerDownMsg">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">30 segundos</property>
-                <property name="justify">center</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                  <attribute name="size" value="20000"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="label52">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">Se preferir cancelar, esteja ciente de que a m&#xE1;quina n&#xE3;o poder&#xE1; operar normalmente.
-Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 horas.</property>
-                <property name="justify">fill</property>
-                <property name="wrap">True</property>
-                <attributes>
-                  <attribute name="weight" value="bold"/>
-                </attributes>
-              </object>
-              <packing>
-                <property name="position">2</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="position">1</property>
-          </packing>
-        </child>
-        <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area1">
-            <property name="visible">True</property>
-            <property name="layout_style">end</property>
-            <child>
-              <object class="GtkButton" id="btnPowerDownOK">
-                <property name="label">gtk-ok</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="btnPowerDownCancel">
-                <property name="label">gtk-cancel</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-    <action-widgets>
-      <action-widget response="0">btnPowerDownOK</action-widget>
-      <action-widget response="1">btnPowerDownCancel</action-widget>
-    </action-widgets>
-  </object>
-  <object class="GtkWindow" id="wndLogin">
-    <property name="visible">True</property>
-    <property name="title" translatable="yes">Entrar no Sistema</property>
-    <signal name="destroy" handler="cbFecharLogin"/>
+  <object class="GtkWindow" id="wndUserPerms">
     <child>
-      <object class="GtkVBox" id="vbox15">
+      <object class="GtkVBox" id="vbox12">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkTable" id="table27">
+          <object class="GtkScrolledWindow" id="scrolledwindow1">
+            <property name="height_request">300</property>
             <property name="visible">True</property>
-            <property name="border_width">3</property>
-            <property name="n_rows">2</property>
-            <property name="n_columns">2</property>
-            <property name="column_spacing">3</property>
-            <property name="row_spacing">3</property>
+            <property name="can_focus">True</property>
+            <property name="hscrollbar_policy">never</property>
+            <property name="vscrollbar_policy">automatic</property>
             <child>
-              <object class="GtkLabel" id="lblLogin">
+              <object class="GtkViewport" id="viewport1">
                 <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Login</property>
+                <property name="resize_mode">queue</property>
+                <child>
+                  <object class="GtkTable" id="tblPerms">
+                    <property name="visible">True</property>
+                    <property name="border_width">3</property>
+                    <property name="n_columns">2</property>
+                    <property name="column_spacing">3</property>
+                    <property name="row_spacing">3</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                </child>
               </object>
-              <packing>
-                <property name="x_options">GTK_FILL</property>
-                <property name="y_options"></property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="lblSenha1">
-                <property name="visible">True</property>
-                <property name="xalign">0</property>
-                <property name="label" translatable="yes">Senha</property>
-              </object>
-              <packing>
-                <property name="top_attach">1</property>
-                <property name="bottom_attach">2</property>
-                <property name="x_options">GTK_FILL</property>
-                <property name="y_options"></property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkEntry" id="entSenha1">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="max_length">20</property>
-                <property name="visibility">False</property>
-                <property name="invisible_char">&#x25CF;</property>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="top_attach">1</property>
-                <property name="bottom_attach">2</property>
-                <property name="y_options"></property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkComboBox" id="cmbLogin1">
-                <property name="visible">True</property>
-              </object>
-              <packing>
-                <property name="left_attach">1</property>
-                <property name="right_attach">2</property>
-                <property name="x_options">GTK_FILL</property>
-                <property name="y_options">GTK_FILL</property>
-              </packing>
             </child>
           </object>
           <packing>
@@ -7380,51 +7136,16 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
           </packing>
         </child>
         <child>
-          <object class="GtkHBox" id="hbox17">
+          <object class="GtkHBox" id="hbox16">
             <property name="visible">True</property>
             <property name="homogeneous">True</property>
             <child>
-              <object class="GtkButton" id="btnCancelar">
+              <object class="GtkButton" id="btnUserPermsOK">
+                <property name="label">gtk-apply</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="gtk_main_quit"/>
-                <child>
-                  <object class="GtkAlignment" id="alignment39">
-                    <property name="visible">True</property>
-                    <property name="xscale">0</property>
-                    <property name="yscale">0</property>
-                    <child>
-                      <object class="GtkHBox" id="hbox54">
-                        <property name="visible">True</property>
-                        <property name="spacing">2</property>
-                        <child>
-                          <object class="GtkImage" id="image33">
-                            <property name="visible">True</property>
-                            <property name="stock">gtk-quit</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label117">
-                            <property name="visible">True</property>
-                            <property name="label">Sair</property>
-                            <property name="use_underline">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
+                <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -7432,47 +7153,12 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="btnLoginOK">
+              <object class="GtkButton" id="btnUserPermsCancel">
+                <property name="label">gtk-go-back</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <signal name="clicked" handler="cbLoginOk"/>
-                <child>
-                  <object class="GtkAlignment" id="alignment40">
-                    <property name="visible">True</property>
-                    <property name="xscale">0</property>
-                    <property name="yscale">0</property>
-                    <child>
-                      <object class="GtkHBox" id="hbox55">
-                        <property name="visible">True</property>
-                        <property name="spacing">2</property>
-                        <child>
-                          <object class="GtkImage" id="image34">
-                            <property name="visible">True</property>
-                            <property name="stock">gtk-ok</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label118">
-                            <property name="visible">True</property>
-                            <property name="label">OK</property>
-                            <property name="use_underline">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                </child>
+                <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -7482,6 +7168,7 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
           </object>
           <packing>
             <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="position">1</property>
           </packing>
         </child>
