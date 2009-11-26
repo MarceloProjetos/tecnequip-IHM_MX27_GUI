@@ -2047,25 +2047,45 @@ void cbExcluirUsuario(GtkButton *button, gpointer user_data)
     }
 }
 
-void SaindoUserPerms(GtkWidget *widget, gpointer user_data)
+void SaindoUserPerms(gpointer user_data)
 {
-  gtk_grab_remove(widget);
+  guint signal_id;
+  gulong handler_id;
+  GtkWidget *wdg;
+  GtkContainer *container = GTK_CONTAINER(gtk_builder_get_object(builder, "tblPerms"));
+  GList *start, *lst = gtk_container_get_children(container);
+
+  start = lst;
+  while(lst) {
+    gtk_container_remove(container, GTK_WIDGET(lst->data));
+    lst = lst->next;
+  }
+
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+
+  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsOK"));
+  handler_id = g_signal_handler_find((gpointer)wdg, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect((gpointer)wdg, handler_id);
+
+  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsCancel"));
+  handler_id = g_signal_handler_find((gpointer)wdg, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect((gpointer)wdg, handler_id);
+
+  gtk_grab_remove(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
   free((int *)(user_data));
+  g_list_free(start);
 }
 
 void cbUserPermsCancel(GtkButton *button, gpointer user_data)
 {
-  GtkWidget *wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndPerms"));
-
-  gtk_widget_hide_all(wnd);
-  SaindoUserPerms(wnd, user_data);
+  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
+  SaindoUserPerms(user_data);
 }
 
 void cbUserPermsAtual(GtkButton *button, gpointer user_data)
 {
   int i=0, val_perm, inserir = 0;
   char sql[100];
-  GtkWidget *wnd;
   GList *lst = gtk_container_get_children(GTK_CONTAINER(gtk_builder_get_object(builder, "tblPerms")));
 
   sprintf(sql,"delete from permissoes where ID_User=%d", *(int *)(user_data));
@@ -2099,9 +2119,8 @@ void cbUserPermsAtual(GtkButton *button, gpointer user_data)
     lst = lst->next;
     }
 
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndPerms"));
-  gtk_widget_hide_all(wnd);
-  SaindoUserPerms(wnd, user_data);
+  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
+  SaindoUserPerms(user_data);
 }
 
 void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
