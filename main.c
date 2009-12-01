@@ -17,10 +17,12 @@
 
 extern SERIAL_TX_FNC(SerialTX);
 extern SERIAL_RX_FNC(SerialRX);
+extern void AbrirConfig(unsigned int pos);
 
 struct MB_Device mbdev;
 struct strDB     mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
+int CurrentWorkArea = 0; // Funcao que armazena a tela atual.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
@@ -137,7 +139,10 @@ GtkBuilder *builder;
 // Timers
 gboolean tmrAD(gpointer data)
 {
-  comm_put(&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+  if(CurrentWorkArea == NTB_ABA_HOME) {
+    comm_put(&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+  }
+
   return TRUE;
 }
 
@@ -246,52 +251,54 @@ void * ihm_update(void *args)
    ***************************************************************************/
   while (1) {
     usleep(500);
-    comm_update();
-    if(comm_ready()) {
-      comm_get(&msg);
-      switch(msg.fnc) {
-      case COMM_FNC_AIN:
-        gdk_threads_enter();
-        if(msg.data.ad.vin != ad_vin) {
-          ad_vin = msg.data.ad.vin;
-          gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(msg.data.ad.vin )/0x3ff);
-        }
-        if(msg.data.ad.term != ad_term) {
-          ad_term = msg.data.ad.term;
-          gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(msg.data.ad.term)/0x3ff);
-        }
-        if(msg.data.ad.vbat != ad_vbat) {
-          ad_vbat = msg.data.ad.vbat;
-          gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/0x3ff);
-        }
-        gdk_threads_leave();
-        break;
+    if(CurrentWorkArea == NTB_ABA_HOME) {
+      comm_update();
+      if(comm_ready()) {
+        comm_get(&msg);
+        switch(msg.fnc) {
+        case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
+          gdk_threads_enter();
+          if(msg.data.ad.vin != ad_vin) {
+            ad_vin = msg.data.ad.vin;
+            gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(msg.data.ad.vin )/3150);
+          }
+          if(msg.data.ad.term != ad_term) {
+            ad_term = msg.data.ad.term;
+            gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(msg.data.ad.term)/3150);
+          }
+          if(msg.data.ad.vbat != ad_vbat) {
+            ad_vbat = msg.data.ad.vbat;
+            gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/3150);
+          }
+          gdk_threads_leave();
+          break;
 
-      case COMM_FNC_PWR:
-        gdk_threads_enter();
-        if(msg.data.pwr) {
-          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema energizado");
-        } else {
-          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
+        case COMM_FNC_PWR:
+          gdk_threads_enter();
+          if(msg.data.pwr) {
+            gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema energizado");
+          } else {
+            gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
 
-          dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
-          gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
-              "30 segundos");
-          gtk_widget_show_all(GTK_WIDGET(dlg));
-          printf("Resposta: %d\n", gtk_dialog_run(dlg));
-          gtk_widget_hide_all(GTK_WIDGET(dlg));
-          dlg = NULL;
+            dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
+            gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
+                "30 segundos");
+            gtk_widget_show_all(GTK_WIDGET(dlg));
+            printf("Resposta: %d\n", gtk_dialog_run(dlg));
+            gtk_widget_hide_all(GTK_WIDGET(dlg));
+            dlg = NULL;
+          }
+          gdk_threads_leave();
+          break;
+
+        default:
+          printf("\nFuncao.: 0x%08x\n", msg.fnc);
+          printf("\tds.....: 0x%08x\n", msg.data.ds     );
+          printf("\tled....: 0x%08x\n", msg.data.led    );
+          printf("\tad.vin.: 0x%08x\n", msg.data.ad.vin );
+          printf("\tad.term: 0x%08x\n", msg.data.ad.term);
+          printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
         }
-        gdk_threads_leave();
-        break;
-
-      default:
-        printf("\nFuncao.: 0x%08x\n", msg.fnc);
-        printf("\tds.....: 0x%08x\n", msg.data.ds     );
-        printf("\tled....: 0x%08x\n", msg.data.led    );
-        printf("\tad.vin.: 0x%08x\n", msg.data.ad.vin );
-        printf("\tad.term: 0x%08x\n", msg.data.ad.term);
-        printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
       }
     }
   }

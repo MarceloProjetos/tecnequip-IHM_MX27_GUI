@@ -67,7 +67,6 @@ char *LerComboAtivo(GtkComboBox *cmb)
 	if(GTK_IS_COMBO_BOX_ENTRY(cmb))
 		return gtk_combo_box_get_active_text(cmb);
 
-	printf("gtk_combo_box_get_active(cmb) = %d\n", gtk_combo_box_get_active(cmb));
 	sprintf(tmp, "%d", gtk_combo_box_get_active(cmb));
 	gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(store), &iter, tmp);
 	gtk_tree_model_get_value(GTK_TREE_MODEL(store), &iter, 0, &valor);

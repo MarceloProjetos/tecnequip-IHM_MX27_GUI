@@ -2,14 +2,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <net/modbus.h>
+
 #include <gtk/gtk.h>
 
 #include "defines.h"
 #include "GtkUtils.h"
 
+// Estrutura que representa o ModBus
+extern struct MB_Device mbdev;
+
 /*** Funcoes e variáveis de suporte ***/
 
 int idUser=0; // Indica usuário que logou se for diferente de zero.
+extern int CurrentWorkArea; // Funcao que armazena a tela atual.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
@@ -1564,31 +1570,6 @@ cbManualPerfAvanca                     (GtkButton       *button,
   MQ_Transfer(&MQ);
 }
 
-void
-cbManutAtualSaidas                     (GtkToggleButton *togglebutton,
-                                        gpointer         user_data)
-{
-  unsigned long i=0, val=0;
-  GtkWidget *obj;
-  char nome_obj[20];
-
-  while(1) // Sai apenas quando não encontra o objeto
-    {
-    sprintf(nome_obj, "tglManutSai%02d", i);
-    obj = lookup_widget(GTK_WIDGET(togglebutton), nome_obj);
-
-    // Acabaram os controles, saindo
-    if(obj == NULL)
-      break;
-
-    if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(obj)))
-      val |= 1UL<<i;
-
-    i++; // Próximo controle.
-    }
-
-  PIO_DO_Escrever(val);
-}
 #else
 void CarregaComboClientes()
 {
@@ -1941,7 +1922,7 @@ void cbAplicarUsuario(GtkButton *button, gpointer user_data)
         nome, senha, lembrete, LerComboAtivo(GTK_COMBO_BOX(obj)));
       DB_Execute(&mainDB, 0, sql);
 
-      sprintf(sql, "Alterado o usuário '%s'", LerComboAtivo(GTK_COMBO_BOX(obj)));
+      sprintf(sql, "Alterado o usuário %s", LerComboAtivo(GTK_COMBO_BOX(obj)));
       Log(sql, LOG_TIPO_SISTEMA);
 
       MessageBox("Usuário alterado com sucesso!");
@@ -2358,6 +2339,28 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
     MessageBox("Erro conectando ao banco de dados!");
 
   DB_Close(&tmpDB);
+}
+
+void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
+{
+  const gchar *nome = gtk_widget_get_name(GTK_WIDGET(togglebutton));
+  union MB_FCD_Data data;
+  struct MB_Reply rp;
+
+  data.write_single_coil.output = atoi(&nome[strlen(nome)-2]);
+  data.write_single_coil.val    = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(togglebutton));
+
+  printf("output: %d, val = %d\n", data.write_single_coil.output, data.write_single_coil.val);
+
+  rp = MB_Send(&mbdev, MB_FC_WRITE_SINGLE_COIL, &data);
+
+  if(rp.ExceptionCode != MB_EXCEPTION_NONE)
+    printf("Erro escrevendo saida. Exception Code: %02x\n", rp.ExceptionCode);
+}
+
+void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
+{
+  CurrentWorkArea = arg1;
 }
 
 #endif
