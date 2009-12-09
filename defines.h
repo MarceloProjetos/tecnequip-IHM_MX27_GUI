@@ -48,5 +48,10 @@
 // Numeracao das abas que contem a tela (ntbWorkArea)
 #define NTB_ABA_HOME   0
 #define NTB_ABA_CONFIG 1
+#define NTB_ABA_OPERAR 2
+#define NTB_ABA_LOGS   4
+#define NTB_ABA_TAREFA 6
+#define NTB_ABA_MODBUS 7
+#define NTB_ABA_DATA   8
 
 /*** Fim das definições gerais ***/

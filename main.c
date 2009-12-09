@@ -17,12 +17,16 @@
 
 extern SERIAL_TX_FNC(SerialTX);
 extern SERIAL_RX_FNC(SerialRX);
+
+extern void AbrirLog   ();
+extern void AbrirOper  ();
 extern void AbrirConfig(unsigned int pos);
 
 struct MB_Device mbdev;
 struct strDB     mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
-int CurrentWorkArea = 0; // Funcao que armazena a tela atual.
+int CurrentWorkArea  = 0; // Variavel que armazena a tela atual.
+int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
@@ -106,7 +110,7 @@ COMM_FNC(CommRX)
 MB_HANDLER_TX(IHM_MB_TX)
 {
   uint32_t i, tent = 10;
-  int32_t tcp_socket;
+  int32_t tcp_socket, opts;
 
   printf("MB Send: ");
   for(i=0; i<size; i++)
@@ -117,6 +121,14 @@ MB_HANDLER_TX(IHM_MB_TX)
   tcp_socket = ihm_connect("192.168.0.232", 502);
   if(tcp_socket >= 0) {
     send(tcp_socket, data, size, 0);
+
+    // Configura socket para o modo non-blocking e retorna zero no erro.
+    opts = fcntl(tcp_socket,F_GETFL);
+    if (opts < 0)
+      return 0;
+    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0)
+      return 0;
+
     while(!(size=recv(tcp_socket, data, MB_BUFFER_SIZE, 0)) && tent--) {
       usleep(10000);
     }
@@ -198,6 +210,12 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   case NTB_ABA_CONFIG:
     AbrirConfig(0);
     break;
+  case NTB_ABA_OPERAR:
+    AbrirOper();
+    break;
+  case NTB_ABA_LOGS:
+    AbrirLog();
+    break;
   }
 }
 
@@ -251,12 +269,12 @@ void * ihm_update(void *args)
    ***************************************************************************/
   while (1) {
     usleep(500);
-    if(CurrentWorkArea == NTB_ABA_HOME) {
-      comm_update();
-      if(comm_ready()) {
-        comm_get(&msg);
-        switch(msg.fnc) {
-        case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
+    comm_update();
+    if(comm_ready()) {
+      comm_get(&msg);
+      switch(msg.fnc) {
+      case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
+        if(CurrentWorkArea == NTB_ABA_HOME) {
           gdk_threads_enter();
           if(msg.data.ad.vin != ad_vin) {
             ad_vin = msg.data.ad.vin;
@@ -271,34 +289,34 @@ void * ihm_update(void *args)
             gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/3150);
           }
           gdk_threads_leave();
-          break;
-
-        case COMM_FNC_PWR:
-          gdk_threads_enter();
-          if(msg.data.pwr) {
-            gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema energizado");
-          } else {
-            gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
-
-            dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
-            gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
-                "30 segundos");
-            gtk_widget_show_all(GTK_WIDGET(dlg));
-            printf("Resposta: %d\n", gtk_dialog_run(dlg));
-            gtk_widget_hide_all(GTK_WIDGET(dlg));
-            dlg = NULL;
-          }
-          gdk_threads_leave();
-          break;
-
-        default:
-          printf("\nFuncao.: 0x%08x\n", msg.fnc);
-          printf("\tds.....: 0x%08x\n", msg.data.ds     );
-          printf("\tled....: 0x%08x\n", msg.data.led    );
-          printf("\tad.vin.: 0x%08x\n", msg.data.ad.vin );
-          printf("\tad.term: 0x%08x\n", msg.data.ad.term);
-          printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
         }
+        break;
+
+      case COMM_FNC_PWR:
+        gdk_threads_enter();
+        if(msg.data.pwr) {
+          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema energizado");
+        } else {
+          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
+
+          dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
+          gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
+              "30 segundos");
+          gtk_widget_show_all(GTK_WIDGET(dlg));
+          printf("Resposta: %d\n", gtk_dialog_run(dlg));
+          gtk_widget_hide_all(GTK_WIDGET(dlg));
+          dlg = NULL;
+        }
+        gdk_threads_leave();
+        break;
+
+      default:
+        printf("\nFuncao.: 0x%08x\n", msg.fnc);
+        printf("\tds.....: 0x%08x\n", msg.data.ds     );
+        printf("\tled....: 0x%08x\n", msg.data.led    );
+        printf("\tad.vin.: 0x%08x\n", msg.data.ad.vin );
+        printf("\tad.term: 0x%08x\n", msg.data.ad.term);
+        printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
       }
     }
   }
@@ -312,6 +330,8 @@ int main(int argc, char *argv[])
   pthread_t tid;
   GtkWidget *wnd;
   GtkComboBox *cmb;
+  char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
+  char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
 
 #ifdef DEBUG_PC
   ps = SerialInit("/dev/ttyUSB0");
@@ -370,6 +390,19 @@ int main(int argc, char *argv[])
   gtk_builder_connect_signals(builder, NULL);
 
 //  g_object_unref (G_OBJECT (builder));
+
+  // Configura TreeView da tela de Tarefas
+  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), campos_tarefa,
+    GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_tarefa)/sizeof(campos_tarefa[0]))-1,
+        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+
+  // Configura TreeView da tela de Logs
+  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")), campos_log,
+      GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
+          G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+
+  // Configura o ComboBoxEntry para usar o modo de texto. Pelo Glade nao funciona!
+  gtk_combo_box_entry_set_text_column(GTK_COMBO_BOX_ENTRY(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0);
 
   gtk_widget_show_all(wnd);
 

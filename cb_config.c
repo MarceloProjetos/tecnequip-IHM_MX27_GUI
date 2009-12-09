@@ -15,7 +15,8 @@ extern struct MB_Device mbdev;
 /*** Funcoes e variáveis de suporte ***/
 
 int idUser=0; // Indica usuário que logou se for diferente de zero.
-extern int CurrentWorkArea; // Funcao que armazena a tela atual.
+extern int CurrentWorkArea;  // Variavel que armazena a tela atual.
+extern int PreviousWorkArea; // Variavel que armazena a tela anterior.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
@@ -139,131 +140,6 @@ gint sync_cv(gpointer dados)
     }
 
   return TRUE;
-}
-
-void ConfigBotoesTarefa(GtkWidget *wdg, gboolean modo)
-{
-  gtk_widget_set_sensitive(lookup_widget(wdg, "btnExecTarefa"  ), modo);
-  gtk_widget_set_sensitive(lookup_widget(wdg, "btnEditarTarefa"), modo);
-}
-
-void CarregaListaTarefas(GtkWidget *tvw)
-{
-  int i;
-  const int tam = 9;
-  char *valores[tam+1], sql[300];
-
-  valores[tam] = NULL;
-
-  TV_Limpar(tvw);
-
-  sprintf(sql, "select t.ID, c.nome, t.Pedido, m.nome, t.qtd, t.qtdprod, t.tamanho, t.data, t.coments from modelos as m, tarefas as t, clientes as c where c.ID = t.ID_Cliente and m.ID = t.ID_Modelo and (t.estado='%d' or t.estado='%d') and m.estado='%d' order by data", TRF_ESTADO_NOVA, TRF_ESTADO_PARCIAL, MOD_ESTADO_ATIVO);
-  DB_Execute(&mainDB, 0, sql);
-  while(DB_GetNextRow(&mainDB, 0)>0)
-    {
-    for(i = 0; i<tam; i++)
-      {
-      valores[i] = DB_GetData(&mainDB, 0, i);
-      if(valores[i] == NULL)
-        valores[i] = "";
-      }
-
-    TV_Adicionar(tvw, valores);
-    }
-
-  ConfigBotoesTarefa(tvw, FALSE);
-}
-
-// função que carrega a lista de eventos em um TreeView
-void CarregaListaLogs(GtkWidget *tvw)
-{
-  int i, tipo;
-  const int tam = 3;
-  char *valores[tam+1], sql[300], *data_ini, *data_fim;
-
-  valores[tam] = NULL;
-
-  TV_Limpar(tvw);
-
-  tipo = gtk_combo_box_get_active(GTK_COMBO_BOX(lookup_widget(GTK_WIDGET(tvw), "cmbLogFiltro")));
-  data_ini = (char *)gtk_entry_get_text(GTK_ENTRY(lookup_widget(GTK_WIDGET(tvw), "entLogDataInicial")));
-  data_fim = (char *)gtk_entry_get_text(GTK_ENTRY(lookup_widget(GTK_WIDGET(tvw), "entLogDataFinal")));
-
-  if(tipo == LOG_TIPO_TODOS)
-    sprintf(sql, "select l.data, u.nome, l.evento from log as l, usuarios as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') order by data desc", data_ini, data_fim);
-  else
-    sprintf(sql, "select l.data, u.nome, l.evento from log as l, usuarios as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') and Tipo='%d' order by data desc", data_ini, data_fim, tipo);
-
-  DB_Execute(&mainDB, 0, sql);
-
-  while(DB_GetNextRow(&mainDB, 0)>0)
-    {
-    for(i = 0; i<tam; i++)
-      {
-      valores[i] = DB_GetData(&mainDB, 0, i);
-      if(valores[i] == NULL)
-        valores[i] = "";
-      }
-
-    TV_Adicionar(tvw, valores);
-    }
-}
-
-// Função que abre a janela de data, carregando a data de entry e
-// associando a função cb como callback do botão de aplicar data.
-void AbrirData(GtkEntry *entry, GCallback cb)
-{
-  gint v1, v2, v3;
-  char *data, tmp[30];
-  GtkWidget *obj, *wnd = create_wndData();
-
-// Carrega o ponteiro para o botão de aplicar tarefa.
-  obj = lookup_widget(wnd, "btnDataAplicar");
-
-// Conexão dos sinais de callback
-  g_signal_connect ((gpointer) obj, "clicked",  cb,
-              (gpointer)(entry));
-
-// Lê a data atualmente inserida no entry box.
-  data = (char *)gtk_entry_get_text(entry);
-
-// Carrega o ano
-  strncpy(tmp, data, 4);
-  tmp[4] = 0;
-  v1 = atoi(tmp);
-
-// Carrega o mês
-  strncpy(tmp, data+5, 2);
-  tmp[2] = 0;
-  v2 = atoi(tmp);
-
-// Carrega o dia
-  strncpy(tmp, data+8, 2);
-  tmp[2] = 0;
-  v3 = atoi(tmp);
-
-// Carrega a data no calendário.
-  obj = lookup_widget(wnd, "cldData");
-  gtk_calendar_select_month(GTK_CALENDAR(obj), v2-1, v1);
-  gtk_calendar_select_day  (GTK_CALENDAR(obj), v3);
-
-// Carrega a hora
-  strncpy(tmp, data+11, 2);
-  tmp[2] = 0;
-  v1 = atoi(tmp);
-
-// Carrega os minutos
-  strncpy(tmp, data+14, 2);
-  tmp[2] = 0;
-  v2 = atoi(tmp);
-
-// Carrega a hora nos spins buttons
-  gtk_spin_button_set_value(GTK_SPIN_BUTTON(lookup_widget(wnd, "spbHora")), v1);
-  gtk_spin_button_set_value(GTK_SPIN_BUTTON(lookup_widget(wnd, "spbMin" )), v2);
-
-// Exibe a janela.
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
 }
 
 int MaquinaEspera(int checar_manual)
@@ -528,30 +404,6 @@ Operar                                 (GtkButton       *button,
 
     CarregaListaTarefas(wdg);
     }
-}
-
-void
-AbrirOper                              (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  char *campos[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
-  GtkWidget *wnd, *tvw;
-
-  if(!GetUserPerm(PERM_ACESSO_OPER))
-    {
-    MessageBox("Sem permissão para operar a máquina!");
-    return;
-    }
-
-  wnd = (GtkWidget *)(create_wndOperacao());
-  tvw = lookup_widget(wnd, "tvwTarefas");
-
-  TV_Config(tvw, campos, GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos)/sizeof(campos[0]))-1, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
-  CarregaListaTarefas(tvw);
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
 }
 
 void
@@ -844,624 +696,6 @@ CalcFatorMesa                          (GtkButton       *button,
   MQD.funcao = CV_MQFNC_CALC_FATOR;
   EnviaComando(&MQ, &MQD, NULL);
   LerDadosConfig(GTK_WIDGET(button));
-}
-
-void
-ModeloSelecionado                      (GtkComboBox     *combobox,
-                                        gpointer         user_data)
-{
-  GSList *lst;
-  int pilotar;
-
-  char *lst_campos[] =
-    {
-      "entModPasso" , "passo",
-      "entModTamMax", "tam_max",
-      "entModTamMin", "tam_min",
-      ""            , ""
-    };
-
-  char *lst_botoes[] = { "btnModRemover", "" }, *opt_piloto[] = { "Não", "Sim" };
-
-  if(CarregaCampos(combobox, lst_campos, lst_botoes, "modelos", "nome"))
-    pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar")));
-  else
-    pilotar = 0;
-
-  lst = gtk_radio_button_get_group(GTK_RADIO_BUTTON(lookup_widget(GTK_WIDGET(combobox), "rbtModPilotarSim")));
-  while(lst)
-    {
-    if(!strcmp(gtk_button_get_label(GTK_BUTTON(lst->data)), opt_piloto[pilotar]))
-      {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(lst->data), TRUE);
-      break;
-      }
-
-    lst = lst->next;
-    }
-}
-
-void
-AplicarModelo                          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  int i;
-  char sql[400], *nome;
-
-  char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
-  char *campos[] =
-    {
-    "cmbModNome",
-    "rbtModPilotarSim",
-    "entModPasso",
-    "entModTamMax",
-    "entModTamMin",
-    ""
-    };
-
-  GtkWidget *dialog, *obj, *wnd, *entry;
-
-  if(!LerValoresWidgets(GTK_WIDGET(button), campos, valores))
-    return; // Ocorreu algum erro lendo os campos. Retorna.
-
-// Checa se os dados são válidos.
-  if(!ChecarModelo(atol(valores[2]), atol(valores[3])))
-    return;
-
-  obj = lookup_widget(GTK_WIDGET(button), "cmbModNome");
-  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, alterar usuário.
-    {
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Aplicar as alterações ao modelo '%s'?",
-              valores[0]);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "update modelos set pilotar='%d', passo='%s', tam_max='%s', tam_min='%s' where nome='%s'",
-        BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], valores[0]);
-      DB_Execute(&mainDB, 0, sql);
-
-      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-
-      sprintf(sql, "Alterado modelo '%s'", LerComboAtivo(obj));
-      Log(sql, LOG_TIPO_CONFIG);
-
-      MessageBox("Modelo alterado com sucesso!");
-      }
-    }
-  else
-    {
-    wnd = lookup_widget(GTK_WIDGET(button), "wndConfig");
-    dialog = gtk_dialog_new_with_buttons ("Digite o nome do modelo:",
-          GTK_WINDOW(wnd),
-          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR,
-          GTK_STOCK_OK,
-          GTK_RESPONSE_OK,
-          GTK_STOCK_CANCEL,
-          GTK_RESPONSE_CANCEL,
-          NULL);
-
-    // TODO: Ler do banco de dados o tamanho do campo de nome.
-    entry = gtk_entry_new_with_max_length(20);
-    gtk_container_add (GTK_CONTAINER (GTK_DIALOG(dialog)->vbox), entry);
-    AbrirJanelaModal(dialog);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
-      {
-      nome = (char *)(gtk_entry_get_text(GTK_ENTRY(entry)));
-      sprintf(sql, "select ID from modelos where nome='%s'", nome);
-      DB_Execute(&mainDB, 0, sql);
-      if(DB_GetNextRow(&mainDB, 0)>0)
-        {
-        wnd = gtk_message_dialog_new (NULL,
-                  GTK_DIALOG_DESTROY_WITH_PARENT,
-                  GTK_MESSAGE_ERROR,
-                  GTK_BUTTONS_OK,
-                  "O modelo '%s' já existe!",
-                  nome);
-
-        gtk_dialog_run(GTK_DIALOG(wnd));
-        gtk_widget_destroy (wnd);
-        }
-      else // O modelo não existe. Realizando inserção.
-        {
-        sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
-               "values ('%s', '%d', '%s', '%s', '%s')",
-               nome, BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], MOD_ESTADO_ATIVO);
-        DB_Execute(&mainDB, 0, sql);
-
-        CarregaItemCombo(GTK_COMBO_BOX(obj), nome);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-        ModeloSelecionado(GTK_COMBO_BOX(obj), NULL);
-
-        sprintf(sql, "Adicionado modelo '%s'", LerComboAtivo(obj));
-        Log(sql, LOG_TIPO_CONFIG);
-
-        MessageBox("Modelo adicionado com sucesso!");
-        }
-      }
-    }
-
-  gtk_widget_destroy (dialog);
-}
-
-void
-RemoverModelo                          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  char sql[100];
-  GtkWidget *dialog, *obj;
-
-  obj = lookup_widget(GTK_WIDGET(button), "cmbModNome");
-  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, exclui modelo.
-    {
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Tem certeza que deseja excluir o modelo '%s'?",
-              LerComboAtivo(GTK_COMBO_BOX(obj)));
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "update modelos set estado='%d' where nome='%s'", MOD_ESTADO_REMOVIDO, LerComboAtivo(GTK_COMBO_BOX(obj)));
-      DB_Execute(&mainDB, 0, sql);
-      ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
-      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-
-      sprintf(sql, "Removendo modelo '%s'", LerComboAtivo(GTK_COMBO_BOX(obj)));
-      Log(sql, LOG_TIPO_CONFIG);
-
-      MessageBox("Modelo removido com sucesso!");
-      }
-
-    gtk_widget_destroy (dialog);
-    }
-}
-
-GtkWidget *ptr_tosco = NULL;
-
-void SaindoTarefa (GtkObject *object, gpointer user_data)
-{
-  gtk_grab_remove(GTK_WIDGET(object));
-  if(ptr_tosco)
-    {
-    CarregaListaTarefas(ptr_tosco);
-    ptr_tosco = NULL;
-    }
-
-  if(user_data != NULL)
-    free((int *)(user_data));
-}
-
-void
-AplicarTarefa                          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  int qtdprod;
-  char *valores[30], sql[800], tmp[100];
-
-  char *campos[] =
-    {
-    "cbeTarefaCliente",
-    "cmbModNome",
-    "entTarefaQtd",
-    "entTarefaTam",
-    "entTarefaData",
-    "txvTarefaComent",
-    "entTarefaPedido",
-    ""
-    };
-
-  GtkWidget *dialog;
-
-  if(!LerValoresWidgets(GTK_WIDGET(button), campos, valores))
-    return; // Ocorreu algum erro lendo os campos. Retorna.
-
-// Carrega o ID, passo e quantidade produzida do modelo selecionado
-  sprintf(sql, "select ID, passo, tam_max, tam_min from modelos where nome='%s'", valores[1]);
-  DB_Execute(&mainDB, 1, sql);
-  DB_GetNextRow(&mainDB, 1);
-
-// Carrega a quantidade produzida do modelo selecionado se estiver alterando a tarefa
-  if(user_data != NULL)
-    {
-    sprintf(sql, "select qtdprod from tarefas where ID='%d'", *(int*)(user_data));
-    DB_Execute(&mainDB, 3, sql);
-    DB_GetNextRow(&mainDB, 3);
-    qtdprod = atol(DB_GetData(&mainDB, 3, 0));
-    }
-  else
-    qtdprod = 0;
-
-// Checa se os dados são válidos.
-  if(!ChecarTarefa(atol(valores[2]), qtdprod, atol(valores[3]), atol(DB_GetData(&mainDB, 1, 1)), atol(DB_GetData(&mainDB, 1, 2)), atol(DB_GetData(&mainDB, 1, 3))))
-    return;
-
-// Carrega o ID do cliente selecionado
-  sprintf(sql, "select ID from clientes where nome='%s'", valores[0]);
-  DB_Execute(&mainDB, 2, sql);
-  if(DB_GetNextRow(&mainDB, 2)<=0) // Cliente não existe. Adicionando...
-    {
-    sprintf(tmp, "insert into clientes (nome) values ('%s')", valores[0]);
-    DB_Execute(&mainDB, 2, tmp);
-
-    // Refazendo o select do cliente.
-    DB_Execute(&mainDB, 2, sql);
-    DB_GetNextRow(&mainDB, 2);
-    }
-
-  if(user_data != NULL)
-    {
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Aplicar as alterações a esta tarefa?"
-              );
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "update tarefas set ID_Cliente='%d', Pedido='%s', ID_Modelo='%d', qtd='%d', tamanho='%f', "
-            "data='%s', coments='%s' where ID='%d'",
-            atoi(DB_GetData(&mainDB, 2, 0)), valores[6], atoi(DB_GetData(&mainDB, 1, 0)), atoi(valores[2]),
-            atof(valores[3]), valores[4], valores[5], *(int*)(user_data));
-
-      DB_Execute(&mainDB, 0, sql);
-      }
-
-    gtk_widget_destroy (dialog);
-    }
-  else
-    {
-    sprintf(sql, "insert into tarefas (ID_Cliente, Pedido, ID_Modelo, qtd, tamanho, data, coments, ID_User, Origem) "
-          "values ('%d', '%s', '%d', '%d', '%f', '%s', '%s', '%d', '%d')",
-          atoi(DB_GetData(&mainDB, 2, 0)), valores[6], atoi(DB_GetData(&mainDB, 1, 0)), atoi(valores[2]),
-          atof(valores[3]), valores[4], valores[5], idUser, TRF_ORIGEM_MANUAL);
-
-    DB_Execute(&mainDB, 0, sql);
-    }
-
-  gtk_widget_destroy(lookup_widget(GTK_WIDGET(button), "wndTarefa"));
-}
-
-void CarregaComboModelosTarefa(GtkComboBox *cmb)
-{
-  char sql[100];
-  GtkTreeIter iter;
-  GtkListStore *store = gtk_list_store_new(4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
-
-  sprintf(sql, "select nome, passo, tam_max, tam_min from modelos where estado='%d' order by ID", MOD_ESTADO_ATIVO);
-  DB_Execute(&mainDB, 0, sql);
-
-  gtk_combo_box_set_model(cmb, GTK_TREE_MODEL(store));
-
-  while(DB_GetNextRow(&mainDB, 0)>0)
-    {
-    gtk_list_store_append(store, &iter);
-    gtk_list_store_set(store, &iter,
-        0, DB_GetData(&mainDB, 0, 0),
-        1, DB_GetData(&mainDB, 0, 1),
-        2, DB_GetData(&mainDB, 0, 2),
-        3, DB_GetData(&mainDB, 0, 3),
-        -1);
-    }
-
-  gtk_combo_box_set_wrap_width(cmb,4);
-  gtk_combo_box_set_active(cmb, 0);
-}
-
-void
-AdicionarTarefa                        (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  char tmp[100];
-  time_t agora;
-  GtkWidget *wnd, *obj;
-
-  wnd = create_wndTarefa();
-
-  ptr_tosco = lookup_widget(GTK_WIDGET(button), "tvwTarefas");
-
-  obj = lookup_widget(wnd, "cmbModNome");
-  CarregaComboModelosTarefa(GTK_COMBO_BOX(obj));
-
-  obj = lookup_widget(wnd, "cbeTarefaCliente");
-  DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj), 0, NULL);
-
-// Carrega o ponteiro para o botão de aplicar tarefa.
-  obj = lookup_widget(wnd, "btnTarefaAplicar");
-
-// Conexão dos sinais de callback
-  g_signal_connect ((gpointer) wnd, "destroy",
-    G_CALLBACK (SaindoTarefa), NULL);
-  g_signal_connect ((gpointer) obj, "clicked",
-    G_CALLBACK (AplicarTarefa), NULL);
-
-  agora = time(NULL);
-  strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&agora));
-  gtk_entry_set_text(GTK_ENTRY(lookup_widget(wnd, "entTarefaData")), tmp);
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
-
-void
-EditarTarefa                           (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  int *ptrID, i;
-  GtkWidget *wnd, *obj;
-  char **valor, tmp[30], *campos[] = { "cbeTarefaCliente", "entTarefaPedido", "cmbModNome", "entTarefaQtd", "0", "entTarefaTam", "entTarefaData", "txvTarefaComent", "" };
-
-  wnd = create_wndTarefa();
-
-  obj = lookup_widget(wnd, "cbeTarefaCliente");
-  DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj), 0, NULL);
-
-  obj = lookup_widget(wnd, "cmbModNome");
-  DB_Execute(&mainDB, 0, "select nome from modelos");
-  CarregaCombo(GTK_COMBO_BOX(obj), 0, NULL);
-
-// Aloca o ponteiro para os IDs.
-// Deve ser desalocado pela função de callback do sinal destroy da janela.
-  ptrID = (int *)(malloc(sizeof(int)));
-
-// Carrega os dados da tarefa selecionada
-  obj = lookup_widget(GTK_WIDGET(button), "tvwTarefas");
-  ptr_tosco = obj;
-
-  TV_GetSelected(GTK_TREE_VIEW(obj), 0, tmp);
-  *ptrID = atoi(tmp); // ID da Tarefa
-
-// Diminui em 1 o número de campos devido ao elemento vazio no final.
-  i=sizeof(campos)/sizeof(campos[0])-1;
-  valor = (char **)(malloc(i * sizeof(char *)));
-  while(i>0)
-    {
-    i--;
-    if(strcmp(campos[i], "0")) // Se campo for diferente de zero devemos considerá-lo.
-      {
-      TV_GetSelected(GTK_TREE_VIEW(obj), i+1, tmp);
-      valor[i] = (char *)(malloc(strlen(tmp)+1));
-      strcpy(valor[i], tmp);
-      }
-    else
-      valor[i] = NULL;
-    }
-
-  GravarValoresWidgets(wnd, campos, valor);
-
-// Desaloca a memória em valor.
-  i=sizeof(campos)/sizeof(campos[0])-1;
-  while(i--)
-    free(valor[i]);
-
-  free(valor);
-
-// Carrega o ponteiro para o botão de aplicar tarefa.
-  obj = lookup_widget(wnd, "btnTarefaAplicar");
-
-// Conexão dos sinais de callback
-  g_signal_connect ((gpointer) wnd, "destroy",
-    G_CALLBACK (SaindoTarefa), (gpointer)(ptrID));
-  g_signal_connect ((gpointer) obj, "clicked",
-    G_CALLBACK (AplicarTarefa), (gpointer)(ptrID));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
-void
-RemoverTarefa                          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  char sql[100], tmp[10];
-  GtkWidget *dialog;
-
-  TV_GetSelected(GTK_TREE_VIEW(lookup_widget(GTK_WIDGET(button), "tvwTarefas")), 0, tmp);
-
-  dialog = gtk_message_dialog_new (NULL,
-           GTK_DIALOG_DESTROY_WITH_PARENT,
-           GTK_MESSAGE_QUESTION,
-           GTK_BUTTONS_YES_NO,
-           "Tem certeza que deseja excluir a tarefa %d ?",
-           atoi(tmp));
-
-  if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-    {
-    sprintf(sql, "update tarefas set estado='%d' where ID='%d'", TRF_ESTADO_REMOVIDA, atoi(tmp));
-    DB_Execute(&mainDB, 0, sql);
-
-    // Recarrega a lista de tarefas.
-    CarregaListaTarefas(lookup_widget(GTK_WIDGET(button), "tvwTarefas"));
-    }
-
-  gtk_widget_destroy (dialog);
-}
-
-void
-AplicarDataTarefa                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  guint y, m, d, hora, min;
-  char tmp[100];
-
-  gtk_calendar_get_date(GTK_CALENDAR(lookup_widget(GTK_WIDGET(button), "cldData")), &y, &m, &d);
-  hora = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(lookup_widget(GTK_WIDGET(button), "spbHora")));
-  min  = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(lookup_widget(GTK_WIDGET(button), "spbMin" )));
-
-  sprintf(tmp, "%d-%02d-%02d %02d:%02d:00", y, m+1, d, hora, min);
-  gtk_entry_set_text((GtkEntry *)(user_data), tmp);
-
-  gtk_widget_destroy(lookup_widget(GTK_WIDGET(button),"wndData"));
-}
-
-void
-SelecDataTarefa                        (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  AbrirData(GTK_ENTRY(lookup_widget(GTK_WIDGET(button), "entTarefaData")), G_CALLBACK (AplicarDataTarefa));
-}
-
-void
-SaindoData                             (GtkObject       *object,
-                                        gpointer         user_data)
-{
-  gtk_grab_remove(GTK_WIDGET(object));
-}
-
-void
-TarefaSelecionada                      (GtkTreeView     *treeview,
-                                        gpointer         user_data)
-{
-  ConfigBotoesTarefa(GTK_WIDGET(treeview), TRUE);
-}
-
-void
-ClienteSelecionado                     (GtkComboBox     *combobox,
-                                        gpointer         user_data)
-{
-  gboolean estado;
-
-  if(gtk_combo_box_get_active(combobox)) {
-    estado = TRUE;
-  } else {
-    estado = FALSE;
-  }
-
-  gtk_widget_set_sensitive(lookup_widget(GTK_WIDGET(combobox), "btnClienteRemover"), estado);
-}
-
-
-void
-cbTarefaModeloSelec                    (GtkComboBox     *combobox,
-                                        gpointer         user_data)
-{
-  GtkWidget *wdg;
-  char sql[100], strval[100];
-
-  sprintf(sql, "select passo, tam_max, tam_min from modelos where nome='%s'", LerComboAtivo(combobox));
-  DB_Execute(&mainDB, 0, sql);
-  DB_GetNextRow(&mainDB, 0);
-
-  sprintf(strval, "%d mm", atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "passo"))));
-
-  wdg = lookup_widget(GTK_WIDGET(combobox), "lblTarefaPasso");
-  gtk_label_set_text(GTK_LABEL(wdg), strval);
-
-  sprintf(strval, "Maior que %d mm e menor que %d mm",
-        atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tam_min"))),
-        atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tam_max"))));
-
-  wdg = lookup_widget(GTK_WIDGET(combobox), "lblTarefaLimites");
-  gtk_label_set_text(GTK_LABEL(wdg), strval);
-}
-
-
-void
-cbFecharLogin                          (GtkObject       *object,
-                                        gpointer         user_data)
-{
-  if(!idUser)
-    gtk_main_quit();
-  else
-    Log("Entrada no sistema", LOG_TIPO_SISTEMA);
-}
-
-
-void
-cbAbrirLog                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  int i;
-  time_t DataInicial, DataFinal;
-  char tmp[50], *campos[] = { "Data", "Usuário", "Evento", "" },
-      *TiposLog[] = {
-        "Todos",
-        "Sistema",
-        "Tarefas",
-        "Erros",
-        "Configuração",
-        ""
-      };
-
-  GtkWidget *wnd, *tvw, *cmb;
-
-  if(!GetUserPerm(PERM_ACESSO_LOGS))
-    {
-    MessageBox("Sem permissão para acesso aos registros!");
-    return;
-    }
-
-  wnd = (GtkWidget *)(create_wndLog());
-  tvw = lookup_widget(wnd, "tvwLog");
-
-  TV_Config(tvw, campos, GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos)/sizeof(campos[0]))-1, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
-  DataFinal = time(NULL);
-  strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&DataFinal));
-  gtk_entry_set_text(GTK_ENTRY(lookup_widget(wnd, "entLogDataFinal")), tmp);
-
-  DataInicial = DataFinal - 604800; // 604.800 segundos = 7 dias
-  strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&DataInicial));
-  gtk_entry_set_text(GTK_ENTRY(lookup_widget(wnd, "entLogDataInicial")), tmp);
-
-  cmb = lookup_widget(wnd, "cmbLogFiltro");
-  for(i=0; TiposLog[i][0]; i++)
-    CarregaItemCombo(GTK_COMBO_BOX(cmb), TiposLog[i]);
-
-// Selecionando o item do combobox faz com que a lista de eventos seja carregada.
-  gtk_combo_box_set_active(GTK_COMBO_BOX(cmb), 0);
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
-void
-cbLogFiltrar                           (GtkComboBox     *combobox,
-                                        gpointer         user_data)
-{
-  CarregaListaLogs(lookup_widget(GTK_WIDGET(combobox), "tvwLog"));
-}
-
-void
-AplicarDataLog                         (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  guint y, m, d, hora, min;
-  char tmp[100];
-
-  gtk_calendar_get_date(GTK_CALENDAR(lookup_widget(GTK_WIDGET(button), "cldData")), &y, &m, &d);
-  hora = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(lookup_widget(GTK_WIDGET(button), "spbHora")));
-  min  = gtk_spin_button_get_value_as_int(GTK_SPIN_BUTTON(lookup_widget(GTK_WIDGET(button), "spbMin" )));
-
-  sprintf(tmp, "%d-%02d-%02d %02d:%02d:00", y, m+1, d, hora, min);
-  gtk_entry_set_text((GtkEntry *)(user_data), tmp);
-
-  gtk_widget_destroy(lookup_widget(GTK_WIDGET(button),"wndData"));
-
-  CarregaListaLogs(lookup_widget((GtkWidget *)(user_data), "tvwLog"));
-}
-
-void
-cbLogSelDataInicial                    (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  AbrirData(GTK_ENTRY(lookup_widget(GTK_WIDGET(button), "entLogDataInicial")), G_CALLBACK (AplicarDataLog));
-}
-
-void
-cbLogSelDataFinal                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  AbrirData(GTK_ENTRY(lookup_widget(GTK_WIDGET(button), "entLogDataFinal")), G_CALLBACK (AplicarDataLog));
 }
 
 void
@@ -1833,6 +1067,19 @@ void LerDadosConfig()
   CarregaDadosBanco();
 }
 
+void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
+{
+  gboolean estado;
+
+  if(gtk_combo_box_get_active(combobox)) {
+    estado = TRUE;
+  } else {
+    estado = FALSE;
+  }
+
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnClienteRemover")), estado);
+}
+
 void cbRemoverCliente(GtkButton *button, gpointer user_data)
 {
   int id;
@@ -2189,6 +1436,207 @@ void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
     }
 }
 
+gboolean ChecarModelo(int passo, int tam_max)
+{
+  char *msg = NULL;
+  GtkWidget *dlg;
+
+  if(passo <= 0)
+    msg = "O passo tem que ser maior que zero!";
+  if(tam_max < passo)
+    msg = "O Tamanho máximo deve ser maior que o passo!";
+
+  if(msg==NULL)
+    return TRUE;
+
+  dlg = gtk_message_dialog_new (NULL,
+           GTK_DIALOG_DESTROY_WITH_PARENT,
+           GTK_MESSAGE_ERROR,
+           GTK_BUTTONS_OK,
+           "%s",
+           msg
+           );
+
+  gtk_dialog_run(GTK_DIALOG(dlg));
+  gtk_widget_destroy (dlg);
+
+  return FALSE;
+}
+
+void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
+{
+  GSList *lst;
+  int pilotar;
+
+  char *lst_campos[] =
+    {
+      "entModPasso" , "passo",
+      "entModTamMax", "tam_max",
+      "entModTamMin", "tam_min",
+      ""            , ""
+    };
+
+  char *lst_botoes[] = { "btnModRemover", "" }, *opt_piloto[] = { "Não", "Sim" };
+
+  if(gtk_combo_box_get_active(combobox)<0)
+    return; // Sem item ativo.
+
+  if(CarregaCampos(combobox, lst_campos, lst_botoes, "modelos", "nome"))
+    pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar")));
+  else
+    pilotar = 0;
+
+  lst = gtk_radio_button_get_group(GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "rbtModPilotarSim")));
+  while(lst)
+    {
+    if(!strcmp(gtk_button_get_label(GTK_BUTTON(lst->data)), opt_piloto[pilotar]))
+      {
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(lst->data), TRUE);
+      break;
+      }
+
+    lst = lst->next;
+    }
+}
+
+void cbAplicarModelo(GtkButton *button, gpointer user_data)
+{
+  int i;
+  char sql[400], *nome;
+
+  char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
+  char *campos[] =
+    {
+    "cmbModNome",
+    "rbtModPilotarSim",
+    "entModPasso",
+    "entModTamMax",
+    "entModTamMin",
+    ""
+    };
+
+  GtkWidget *dialog, *obj, *wnd, *entry;
+
+  if(!LerValoresWidgets(campos, valores))
+    return; // Ocorreu algum erro lendo os campos. Retorna.
+
+// Checa se os dados são válidos.
+  if(!ChecarModelo(atol(valores[2]), atol(valores[3])))
+    return;
+
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbModNome"));
+  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, alterar usuário.
+    {
+    dialog = gtk_message_dialog_new (NULL,
+              GTK_DIALOG_DESTROY_WITH_PARENT,
+              GTK_MESSAGE_QUESTION,
+              GTK_BUTTONS_YES_NO,
+              "Aplicar as alterações ao modelo '%s'?",
+              valores[0]);
+
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
+      {
+      sprintf(sql, "update modelos set pilotar='%d', passo='%s', tam_max='%s', tam_min='%s' where nome='%s'",
+        BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], valores[0]);
+      DB_Execute(&mainDB, 0, sql);
+
+      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
+
+      sprintf(sql, "Alterado modelo %s", valores[0]);
+      Log(sql, LOG_TIPO_CONFIG);
+
+      MessageBox("Modelo alterado com sucesso!");
+      }
+    }
+  else
+    {
+    wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
+    dialog = gtk_dialog_new_with_buttons ("Digite o nome do modelo:",
+          GTK_WINDOW(wnd),
+          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR,
+          GTK_STOCK_OK,
+          GTK_RESPONSE_OK,
+          GTK_STOCK_CANCEL,
+          GTK_RESPONSE_CANCEL,
+          NULL);
+
+    // TODO: Ler do banco de dados o tamanho do campo de nome.
+    entry = gtk_entry_new_with_max_length(20);
+    gtk_container_add (GTK_CONTAINER (GTK_DIALOG(dialog)->vbox), entry);
+    AbrirJanelaModal(dialog);
+
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
+      {
+      nome = (char *)(gtk_entry_get_text(GTK_ENTRY(entry)));
+      sprintf(sql, "select ID from modelos where nome='%s'", nome);
+      DB_Execute(&mainDB, 0, sql);
+      if(DB_GetNextRow(&mainDB, 0)>0)
+        {
+        wnd = gtk_message_dialog_new (NULL,
+                  GTK_DIALOG_DESTROY_WITH_PARENT,
+                  GTK_MESSAGE_ERROR,
+                  GTK_BUTTONS_OK,
+                  "O modelo '%s' já existe!",
+                  nome);
+
+        gtk_dialog_run(GTK_DIALOG(wnd));
+        gtk_widget_destroy (wnd);
+        }
+      else // O modelo não existe. Realizando inserção.
+        {
+        sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
+               "values ('%s', '%d', '%s', '%s', '%s', '%d')",
+               nome, BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], MOD_ESTADO_ATIVO);
+        DB_Execute(&mainDB, 0, sql);
+
+        CarregaItemCombo(GTK_COMBO_BOX(obj), nome);
+        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
+        cbConfigModeloSelecionado(GTK_COMBO_BOX(obj), NULL);
+
+        sprintf(sql, "Adicionado modelo %s", nome);
+        Log(sql, LOG_TIPO_CONFIG);
+
+        MessageBox("Modelo adicionado com sucesso!");
+        }
+      }
+    }
+
+  gtk_widget_destroy (dialog);
+}
+
+void cbRemoverModelo(GtkButton *button, gpointer user_data)
+{
+  char sql[100];
+  GtkWidget *dialog, *obj;
+
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbModNome"));
+  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, exclui modelo.
+    {
+    dialog = gtk_message_dialog_new (NULL,
+              GTK_DIALOG_DESTROY_WITH_PARENT,
+              GTK_MESSAGE_QUESTION,
+              GTK_BUTTONS_YES_NO,
+              "Tem certeza que deseja excluir o modelo '%s'?",
+              LerComboAtivo(GTK_COMBO_BOX(obj)));
+
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
+      {
+      sprintf(sql, "update modelos set estado='%d' where nome='%s'", MOD_ESTADO_REMOVIDO, LerComboAtivo(GTK_COMBO_BOX(obj)));
+      DB_Execute(&mainDB, 0, sql);
+
+      sprintf(sql, "Removendo modelo %s", LerComboAtivo(GTK_COMBO_BOX(obj)));
+      Log(sql, LOG_TIPO_CONFIG);
+
+      ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
+      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
+
+      MessageBox("Modelo removido com sucesso!");
+      }
+
+    gtk_widget_destroy (dialog);
+    }
+}
+
 void AbrirConfig(unsigned int pos)
 {
   GtkWidget *wnd;
@@ -2266,9 +1714,9 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         {
         // Carrega o ID do usuário que está logando.
         idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
+        Log("Entrada no sistema", LOG_TIPO_SISTEMA);
 
-// Oculta a janela de login. Isso deve ocorrer após identificar o usuário pois caso
-// contrário o sistema é encerrado.
+        // Oculta a janela de login.
         gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin")));
 
         // Cria a janela principal
@@ -2344,15 +1792,18 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
 void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 {
   const gchar *nome = gtk_widget_get_name(GTK_WIDGET(togglebutton));
+  char nome_img[30];
   union MB_FCD_Data data;
   struct MB_Reply rp;
 
   data.write_single_coil.output = atoi(&nome[strlen(nome)-2]);
   data.write_single_coil.val    = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(togglebutton));
 
-  printf("output: %d, val = %d\n", data.write_single_coil.output, data.write_single_coil.val);
-
   rp = MB_Send(&mbdev, MB_FC_WRITE_SINGLE_COIL, &data);
+
+  sprintf(nome_img, "imgManutSai%02d", data.write_single_coil.output-1);
+  gtk_image_set_from_stock(GTK_IMAGE(gtk_builder_get_object(builder, nome_img)),
+      data.write_single_coil.val ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
 
   if(rp.ExceptionCode != MB_EXCEPTION_NONE)
     printf("Erro escrevendo saida. Exception Code: %02x\n", rp.ExceptionCode);
@@ -2360,7 +1811,629 @@ void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 
 void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
 {
-  CurrentWorkArea = arg1;
+  int i;
+  char nome[30];
+
+  PreviousWorkArea = CurrentWorkArea;
+  CurrentWorkArea  = arg1;
+
+  for(i=0; i<6; i++) {
+    sprintf(nome, "btnF%d", i+1);
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, nome)), CurrentWorkArea<6);
+  }
+}
+
+void WorkAreaGoPrevious()
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), PreviousWorkArea);
+}
+
+void cbDebugModBus(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_MODBUS);
+}
+
+// função que carrega a lista de eventos em um TreeView
+void CarregaListaLogs(GtkWidget *tvw)
+{
+  int i, tipo;
+  const int tam = 3;
+  char *valores[tam+1], sql[300], *data_ini, *data_fim;
+
+  valores[tam] = NULL;
+
+  TV_Limpar(tvw);
+
+  tipo = gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLogFiltro")));
+  data_ini = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataInicial")));
+  data_fim = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataFinal")));
+
+  if(tipo == LOG_TIPO_TODOS)
+    sprintf(sql, "select l.data, u.nome, l.evento from log as l, usuarios as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') order by data desc", data_ini, data_fim);
+  else
+    sprintf(sql, "select l.data, u.nome, l.evento from log as l, usuarios as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') and Tipo='%d' order by data desc", data_ini, data_fim, tipo);
+
+  DB_Execute(&mainDB, 0, sql);
+
+  while(DB_GetNextRow(&mainDB, 0)>0)
+    {
+    for(i = 0; i<tam; i++)
+      {
+      valores[i] = DB_GetData(&mainDB, 0, i);
+      if(valores[i] == NULL)
+        valores[i] = "";
+      }
+
+    TV_Adicionar(tvw, valores);
+    }
+}
+
+void cbDebugModBusVoltar(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+}
+
+// Funcoes que aumentam/reduzem horas e minutos.
+void DataAtualizaHora(int32_t inc)
+{
+  int32_t val;
+  char tmp[10];
+  GtkEntry *entry = GTK_ENTRY(gtk_builder_get_object(builder, "entDataHora"));
+
+  val = atoi(gtk_entry_get_text(entry)) + inc;
+  if(val > 23)
+    val = 23;
+  else if(val < 0)
+    val = 0;
+
+  sprintf(tmp, "%d", val);
+  gtk_entry_set_text(entry, tmp);
+}
+
+void cbDataAumentaHora(GtkButton *button, gpointer user_data)
+{
+  DataAtualizaHora(+1);
+}
+
+void cbDataReduzHora(GtkButton *button, gpointer user_data)
+{
+  DataAtualizaHora(-1);
+}
+
+void DataAtualizaMinuto(int32_t inc)
+{
+  int32_t val;
+  char tmp[10];
+  GtkEntry *entry = GTK_ENTRY(gtk_builder_get_object(builder, "entDataMinuto"));
+
+  val = atoi(gtk_entry_get_text(entry)) + inc;
+  if(val > 59)
+    val = 59;
+  else if(val < 0)
+    val = 0;
+
+  sprintf(tmp, "%d", val);
+  gtk_entry_set_text(entry, tmp);
+}
+
+void cbDataAumentaMinuto(GtkButton *button, gpointer user_data)
+{
+  DataAtualizaMinuto(+1);
+}
+
+void cbDataReduzMinuto(GtkButton *button, gpointer user_data)
+{
+  DataAtualizaMinuto(-1);
+}
+
+// Funcao executada quando for clicado voltar na tela de data
+void cbDataVoltar(GtkButton *button, gpointer user_data)
+{
+  guint signal_id;
+  gulong handler_id;
+  GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnDataAplicar"));
+
+  // Exclui o callback do botao de Aplicar
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+  handler_id = g_signal_handler_find(obj, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(obj, handler_id);
+
+  WorkAreaGoPrevious();
+}
+
+// Função que abre a janela de data, carregando a data de entry e
+// associando a função cb como callback do botão de aplicar data.
+void AbrirData(GtkEntry *entry, GCallback cb)
+{
+  gint v1, v2, v3;
+  char *data, tmp[30];
+  GtkWidget *obj;
+
+// Carrega o ponteiro para o botão de aplicar tarefa.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnDataAplicar"));
+
+// Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  cb,
+              (gpointer)(entry));
+
+// Lê a data atualmente inserida no entry box.
+  data = (char *)gtk_entry_get_text(entry);
+
+// Carrega o ano
+  strncpy(tmp, data, 4);
+  tmp[4] = 0;
+  v1 = atoi(tmp);
+
+// Carrega o mês
+  strncpy(tmp, data+5, 2);
+  tmp[2] = 0;
+  v2 = atoi(tmp);
+
+// Carrega o dia
+  strncpy(tmp, data+8, 2);
+  tmp[2] = 0;
+  v3 = atoi(tmp);
+
+// Carrega a data no calendário.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cldData"));
+  gtk_calendar_select_month(GTK_CALENDAR(obj), v2-1, v1);
+  gtk_calendar_select_day  (GTK_CALENDAR(obj), v3);
+
+// Carrega a hora
+  strncpy(tmp, data+11, 2);
+  tmp[2] = 0;
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataHora"  )), tmp);
+
+// Carrega os minutos
+  strncpy(tmp, data+14, 2);
+  tmp[2] = 0;
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataMinuto")), tmp);
+
+// Exibe a janela.
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_DATA);
+}
+
+void cbAplicarDataLog(GtkButton *button, gpointer user_data)
+{
+  guint y, m, d, hora, min;
+  char tmp[100];
+  guint signal_id;
+  gulong handler_id;
+
+  // Exclui o callback do botao
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  gtk_calendar_get_date(GTK_CALENDAR(gtk_builder_get_object(builder, "cldData")), &y, &m, &d);
+  hora = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataHora"  ))));
+  min  = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataMinuto"))));
+
+  sprintf(tmp, "%d-%02d-%02d %02d:%02d:00", y, m+1, d, hora, min);
+  gtk_entry_set_text((GtkEntry *)(user_data), tmp);
+
+  CarregaListaLogs(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
+
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_LOGS);
+}
+
+void cbLogSelDataInicial(GtkButton *button, gpointer user_data)
+{
+  AbrirData(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataInicial")), G_CALLBACK (cbAplicarDataLog));
+}
+
+void cbLogSelDataFinal(GtkButton *button, gpointer user_data)
+{
+  AbrirData(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataFinal")), G_CALLBACK (cbAplicarDataLog));
+}
+
+void cbLogFiltrar(GtkComboBox *combobox, gpointer user_data)
+{
+  CarregaListaLogs(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
+}
+
+void AbrirLog()
+{
+  char tmp[50];
+  time_t DataInicial, DataFinal;
+
+  if(!GetUserPerm(PERM_ACESSO_LOGS))
+    {
+    MessageBox("Sem permissão para acesso aos registros!");
+    return;
+    }
+
+  DataFinal = time(NULL);
+  strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&DataFinal));
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataFinal")), tmp);
+
+  DataInicial = DataFinal - 604800; // 604.800 segundos = 7 dias
+  strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&DataInicial));
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataInicial")), tmp);
+
+// Selecionando o item do combobox faz com que a lista de eventos seja carregada.
+  gtk_combo_box_set_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLogFiltro")), 0);
+  CarregaListaLogs(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
+}
+
+void cbLogVoltar(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+}
+
+void ConfigBotoesTarefa(GtkWidget *wdg, gboolean modo)
+{
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecTarefa"   )), modo);
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnEditarTarefa" )), modo);
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRemoverTarefa")), modo);
+}
+
+void CarregaListaTarefas(GtkWidget *tvw)
+{
+  int i;
+  const int tam = 9;
+  char *valores[tam+1], sql[300];
+
+  valores[tam] = NULL;
+
+  TV_Limpar(tvw);
+
+  sprintf(sql, "select t.ID, c.nome, t.Pedido, m.nome, t.qtd, t.qtdprod, t.tamanho, t.data, t.coments from modelos as m, tarefas as t, clientes as c where c.ID = t.ID_Cliente and m.ID = t.ID_Modelo and (t.estado='%d' or t.estado='%d') and m.estado='%d' order by data", TRF_ESTADO_NOVA, TRF_ESTADO_PARCIAL, MOD_ESTADO_ATIVO);
+  DB_Execute(&mainDB, 0, sql);
+  while(DB_GetNextRow(&mainDB, 0)>0)
+    {
+    for(i = 0; i<tam; i++)
+      {
+      valores[i] = DB_GetData(&mainDB, 0, i);
+      if(valores[i] == NULL)
+        valores[i] = "";
+      }
+
+    TV_Adicionar(tvw, valores);
+    }
+
+  ConfigBotoesTarefa(tvw, FALSE);
+}
+
+gboolean ChecarTarefa(int qtd, int qtdprod, int tamanho, int passo, int max, int min)
+{
+  char tmp[100];
+  char *msg = NULL;
+  GtkWidget *dlg;
+
+  if(qtd<1) // Quantidade deve ser ao menos 1.
+    msg = "A quantidade deve ser pelo menos 1!";
+  else if(qtd<qtdprod) // Quantidade deve ser maior que o total já produzido.
+    {
+    sprintf(tmp, "A quantidade deve ser maior que %d", qtdprod);
+    msg = tmp;
+    }
+  else if(tamanho < min || tamanho > max)
+    {
+    sprintf(tmp, "O tamanho deve estar entre %d e %d", min, max);
+    msg = tmp;
+    }
+  else if(((int)(tamanho/passo)*passo) != tamanho) // Deve ser múltiplo do passo e maior que zero.
+    {
+    sprintf(tmp, "O tamanho deve ser múltiplo de %d", passo);
+    msg = tmp;
+    }
+
+  if(msg==NULL)
+    return TRUE;
+
+  dlg = gtk_message_dialog_new (NULL,
+           GTK_DIALOG_DESTROY_WITH_PARENT,
+           GTK_MESSAGE_ERROR,
+           GTK_BUTTONS_OK,
+           "%s",
+           msg
+           );
+
+  gtk_dialog_run(GTK_DIALOG(dlg));
+  gtk_widget_destroy (dlg);
+
+  return FALSE;
+}
+
+void cbSairTarefa(GtkButton *button, gpointer user_data)
+{
+  char *campos[] =
+    {
+    "lblTarefaNumero",
+    "cbeTarefaCliente",
+    "cmbTarefaModNome",
+    "entTarefaQtd",
+    "entTarefaTam",
+    "txvTarefaComent",
+    "entTarefaPedido",
+    ""
+    };
+  char *valor[] =
+    {
+    "",
+    "Nenhum",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    };
+
+  GravarValoresWidgets(campos, valor);
+
+  CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_OPERAR);
+}
+
+void cbAplicarTarefa(GtkButton *button, gpointer user_data)
+{
+  int qtdprod;
+  char *valores[30], sql[800], tmp[100];
+
+  char *campos[] =
+    {
+    "lblTarefaNumero",
+    "cbeTarefaCliente",
+    "cmbTarefaModNome",
+    "entTarefaQtd",
+    "entTarefaTam",
+    "entTarefaData",
+    "txvTarefaComent",
+    "entTarefaPedido",
+    ""
+    };
+
+  GtkWidget *dialog;
+
+  if(!LerValoresWidgets(campos, valores))
+    return; // Ocorreu algum erro lendo os campos. Retorna.
+
+// Carrega o ID, passo e quantidade produzida do modelo selecionado
+  sprintf(sql, "select ID, passo, tam_max, tam_min from modelos where nome='%s'", valores[2]);
+  DB_Execute(&mainDB, 1, sql);
+  DB_GetNextRow(&mainDB, 1);
+
+// Carrega a quantidade produzida do modelo selecionado se estiver alterando a tarefa
+  if(atoi(valores[0]))
+    {
+    sprintf(sql, "select qtdprod from tarefas where ID='%d'", atoi(valores[0]));
+    DB_Execute(&mainDB, 3, sql);
+    DB_GetNextRow(&mainDB, 3);
+    qtdprod = atol(DB_GetData(&mainDB, 3, 0));
+    }
+  else
+    qtdprod = 0;
+
+// Checa se os dados são válidos.
+  if(!ChecarTarefa(atol(valores[3]), qtdprod, atol(valores[4]), atol(DB_GetData(&mainDB, 1, 1)), atol(DB_GetData(&mainDB, 1, 2)), atol(DB_GetData(&mainDB, 1, 3))))
+    return;
+
+// Carrega o ID do cliente selecionado
+  sprintf(sql, "select ID from clientes where nome='%s'", valores[1]);
+  DB_Execute(&mainDB, 2, sql);
+  if(DB_GetNextRow(&mainDB, 2)<=0) // Cliente não existe. Adicionando...
+    {
+    sprintf(tmp, "insert into clientes (nome) values ('%s')", valores[1]);
+    DB_Execute(&mainDB, 2, tmp);
+
+    // Refazendo o select do cliente.
+    DB_Execute(&mainDB, 2, sql);
+    DB_GetNextRow(&mainDB, 2);
+    }
+
+  if(atoi(valores[0]) != 0)
+    {
+    dialog = gtk_message_dialog_new (NULL,
+              GTK_DIALOG_DESTROY_WITH_PARENT,
+              GTK_MESSAGE_QUESTION,
+              GTK_BUTTONS_YES_NO,
+              "Aplicar as alterações a esta tarefa?"
+              );
+
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
+      {
+      sprintf(sql, "update tarefas set ID_Cliente='%d', Pedido='%s', ID_Modelo='%d', qtd='%d', tamanho='%f', "
+            "data='%s', coments='%s' where ID='%d'",
+            atoi(DB_GetData(&mainDB, 2, 0)), valores[7], atoi(DB_GetData(&mainDB, 1, 0)), atoi(valores[3]),
+            atof(valores[4]), valores[5], valores[6], atoi(valores[0]));
+
+      DB_Execute(&mainDB, 0, sql);
+      }
+
+    gtk_widget_destroy (dialog);
+    }
+  else
+    {
+    sprintf(sql, "insert into tarefas (ID_Cliente, Pedido, ID_Modelo, qtd, tamanho, data, coments, ID_User, Origem) "
+          "values ('%d', '%s', '%d', '%d', '%f', '%s', '%s', '%d', '%d')",
+          atoi(DB_GetData(&mainDB, 2, 0)), valores[7], atoi(DB_GetData(&mainDB, 1, 0)), atoi(valores[3]),
+          atof(valores[4]), valores[5], valores[6], idUser, TRF_ORIGEM_MANUAL);
+
+    DB_Execute(&mainDB, 0, sql);
+    }
+
+  cbSairTarefa(NULL, NULL);
+}
+
+void CarregaComboModelosTarefa(GtkComboBox *cmb)
+{
+  char sql[100];
+  GtkTreeIter iter;
+  GtkListStore *store = GTK_LIST_STORE(gtk_combo_box_get_model(cmb));
+
+  sprintf(sql, "select nome, passo, tam_max, tam_min from modelos where estado='%d' order by ID", MOD_ESTADO_ATIVO);
+  DB_Execute(&mainDB, 0, sql);
+
+  gtk_list_store_clear(store);
+
+  while(DB_GetNextRow(&mainDB, 0)>0)
+    {
+    gtk_list_store_append(store, &iter);
+    gtk_list_store_set(store, &iter,
+        0, DB_GetData(&mainDB, 0, 0),
+        1, DB_GetData(&mainDB, 0, 1),
+        2, DB_GetData(&mainDB, 0, 2),
+        3, DB_GetData(&mainDB, 0, 3),
+        -1);
+    }
+
+  gtk_combo_box_set_wrap_width(cmb,4);
+  gtk_combo_box_set_active(cmb, 0);
+}
+
+void cbAdicionarTarefa(GtkButton *button, gpointer user_data)
+{
+  char tmp[100];
+  time_t agora;
+
+  CarregaComboModelosTarefa(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbTarefaModNome")));
+
+  DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
+  CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0, NULL);
+
+  agora = time(NULL);
+  strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&agora));
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaData")), tmp);
+
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_TAREFA);
+}
+
+void cbEditarTarefa(GtkButton *button, gpointer user_data)
+{
+  int i;
+  GtkWidget *obj;
+  char **valor, tmp[30], *campos[] = { "lblTarefaNumero", "cbeTarefaCliente", "entTarefaPedido", "cmbTarefaModNome", "entTarefaQtd", "0", "entTarefaTam", "entTarefaData", "txvTarefaComent", "" };
+
+  DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
+  CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0, NULL);
+
+  CarregaComboModelosTarefa(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbTarefaModNome")));
+
+// Carrega os dados da tarefa selecionada
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas"));
+
+// Diminui em 1 o número de campos devido ao elemento vazio no final.
+  i=sizeof(campos)/sizeof(campos[0])-1;
+  valor = (char **)(malloc(i * sizeof(char *)));
+  while(i>0)
+    {
+    i--;
+    if(strcmp(campos[i], "0")) // Se campo for diferente de zero devemos considerá-lo.
+      {
+      TV_GetSelected(obj, i, tmp);
+      valor[i] = (char *)(malloc(strlen(tmp)+1));
+      strcpy(valor[i], tmp);
+      }
+    else
+      valor[i] = NULL;
+    }
+
+  GravarValoresWidgets(campos, valor);
+
+// Desaloca a memória em valor.
+  i=sizeof(campos)/sizeof(campos[0])-1;
+  while(i--)
+    free(valor[i]);
+
+  free(valor);
+
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_TAREFA);
+}
+
+void cbRemoverTarefa(GtkButton *button, gpointer user_data)
+{
+  char sql[100], tmp[10];
+  GtkWidget *dialog;
+
+  TV_GetSelected(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), 0, tmp);
+
+  dialog = gtk_message_dialog_new (NULL,
+           GTK_DIALOG_DESTROY_WITH_PARENT,
+           GTK_MESSAGE_QUESTION,
+           GTK_BUTTONS_YES_NO,
+           "Tem certeza que deseja excluir a tarefa %d ?",
+           atoi(tmp));
+
+  if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
+    {
+    sprintf(sql, "update tarefas set estado='%d' where ID='%d'", TRF_ESTADO_REMOVIDA, atoi(tmp));
+    DB_Execute(&mainDB, 0, sql);
+
+    // Recarrega a lista de tarefas.
+    CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
+    }
+
+  gtk_widget_destroy (dialog);
+}
+
+void cbAplicarDataTarefa(GtkButton *button, gpointer user_data)
+{
+  guint y, m, d, hora, min;
+  char tmp[100];
+  guint signal_id;
+  gulong handler_id;
+
+  // Exclui o callback do botao
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  gtk_calendar_get_date(GTK_CALENDAR(gtk_builder_get_object(builder, "cldData")), &y, &m, &d);
+  hora = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataHora"  ))));
+  min  = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataMinuto"))));
+
+  sprintf(tmp, "%d-%02d-%02d %02d:%02d:00", y, m+1, d, hora, min);
+  gtk_entry_set_text((GtkEntry *)(user_data), tmp);
+
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_TAREFA);
+}
+
+void cbSelecDataTarefa(GtkButton *button, gpointer user_data)
+{
+  AbrirData(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaData")), G_CALLBACK (cbAplicarDataTarefa));
+}
+
+void cbTarefaSelecionada(GtkTreeView *treeview, gpointer user_data)
+{
+  ConfigBotoesTarefa(GTK_WIDGET(treeview), TRUE);
+}
+
+void cbTarefaModeloSelec(GtkComboBox *combobox, gpointer user_data)
+{
+  GtkWidget *wdg;
+  char sql[100], strval[100];
+
+  if(gtk_combo_box_get_active(combobox)<0)
+    return;
+
+  sprintf(sql, "select passo, tam_max, tam_min from modelos where nome='%s'", LerComboAtivo(combobox));
+  DB_Execute(&mainDB, 0, sql);
+  DB_GetNextRow(&mainDB, 0);
+
+  sprintf(strval, "%ld mm", atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "passo"))));
+
+  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblTarefaPasso"));
+  gtk_label_set_text(GTK_LABEL(wdg), strval);
+
+  sprintf(strval, "Maior que %ld mm e menor que %ld mm",
+        atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tam_min"))),
+        atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tam_max"))));
+
+  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblTarefaLimites"));
+  gtk_label_set_text(GTK_LABEL(wdg), strval);
+}
+
+void AbrirOper()
+{
+  if(!GetUserPerm(PERM_ACESSO_OPER))
+    {
+    MessageBox("Sem permissão para operar a máquina!");
+    return;
+    }
+
+  CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
 }
 
 #endif

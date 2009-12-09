@@ -157,32 +157,32 @@ int AchaIndiceCombo(GtkComboBox *cmb, char *valor)
 	return -1;
 }
 
-void GravarValorWidget(GtkWidget *wdg, char *nome, char *valor)
+void GravarValorWidget(char *nome, char *valor)
 {
 	GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, nome));
 	if(obj==NULL)
 		return;
 
-	if     (!strncmp(nome, "ent", 3))
-		gtk_entry_set_text(GTK_ENTRY(obj), valor);
-//	else if(!strncmp(nome, "rbt", 3))
-//		return LerRadioAtual(obj, tmp);
+  if     (!strncmp(nome, "ent", 3))
+    gtk_entry_set_text(GTK_ENTRY(obj), valor);
+  else if(!strncmp(nome, "lbl", 3))
+    gtk_label_set_text(GTK_LABEL(obj), valor);
 	else if(!strncmp(nome, "txv", 3))
 		gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(obj)), valor, -1);
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		gtk_combo_box_set_active(GTK_COMBO_BOX(obj), AchaIndiceCombo(GTK_COMBO_BOX(obj), valor));
 }
 
-void GravarValoresWidgets(GtkWidget *wdg, char **lst_wdg, char **lst_val)
+void GravarValoresWidgets(char **lst_wdg, char **lst_val)
 {
 	int i;
 
 	for(i=0; lst_wdg[i][0]; i++)
 		if(strcmp(lst_wdg[i], "0")) // Se for um campo válido, grava o valor.
-		GravarValorWidget(wdg, lst_wdg[i], lst_val[i]);
+		GravarValorWidget(lst_wdg[i], lst_val[i]);
 }
 
-char * LerValorWidget(GtkWidget *wdg, char *nome)
+char * LerValorWidget(char *nome)
 {
 	char tmp[30];
 	GtkTextIter start, end;
@@ -191,8 +191,10 @@ char * LerValorWidget(GtkWidget *wdg, char *nome)
 	if(obj==NULL)
 		return NULL;
 
-	if     (!strncmp(nome, "ent", 3) || !strncmp(nome, "spb", 3))
-		return (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
+  if     (!strncmp(nome, "ent", 3) || !strncmp(nome, "spb", 3))
+    return (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
+  else if(!strncmp(nome, "lbl", 3))
+    return (char *)(gtk_label_get_text(GTK_LABEL(obj)));
 	else if(!strncmp(nome, "txv", 3))
 		{
 		tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(obj));
@@ -208,13 +210,13 @@ char * LerValorWidget(GtkWidget *wdg, char *nome)
 	return NULL;
 }
 
-int LerValoresWidgets(GtkWidget *wdg, char **lst_wdg, char **lst_val)
+int LerValoresWidgets(char **lst_wdg, char **lst_val)
 {
 	int i;
 
 	for(i=0; lst_wdg[i][0]; i++)
 		{
-		lst_val[i] = LerValorWidget(wdg, lst_wdg[i]);
+		lst_val[i] = LerValorWidget(lst_wdg[i]);
 		if(lst_val[i] == NULL)
 			return 0;
 		}
@@ -274,4 +276,62 @@ int BuscaStringLista(char *lista[], char *string, gboolean modo_UTF)
 		free(string_UTF);
 
 	return i;
+}
+
+void TV_Config(GtkWidget *tvw, char *lst_campos[], GtkTreeModel *model)
+{
+  guint i;
+  GtkCellRenderer *renderer;
+
+  for(i=0; lst_campos[i][0]; i++)
+    {
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tvw),
+            -1, lst_campos[i], renderer, "text", i, NULL);
+    }
+
+  gtk_tree_view_set_model (GTK_TREE_VIEW (tvw), model);
+
+  /* The tree view has acquired its own reference to the
+   *  model, so we can drop ours. That way the model will
+   *  be freed automatically when the tree view is destroyed */
+
+  g_object_unref (model);
+}
+
+void TV_Limpar(GtkWidget *tvw)
+{
+  gtk_list_store_clear(GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(tvw))));
+}
+
+void TV_Adicionar(GtkWidget *tvw, char *lst_valores[])
+{
+  guint i;
+  GtkTreeIter iter;
+  GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(tvw)));
+
+  gtk_list_store_append(store,&iter);
+
+  for(i=0; lst_valores[i]!=NULL; i++)
+    gtk_list_store_set(store, &iter, i, lst_valores[i], -1);
+}
+
+void TV_GetSelected(GtkWidget *tvw, int pos, char *dado)
+{
+  GValue valor = { 0 };
+  GtkTreeModel *model;
+  GtkTreeIter  iter;
+
+  if(gtk_tree_selection_get_selected(gtk_tree_view_get_selection(GTK_TREE_VIEW(tvw)), &model, &iter))
+    {
+    gtk_tree_model_get_value(model, &iter, pos, &valor);
+    if((char *)(g_value_get_string(&valor)) != NULL)
+      strcpy(dado, (char *)(g_value_get_string(&valor)));
+    else
+      dado[0] = 0;
+    }
+  else
+    dado[0] = 0;
+
+  g_value_unset(&valor);
 }
