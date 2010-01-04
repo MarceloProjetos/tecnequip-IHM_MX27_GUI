@@ -12,9 +12,15 @@ gcc -pthread -c -export-dynamic -o cb_debug.o cb_debug.c -I../libARM7/inc -DCONF
 gcc -pthread -c -export-dynamic -o cb_config.o cb_config.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libDB -I../libARM7/inc -DCONFIG_CPU_lpc23xx
+gcc -pthread -c -export-dynamic -o cb_oper.o cb_oper.c \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
+    -I../libDB -I../libARM7/inc -DCONFIG_CPU_lpc23xx
+gcc -pthread -c -export-dynamic -o cb_log.o cb_log.c \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
+    -I../libDB -I../libARM7/inc -DCONFIG_CPU_lpc23xx
 echo Compilando main.c
 gcc -pthread -export-dynamic -Wall -o IHM main.c serial.o comm.o \
-    crc.o modbus.o cb_config.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
+    crc.o modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
     -lmysqlclient \

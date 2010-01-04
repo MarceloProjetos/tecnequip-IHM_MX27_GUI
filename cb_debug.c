@@ -1,6 +1,8 @@
 #include <gtk/gtk.h>
 #include <net/modbus.h>
 
+#include "defines.h"
+
 // Objeto que contem toda a interface GTK
 extern GtkBuilder *builder;
 
@@ -12,6 +14,17 @@ void cbFunctionCodeChanged(GtkComboBox *widget, gpointer user_data)
 {
   GtkNotebook *ntb = GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbFunctionCode"));
   gtk_notebook_set_current_page(ntb, gtk_combo_box_get_active(widget));
+}
+
+// Retorna para a tela anterior, saindo da tela de debug do modbus
+void cbDebugModBusVoltar(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+}
+
+void cbDebugModBus(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_MODBUS);
 }
 
 // Envia o comando selecionado pelo ModBus

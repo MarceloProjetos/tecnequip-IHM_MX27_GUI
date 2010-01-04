@@ -110,7 +110,7 @@ COMM_FNC(CommRX)
 MB_HANDLER_TX(IHM_MB_TX)
 {
   uint32_t i, tent = 10;
-  int32_t tcp_socket, opts;
+  int32_t tcp_socket, opts, resp;
 
   printf("MB Send: ");
   for(i=0; i<size; i++)
@@ -129,15 +129,21 @@ MB_HANDLER_TX(IHM_MB_TX)
     if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0)
       return 0;
 
-    while(!(size=recv(tcp_socket, data, MB_BUFFER_SIZE, 0)) && tent--) {
+    while((resp=recv(tcp_socket, data, MB_BUFFER_SIZE, 0))<=0 && tent--) {
       usleep(10000);
     }
     close(tcp_socket);
 
-    printf("Retorno de MB Send: ");
-    for(i=0; i<size; i++)
-      printf("%02x ", data[i]);
-    printf("\n");
+    if(resp<=0) {
+      size = 0;
+      printf("Tempo para resposta esgotado...\n");
+    } else {
+      size = resp;
+      printf("Retorno de MB Send: ");
+      for(i=0; i<size; i++)
+        printf("%02x ", data[i]);
+      printf("\n");
+    }
   } else {
     size = 0;
   }
