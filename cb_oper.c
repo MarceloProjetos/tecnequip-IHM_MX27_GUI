@@ -397,3 +397,8 @@ void AbrirOper()
 
   CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
 }
+
+void cbExecTarefa(GtkButton *button, gpointer user_data)
+{
+  MessageBox("Executando...");
+}

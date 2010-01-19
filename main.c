@@ -1,8 +1,10 @@
+#include <sys/msg.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <errno.h>
 
 #include <gtk/gtk.h>
 #include <pthread.h>
@@ -27,6 +29,8 @@ struct strDB     mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 int CurrentWorkArea  = 0; // Variavel que armazena a tela atual.
 int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
+
+pthread_mutex_t mutex_ipcmq = PTHREAD_MUTEX_INITIALIZER;
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
@@ -118,7 +122,7 @@ MB_HANDLER_TX(IHM_MB_TX)
   printf("\n");
 
 // Envia a mensagem pela ethernet
-  tcp_socket = ihm_connect("192.168.0.232", 502);
+  tcp_socket = ihm_connect("192.168.0.235", 502);
   if(tcp_socket >= 0) {
     send(tcp_socket, data, size, 0);
 
@@ -154,6 +158,23 @@ MB_HANDLER_TX(IHM_MB_TX)
 // Objeto que contem toda a interface GTK
 GtkBuilder *builder;
 
+key_t fd;
+
+#define IPCMQ_MAX_BUFSIZE 100
+
+#define IPCMQ_FNC_TEXT  0x01
+#define IPCMQ_FNC_POWER 0x02
+
+struct strIPCMQ_Message {
+  long mtype;
+  union {
+    struct {
+      uint8_t status;
+    } power;
+    char text[IPCMQ_MAX_BUFSIZE];
+  } data;
+};
+
 // Timers
 gboolean tmrAD(gpointer data)
 {
@@ -168,32 +189,52 @@ gboolean tmrPowerDown(gpointer data)
 {
   char msg[15];
   struct comm_msg cmsg;
-  static GtkDialog *dlg = NULL;
-  static uint32_t timeout=0;
-  GtkDialog *current = *(GtkDialog **)data; // Recebe o ponteiro como parametro nao o endereco apontado.
+  static uint32_t timeout=30;
+  static GtkDialog *dlg = NULL; // Recebe o ponteiro como parametro nao o endereco apontado.
 
-  if(current != dlg) { // mudou o estado da alimentacao
-    dlg = current;
+  gdk_threads_enter();
+
+  if(dlg == NULL)
+    dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
+
+  if(!GTK_WIDGET_VISIBLE(GTK_WIDGET(dlg))) {
     timeout = 30;
-  } else if(dlg != NULL) {
-    gdk_threads_enter();
-    if(!timeout--) {
-      gtk_main_quit();
-    } else {
-      sprintf(msg, "%d segundos", timeout);
-      gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")), msg);
+  } else if(!timeout--) {
+    gtk_dialog_response(dlg, 0);
+  } else {
+    sprintf(msg, "%d segundos", timeout);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")), msg);
 
-      comm_update();
-      while(comm_ready()) {
-        comm_get(&cmsg);
-        if(cmsg.fnc == COMM_FNC_PWR && cmsg.data.pwr) {
-          gtk_dialog_response(dlg, 2);
-        }
-        comm_update();
+    comm_update();
+    if(comm_ready()) {
+      comm_get(&cmsg);
+      if(cmsg.data.pwr) {
+        timeout = 30;
+        gtk_dialog_response(dlg, 2);
       }
     }
-    gdk_threads_leave();
   }
+
+  gdk_threads_leave();
+
+  return TRUE;
+}
+
+gboolean tmrGtkUpdate(gpointer data)
+{
+  struct strIPCMQ_Message rcv;
+
+  pthread_mutex_lock(&mutex_ipcmq);
+  if(msgrcv(fd, &rcv, sizeof(rcv.data), 0, IPC_NOWAIT) >= 0)
+    switch(rcv.mtype) {
+    case IPCMQ_FNC_TEXT:
+      printf("Recebida mensagem de texto: %s\n", rcv.data.text);
+      break;
+
+    default:
+      printf("Mensagem de tipo desconhecido: %ld\n", rcv.mtype);
+    }
+  pthread_mutex_unlock(&mutex_ipcmq);
 
   return TRUE;
 }
@@ -252,22 +293,32 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 }
 
 /****************************************************************************
- * Thread de comunicacao com o LPC2109 (Power Management)
+ * Thread de comunicacao com o LPC2109 (Power Management) e CLPs (ModBus)
  ***************************************************************************/
 void * ihm_update(void *args)
 {
-  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1;
+  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp;
   struct comm_msg msg;
+  GtkDialog      *dlg;
+  GtkStatusbar   *sts;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
-  GtkStatusbar *sts;
-  GtkDialog *dlg = NULL;
+
+  struct strIPCMQ_Message snd;
+
+  snd.mtype = IPCMQ_FNC_TEXT;
+  strcpy(snd.data.text, "message");
+  pthread_mutex_lock(&mutex_ipcmq);
+  msgsnd(fd, &snd, sizeof(snd.data), 0);
+  pthread_mutex_unlock(&mutex_ipcmq);
 
   gdk_threads_enter();
-  g_timeout_add(1000, tmrPowerDown, (void *)&dlg);
-  pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN" ));
-  pgbTERM = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbTERM"));
-  pgbVBAT = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"));
-  sts     = GTK_STATUSBAR   (gtk_builder_get_object(builder, "stsMensagem"));
+
+  pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"      ));
+  pgbTERM = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbTERM"     ));
+  pgbVBAT = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"     ));
+  sts     = GTK_STATUSBAR   (gtk_builder_get_object(builder, "stsMensagem" ));
+  dlg     = GTK_DIALOG      (gtk_builder_get_object(builder, "dlgPowerDown"));
+
   gdk_threads_leave();
 
   /****************************************************************************
@@ -305,13 +356,14 @@ void * ihm_update(void *args)
         } else {
           gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
 
-          dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
           gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
               "30 segundos");
           gtk_widget_show_all(GTK_WIDGET(dlg));
-          printf("Resposta: %d\n", gtk_dialog_run(dlg));
+          rp = gtk_dialog_run(dlg);
+          printf("Resposta: %d\n", rp);
+          if(!rp) // Clicado ok, desligar!
+            gtk_main_quit();
           gtk_widget_hide_all(GTK_WIDGET(dlg));
-          dlg = NULL;
         }
         gdk_threads_leave();
         break;
@@ -349,6 +401,9 @@ int main(int argc, char *argv[])
     printf("Erro abrindo porta serial!\n");
     return 1;
   }
+
+  // Cria fila de mensagens para comunicar com a thread ihm_update
+  fd = msgget(IPC_PRIVATE, IPC_CREAT);
 
   SerialConfig(ps, 115200, 8, 1, SerialParidadeNenhum, 0);
 
@@ -413,7 +468,9 @@ int main(int argc, char *argv[])
   gtk_widget_show_all(wnd);
 
   // Iniciando os timers
-  g_timeout_add(500, tmrAD, NULL);
+  g_timeout_add( 500, tmrAD       , NULL);
+  g_timeout_add(1000, tmrGtkUpdate, NULL);
+  g_timeout_add(1000, tmrPowerDown, NULL);
 
   pthread_create (&tid, NULL, ihm_update, NULL);
 
@@ -433,7 +490,11 @@ int main(int argc, char *argv[])
   SerialClose(ps);
   DB_Close(&mainDB);
 
+  pthread_mutex_destroy(&mutex_ipcmq);
+
   gdk_threads_leave();
+
+  msgctl(fd, IPC_RMID, NULL);
 
   return 0;
 }
