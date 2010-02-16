@@ -7,6 +7,7 @@
 #include <gtk/gtk.h>
 
 #include "defines.h"
+#include "maq.h"
 #include "GtkUtils.h"
 
 // Estrutura que representa o ModBus
@@ -21,7 +22,75 @@ extern int PreviousWorkArea; // Variavel que armazena a tela anterior.
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
 
+void CarregaListaTarefas(GtkWidget *tvw);
+
 /*** Fim das funcoes e variáveis de suporte ***/
+
+// Timer de producao
+gboolean tmrExec(gpointer data)
+{
+  GtkWidget *wdg;
+  static int qtd, iniciando = 1;
+  char tmp[30], sql[300];
+  int qtdprod, status, tam;
+  static GtkLabel *lblSaldo = NULL, *lblProd = NULL;
+
+  if(iniciando) {
+    iniciando = 0;
+    qtd = atoi(gtk_label_get_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal" ))));
+    printf("quantidade total: %d\n", qtd);
+    lblProd  = GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd" ));
+    lblSaldo = GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo"));
+  }
+
+  qtdprod = MaqLerProdQtd();
+
+  if(MaqLerModo() == MAQ_MODO_MANUAL) {
+    iniciando = 1;
+  // Recupera o ID da tarefa em execução
+    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas"));
+    TV_GetSelected(wdg, 0, tmp);
+
+    sprintf(sql, "select Qtd, QtdProd from tarefas where ID='%ld'", atol(tmp));
+    DB_Execute(&mainDB, 0, sql);
+    DB_GetNextRow(&mainDB, 0);
+
+    // Carrega a quantidade de peças da tarefa
+    qtd = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd")));
+
+    // Subtrai o total do numero de pecas restantes para encontrar quantas foram produzidas
+    qtdprod = qtd - qtdprod;
+
+//      if(status == CV_ST_ESPERA)
+//    MessageBox("Tarefa executada sem erros!");
+//      else
+//        MessageBox("Erro encontrado enquanto produzindo!");
+
+    if(qtdprod >= qtd) // Quantidade produzida maior ou igual ao total
+      status = TRF_ESTADO_FINAL;
+    else if(qtdprod) // Quantidade produzida diferente de zero
+      status = TRF_ESTADO_PARCIAL;
+    else // Nenhuma peça produzida
+      status = TRF_ESTADO_NOVA;
+
+    // Executa a instrução SQL necessária para atualizar o estado da tarefa.
+    sprintf(sql, "update tarefas set estado='%d', QtdProd='%d' where ID='%ld'", status, qtdprod, atol(tmp));
+    DB_Execute(&mainDB, 0, sql);
+
+    CarregaListaTarefas(wdg);
+
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_OPERAR);
+    return FALSE;
+  } else {
+    sprintf(tmp, "%d", qtd - qtdprod);
+    gtk_label_set_text(lblProd, tmp);
+
+    sprintf(tmp, "%d", qtdprod);
+    gtk_label_set_text(lblSaldo, tmp);
+  }
+
+  return TRUE;
+}
 
 void ConfigBotoesTarefa(GtkWidget *wdg, gboolean modo)
 {
@@ -400,5 +469,73 @@ void AbrirOper()
 
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
-  MessageBox("Executando...");
+  int qtd, qtdprod, status, tam;
+  GtkWidget *wdg;
+  char tmp[30], sql[300];
+
+//  if(!MaquinaEspera(CHECAR_ESPERA))
+//    return;
+
+// Carrega os dados da tarefa selecionada
+  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas"));
+
+  TV_GetSelected(wdg, 4, tmp); // Quantidade total
+  qtd = atol(tmp);
+
+  TV_GetSelected(wdg, 5, tmp); // Subtrai quantidade já produzida
+  qtd -= atol(tmp);
+
+  sprintf(tmp, "%d", qtd);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal")), tmp);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo")), tmp);
+
+  TV_GetSelected(wdg, 6, tmp);
+  tam = atol(tmp);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPos" )), tmp);
+
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd")), "0");
+
+  MaqConfigProdQtd(qtd);
+  MaqConfigProdTam(tam);
+
+  sprintf(sql, "Produzindo %d peças de %d mm", qtd, tam);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), sql);
+  Log(sql, LOG_TIPO_TAREFA);
+
+  MaqConfigModo(MAQ_MODO_AUTO);
+  g_timeout_add(1000, tmrExec, (gpointer)&qtd);
+
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecParar" )), TRUE);
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_EXECUTAR);
+}
+
+void cbExecParar(GtkButton *button, gpointer user_data)
+{
+  MaqConfigModo(MAQ_MODO_MANUAL);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Terminando...");
+  gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+}
+
+gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+  printf("%d: (%f,%f) - %d\n", event->time, event->x, event->y, event->type);
+}
+
+gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
+{
+  static unsigned int i=0;
+  static GdkPixbuf *pb = NULL;
+  if(pb == NULL) {
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+  }
+
+  gdk_draw_pixbuf(widget->window,
+                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                  pb,
+                  0, 0, 0, 0, -1, -1,
+                  GDK_RGB_DITHER_NONE, 0, 0);
+
+  return TRUE;
 }

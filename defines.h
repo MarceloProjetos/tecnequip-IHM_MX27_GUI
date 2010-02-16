@@ -1,3 +1,25 @@
+#include <sys/msg.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <errno.h>
+
+// Para que a funcao atof funcione corretamente
+#include <stdio.h>
+#include <stdlib.h>
+
+#include <pthread.h>
+#include <string.h>
+#include <unistd.h>
+#include "serial.h"
+#include <comm.h>
+#include <net/modbus.h>
+#include <DB.h>
+
+#include "maq.h"
+
 /*** Definições gerais ***/
 
 //#define DEBUG_PC
@@ -46,12 +68,50 @@
 #define CHECAR_MANUAL 1
 
 // Numeracao das abas que contem a tela (ntbWorkArea)
-#define NTB_ABA_HOME   0
-#define NTB_ABA_CONFIG 1
-#define NTB_ABA_OPERAR 2
-#define NTB_ABA_LOGS   4
-#define NTB_ABA_TAREFA 6
-#define NTB_ABA_MODBUS 7
-#define NTB_ABA_DATA   8
+#define NTB_ABA_HOME        0
+#define NTB_ABA_CONFIG      2
+#define NTB_ABA_OPERAR      3
+#define NTB_ABA_LOGS        5
+#define NTB_ABA_TAREFA      7
+#define NTB_ABA_MODBUS      8
+#define NTB_ABA_DATA        9
+#define NTB_ABA_EXECUTAR   10
+#define NTB_ABA_VIRTUAL_KB 11
 
 /*** Fim das definições gerais ***/
+
+/*** Definições para Comunicação entre Threads ***/
+
+key_t fd_rd;
+key_t fd_wr;
+
+#define IPCMQ_MAX_BUFSIZE  MB_BUFFER_SIZE
+#define IPCMQ_MESSAGE_SIZE (sizeof(struct strIPCMQ_Message) - sizeof(long))
+
+#define IPCMQ_FNC_TEXT   0x01
+#define IPCMQ_FNC_POWER  0x02
+#define IPCMQ_FNC_MODBUS 0x03
+
+struct strIPCMQ_Message {
+  long mtype;
+  void (*fnc)(void *, void *);
+  void  *res;
+  union uniIPCMQ_Data {
+    struct {
+      uint8_t status;
+    } power;
+    struct {
+      uint32_t function_code;
+      union MB_FCD_Data data;
+    } modbus_query;
+    struct MB_Reply modbus_reply;
+    char text[IPCMQ_MAX_BUFSIZE];
+  } data;
+};
+
+void IPCMQ_Main_Enviar    (struct strIPCMQ_Message *msg);
+int  IPCMQ_Main_Receber   (struct strIPCMQ_Message *msg, int tipo);
+void IPCMQ_Threads_Enviar (struct strIPCMQ_Message *msg);
+int  IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg);
+
+/*** Fim das definições para Comunicação entre Threads ***/

@@ -165,6 +165,8 @@ void GravarValorWidget(char *nome, char *valor)
 
   if     (!strncmp(nome, "ent", 3))
     gtk_entry_set_text(GTK_ENTRY(obj), valor);
+  else if(!strncmp(nome, "spb", 3))
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(obj), atof(valor));
   else if(!strncmp(nome, "lbl", 3))
     gtk_label_set_text(GTK_LABEL(obj), valor);
 	else if(!strncmp(nome, "txv", 3))
@@ -179,7 +181,7 @@ void GravarValoresWidgets(char **lst_wdg, char **lst_val)
 
 	for(i=0; lst_wdg[i][0]; i++)
 		if(strcmp(lst_wdg[i], "0")) // Se for um campo válido, grava o valor.
-		GravarValorWidget(lst_wdg[i], lst_val[i]);
+		  GravarValorWidget(lst_wdg[i], lst_val[i]);
 }
 
 char * LerValorWidget(char *nome)

@@ -1,21 +1,7 @@
-#include <sys/msg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <errno.h>
-
-#include <gtk/gtk.h>
-#include <pthread.h>
-#include <string.h>
-#include <unistd.h>
-#include "serial.h"
 #include "defines.h"
+#include <gtk/gtk.h>
 #include "GtkUtils.h"
-#include <comm.h>
-#include <net/modbus.h>
-#include <DB.h>
+#include <time.h>
 
 extern SERIAL_TX_FNC(SerialTX);
 extern SERIAL_RX_FNC(SerialRX);
@@ -30,7 +16,8 @@ extern int idUser; // Indica usuário que logou se for diferente de zero.
 int CurrentWorkArea  = 0; // Variavel que armazena a tela atual.
 int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
-pthread_mutex_t mutex_ipcmq = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ipcmq_rd = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ipcmq_wr = PTHREAD_MUTEX_INITIALIZER;
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
@@ -100,6 +87,7 @@ int32_t ihm_connect(char *host, int16_t port)
 }
 
 struct PortaSerial *ps;
+int32_t tcp_socket = -1;
 
 COMM_FNC(CommTX)
 {
@@ -113,8 +101,8 @@ COMM_FNC(CommRX)
 
 MB_HANDLER_TX(IHM_MB_TX)
 {
-  uint32_t i, tent = 10;
-  int32_t tcp_socket, opts, resp;
+  uint32_t i, tent = 50;
+  int32_t resp;
 
   printf("MB Send: ");
   for(i=0; i<size; i++)
@@ -122,34 +110,21 @@ MB_HANDLER_TX(IHM_MB_TX)
   printf("\n");
 
 // Envia a mensagem pela ethernet
-  tcp_socket = ihm_connect("192.168.0.235", 502);
-  if(tcp_socket >= 0) {
-    send(tcp_socket, data, size, 0);
+  send(tcp_socket, data, size, 0);
 
-    // Configura socket para o modo non-blocking e retorna zero no erro.
-    opts = fcntl(tcp_socket,F_GETFL);
-    if (opts < 0)
-      return 0;
-    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0)
-      return 0;
+  while((resp=recv(tcp_socket, data, MB_BUFFER_SIZE, 0))<=0 && tent--) {
+    usleep(10000);
+  }
 
-    while((resp=recv(tcp_socket, data, MB_BUFFER_SIZE, 0))<=0 && tent--) {
-      usleep(10000);
-    }
-    close(tcp_socket);
-
-    if(resp<=0) {
-      size = 0;
-      printf("Tempo para resposta esgotado...\n");
-    } else {
-      size = resp;
-      printf("Retorno de MB Send: ");
-      for(i=0; i<size; i++)
-        printf("%02x ", data[i]);
-      printf("\n");
-    }
-  } else {
+  if(resp<=0) {
     size = 0;
+    printf("Tempo para resposta esgotado...\n");
+  } else {
+    size = resp;
+    printf("Retorno de MB Send: ");
+    for(i=0; i<size; i++)
+      printf("%02x ", data[i]);
+    printf("\n");
   }
 
   return size;
@@ -158,22 +133,44 @@ MB_HANDLER_TX(IHM_MB_TX)
 // Objeto que contem toda a interface GTK
 GtkBuilder *builder;
 
-key_t fd;
+extern key_t fd_rd;
+extern key_t fd_wr;
 
-#define IPCMQ_MAX_BUFSIZE 100
+void IPCMQ_Main_Enviar(struct strIPCMQ_Message *msg)
+{
+  pthread_mutex_lock(&mutex_ipcmq_wr);
+  msgsnd(fd_wr, msg, IPCMQ_MESSAGE_SIZE, 0);
+  pthread_mutex_unlock(&mutex_ipcmq_wr);
+}
 
-#define IPCMQ_FNC_TEXT  0x01
-#define IPCMQ_FNC_POWER 0x02
+int IPCMQ_Main_Receber(struct strIPCMQ_Message *msg, int tipo)
+{
+  int ret;
 
-struct strIPCMQ_Message {
-  long mtype;
-  union {
-    struct {
-      uint8_t status;
-    } power;
-    char text[IPCMQ_MAX_BUFSIZE];
-  } data;
-};
+  pthread_mutex_lock(&mutex_ipcmq_rd);
+  ret = msgrcv(fd_rd, msg, IPCMQ_MESSAGE_SIZE, tipo, IPC_NOWAIT);
+  pthread_mutex_unlock(&mutex_ipcmq_rd);
+
+  return ret;
+}
+
+void IPCMQ_Threads_Enviar(struct strIPCMQ_Message *msg)
+{
+  pthread_mutex_lock(&mutex_ipcmq_rd);
+  msgsnd(fd_rd, msg, IPCMQ_MESSAGE_SIZE, 0);
+  pthread_mutex_unlock(&mutex_ipcmq_rd);
+}
+
+int IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg)
+{
+  int ret;
+
+  pthread_mutex_lock(&mutex_ipcmq_wr);
+  ret = msgrcv(fd_wr, msg, IPCMQ_MESSAGE_SIZE, 0, IPC_NOWAIT);
+  pthread_mutex_unlock(&mutex_ipcmq_wr);
+
+  return ret;
+}
 
 // Timers
 gboolean tmrAD(gpointer data)
@@ -220,23 +217,71 @@ gboolean tmrPowerDown(gpointer data)
   return TRUE;
 }
 
-gboolean tmrGtkUpdate(gpointer data)
+void IPC_Update(void)
 {
   struct strIPCMQ_Message rcv;
 
-  pthread_mutex_lock(&mutex_ipcmq);
-  if(msgrcv(fd, &rcv, sizeof(rcv.data), 0, IPC_NOWAIT) >= 0)
+  while(IPCMQ_Main_Receber(&rcv, 0) >= 0)
     switch(rcv.mtype) {
     case IPCMQ_FNC_TEXT:
       printf("Recebida mensagem de texto: %s\n", rcv.data.text);
       break;
 
+    case IPCMQ_FNC_MODBUS:
+      switch(rcv.data.modbus_reply.FunctionCode) {
+      case MB_FC_READ_DEVICE_IDENTIFICATION:
+        printf("Identificador %d: %s\n", rcv.data.modbus_reply.reply.read_device_identification.object_id, &rcv.data.modbus_reply.reply.read_device_identification.val);
+        break;
+      default:
+        printf("Funcao desconhecida do modbus: %d\n", rcv.data.modbus_reply.FunctionCode);
+      }
+
+       if(rcv.fnc != NULL) {
+        (*rcv.fnc)(&rcv.data, rcv.res);
+      }
+
+      break;
+
     default:
       printf("Mensagem de tipo desconhecido: %ld\n", rcv.mtype);
     }
-  pthread_mutex_unlock(&mutex_ipcmq);
+}
+
+gboolean tmrGtkUpdate(gpointer data)
+{
+  time_t now;
+  char tmp[40];
+  struct tm *timeptr;
+  static GtkLabel *lbl = NULL;
+
+  if(lbl == NULL)
+    lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
+
+  now = time(NULL);
+  timeptr = localtime(&now);
+
+  sprintf(tmp, "%02d/%02d/%d, %.2d:%.2d",
+      timeptr->tm_mday,
+      timeptr->tm_mon + 1,
+      1900 + timeptr->tm_year,
+      timeptr->tm_hour,
+      timeptr->tm_min);
+  if(strcmp(tmp, gtk_label_get_text(lbl)))
+    gtk_label_set_label(lbl, tmp);
+
+  IPC_Update();
 
   return TRUE;
+}
+
+/****************************************************************************
+ * Funcoes que tratam os dados recebidos do Modbus
+ ***************************************************************************/
+void ReadID(void *dt, void *res)
+{
+  union uniIPCMQ_Data *data = (union uniIPCMQ_Data *)dt;
+
+  printf("recebido: %s\n", &data->modbus_reply.reply.read_device_identification.val);
 }
 
 /****************************************************************************
@@ -249,8 +294,17 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   uint32_t idx;
   const gchar *nome = gtk_widget_get_name(GTK_WIDGET(button));
   GtkWidget *ntb = GTK_WIDGET(gtk_builder_get_object(builder, "ntbWorkArea"));
+  struct strIPCMQ_Message ipc_msg;
 
-  idx = nome[strlen(nome)-1]-'0' - 1;
+  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+  ipc_msg.fnc   = ReadID;
+  ipc_msg.res   = NULL;
+  ipc_msg.data.modbus_query.function_code = MB_FC_READ_DEVICE_IDENTIFICATION;
+  ipc_msg.data.modbus_query.data.read_device_identification.id_code   = 0x01;
+  ipc_msg.data.modbus_query.data.read_device_identification.object_id = 0x01;
+  IPCMQ_Main_Enviar(&ipc_msg);
+
+  idx = nome[strlen(nome)-1]-'0';
   gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), idx);
 
   switch(idx) {
@@ -276,6 +330,11 @@ void cbQuitCancel(GtkButton *button, gpointer user_data)
 void cbLogoff(GtkButton *button, gpointer user_data)
 {
   GtkWidget *wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
+  struct strIPCMQ_Message ipc_msg;
+
+  ipc_msg.mtype = IPCMQ_FNC_TEXT;
+  ipc_msg.data.text[0] = 0;
+  IPCMQ_Main_Enviar(&ipc_msg);
 
   Log("Saida do sistema", LOG_TIPO_SISTEMA);
 
@@ -295,6 +354,7 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 /****************************************************************************
  * Thread de comunicacao com o LPC2109 (Power Management) e CLPs (ModBus)
  ***************************************************************************/
+
 void * ihm_update(void *args)
 {
   uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp;
@@ -303,13 +363,13 @@ void * ihm_update(void *args)
   GtkStatusbar   *sts;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
 
-  struct strIPCMQ_Message snd;
+  struct strIPCMQ_Message ipc_msg;
 
-  snd.mtype = IPCMQ_FNC_TEXT;
-  strcpy(snd.data.text, "message");
-  pthread_mutex_lock(&mutex_ipcmq);
-  msgsnd(fd, &snd, sizeof(snd.data), 0);
-  pthread_mutex_unlock(&mutex_ipcmq);
+  ipc_msg.fnc   = NULL;
+  ipc_msg.res   = NULL;
+  ipc_msg.mtype = IPCMQ_FNC_TEXT;
+  strcpy(ipc_msg.data.text, "mensagem");
+  IPCMQ_Threads_Enviar(&ipc_msg);
 
   gdk_threads_enter();
 
@@ -326,6 +386,7 @@ void * ihm_update(void *args)
    ***************************************************************************/
   while (1) {
     usleep(500);
+    // Loop de checagem de mensagens vindas da CPU LPC2109
     comm_update();
     if(comm_ready()) {
       comm_get(&msg);
@@ -377,6 +438,24 @@ void * ihm_update(void *args)
         printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
       }
     }
+
+    // Loop de checagem de mensagens vindas da thread principal
+    if(IPCMQ_Threads_Receber(&ipc_msg) >= 0) {
+      switch(ipc_msg.mtype) {
+      case IPCMQ_FNC_TEXT:
+        strcpy(ipc_msg.data.text, "resposta");
+        IPCMQ_Threads_Enviar(&ipc_msg);
+        break;
+
+      case IPCMQ_FNC_MODBUS:
+        ipc_msg.data.modbus_reply = MB_Send(&mbdev,
+                                            ipc_msg.data.modbus_query.function_code,
+                                            &ipc_msg.data.modbus_query.data);
+        IPCMQ_Threads_Enviar(&ipc_msg);
+
+        break;
+      }
+    }
   }
 
   return NULL;
@@ -385,6 +464,7 @@ void * ihm_update(void *args)
 //Inicia a aplicacao
 int main(int argc, char *argv[])
 {
+  int32_t opts;
   pthread_t tid;
   GtkWidget *wnd;
   GtkComboBox *cmb;
@@ -402,8 +482,14 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  // Cria fila de mensagens para comunicar com a thread ihm_update
-  fd = msgget(IPC_PRIVATE, IPC_CREAT);
+  if(!MaqLerConfig())
+    printf("Erro carregando configuracao\n");
+
+  // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
+  fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
+  fd_wr = msgget(IPC_PRIVATE, IPC_CREAT);
+  if(fd_wr < 0)
+    printf("erro criando fila fd_wr (%d): %s\n", errno, strerror(errno));
 
   SerialConfig(ps, 115200, 8, 1, SerialParidadeNenhum, 0);
 
@@ -424,6 +510,7 @@ int main(int argc, char *argv[])
   // Limpa a estrutura do banco, zerando ponteiros, etc...
   DB_Clear(&mainDB);
 
+#ifndef DEBUG_PC
   // Carrega configuracoes do arquivo de configuracao e conecta ao banco
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
     {
@@ -432,6 +519,26 @@ int main(int argc, char *argv[])
     mainDB.passwd  = "y1cGH3WK20";
     mainDB.nome_db = "cv";
     }
+#else
+  mainDB.server  = "192.168.0.2";
+  mainDB.user    = "root";
+  mainDB.passwd  = "y1cGH3WK20";
+  mainDB.nome_db = "cv";
+#endif
+
+#ifndef DEBUG_PC
+  tcp_socket = ihm_connect("192.168.0.235", 502);
+  if(tcp_socket >= 0) {
+    // Configura socket para o modo non-blocking e retorna zero no erro.
+    opts = fcntl(tcp_socket,F_GETFL);
+    if (opts < 0)
+      return 0;
+    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0)
+      return 0;
+  } else {
+    return 0;
+  }
+#endif
 
   /* init threads */
   g_thread_init (NULL);
@@ -469,7 +576,7 @@ int main(int argc, char *argv[])
 
   // Iniciando os timers
   g_timeout_add( 500, tmrAD       , NULL);
-  g_timeout_add(1000, tmrGtkUpdate, NULL);
+  g_timeout_add( 500, tmrGtkUpdate, NULL);
   g_timeout_add(1000, tmrPowerDown, NULL);
 
   pthread_create (&tid, NULL, ihm_update, NULL);
@@ -490,11 +597,17 @@ int main(int argc, char *argv[])
   SerialClose(ps);
   DB_Close(&mainDB);
 
-  pthread_mutex_destroy(&mutex_ipcmq);
+  pthread_mutex_destroy(&mutex_ipcmq_rd);
+  pthread_mutex_destroy(&mutex_ipcmq_wr);
 
   gdk_threads_leave();
 
-  msgctl(fd, IPC_RMID, NULL);
+  msgctl(fd_rd, IPC_RMID, NULL);
+  msgctl(fd_wr, IPC_RMID, NULL);
+
+  close(tcp_socket);
+
+  MaqGravarConfig();
 
   return 0;
 }

@@ -5,6 +5,7 @@
 #include <net/modbus.h>
 
 #include <gtk/gtk.h>
+#include <gdk/gdkkeysyms.h>
 
 #include "defines.h"
 #include "GtkUtils.h"
@@ -332,79 +333,6 @@ int EnviaComando(struct strMQ *MQS, struct strMQD *MQD, void *userdata)
 }
 
 /*** Fim das funcoes de suporte ***/
-
-void
-Operar                                 (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  int qtd, qtdprod, status;
-  GtkWidget *wdg;
-  struct strMQD MQD;
-  char tmp[30], sql[300];
-
-  if(!MaquinaEspera(CHECAR_ESPERA))
-    return;
-
-// Carrega os dados da tarefa selecionada
-  wdg = lookup_widget(GTK_WIDGET(button), "tvwTarefas");
-
-  TV_GetSelected(GTK_TREE_VIEW(wdg), 4, tmp); // Quantidade total
-  MQD.data.dl[0] = atol(tmp);
-
-  TV_GetSelected(GTK_TREE_VIEW(wdg), 5, tmp); // Subtrai quantidade já produzida
-  MQD.data.dl[0] -= atol(tmp);
-
-  TV_GetSelected(GTK_TREE_VIEW(wdg), 6, tmp);
-  MQD.data.df[1] = atof(tmp);
-
-  MQD.funcao = CV_MQFNC_PRODUZ;
-
-  sprintf(sql, "Produzindo %d peças de %.03f mm", MQD.data.dl[0], MQD.data.df[1]);
-  Log(sql, LOG_TIPO_TAREFA);
-  EnviaComando(&MQ, &MQD, NULL);
-
-  MQ.MQ_Data.funcao = CV_MQFNC_STATUS;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    // Salva o estado atual da máquina
-    status = MQ.MQ_Data.data.di[0];
-
-    MQ.MQ_Data.funcao = CV_MQFNC_QTDPROD;
-    if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-      qtdprod = MQ.MQ_Data.data.di[0];
-
-// Recupera o ID da tarefa em execução
-    TV_GetSelected(GTK_TREE_VIEW(wdg), 0, tmp);
-
-    sprintf(sql, "select Qtd, QtdProd from tarefas where ID='%d'", atol(tmp));
-    DB_Execute(&mainDB, 0, sql);
-    DB_GetNextRow(&mainDB, 0);
-
-// Adiciona o número de peças já produzidas ao número de peças produzidas nesta operação
-    qtdprod += atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "QtdProd")));
-
-// Carrega a quantidade de peças da tarefa
-    qtd = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd")));
-
-    if(status == CV_ST_ESPERA)
-      MessageBox("Tarefa executada sem erros!");
-    else
-      MessageBox("Erro encontrado enquanto produzindo!");
-
-    if(qtdprod >= qtd) // Quantidade produzida maior ou igual ao total
-      status = TRF_ESTADO_FINAL;
-    else if(qtdprod) // Quantidade produzida diferente de zero
-      status = TRF_ESTADO_PARCIAL;
-    else // Nenhuma peça produzida
-      status = TRF_ESTADO_NOVA;
-
-    // Executa a instrução SQL necessária para atualizar o estado da tarefa.
-    sprintf(sql, "update tarefas set estado='%d', QtdProd='%d' where ID='%d'", status, qtdprod, atol(tmp));
-    DB_Execute(&mainDB, 0, sql);
-
-    CarregaListaTarefas(wdg);
-    }
-}
 
 void
 CalcRelEnc                             (GtkButton       *button,
@@ -878,36 +806,50 @@ void GravaDadosBanco()
     }
 }
 
-char *lista_ent[] =
-  {
-    "entMesaCurso",
-    "entMesaPerim",
-    "entMesaFator",
-    "entMesaResol",
-    "entMesaVelMax",
-    "entMesaVelJOG",
+char *lista_ent[] = {
+    "entEncoderPerim",
+    "entEncoderFator",
+    "entEncoderResol",
     "spbConfigPerfAcel",
     "spbConfigPerfDesacel",
-    "spbConfigPerfVel",
-    "rbtConfigModoNormal",
+    "spbConfigPerfVelMax",
+    "spbConfigPerfVelManual",
+    "entCorteFaca",
+    "spbConfigPerfReducao",
+    "spbConfigPerfDiamRolo",
     ""
-  };
+};
 
 int GravarDadosConfig()
 {
-  unsigned int nova_operacao;
+  unsigned int i;
   GtkWidget *obj;
-  char **valor_ent, *lista_oper[] = { "Normal", "Estático", "" };
+  char **valor_ent;
+  struct strMaqParam mp;
   valor_ent = (char **)(malloc(10*sizeof(char[10])));
-/*
+
   // Carrega o valor dos widgets conforme a lista fornecida
-  LerValoresWidgets(wdg, lista_ent, valor_ent);
+  LerValoresWidgets(lista_ent, valor_ent);
+  for(i=0; lista_ent[i][0]; i++)
+    printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
 
-  if(!BuscaStringLista(lista_oper, valor_ent[9])) // 0: Modo Normal
-    nova_operacao = CV_OPER_NORMAL;
-  else
-    nova_operacao = CV_OPER_ESTAT;
+  mp.perfil.vel_max    = atol(valor_ent[5]);
+  mp.perfil.vel_manual = atol(valor_ent[6]);
+  mp.perfil.acel       = atof(valor_ent[3]);
+  mp.perfil.desacel    = atof(valor_ent[4]);
+  mp.perfil.fator      = atof(valor_ent[8]);
+  mp.perfil.diam_rolo  = atol(valor_ent[9]);
+  MaqConfigPerfil(mp.perfil);
 
+  mp.encoder.fator     = atof(valor_ent[1]);
+  mp.encoder.precisao  = atol(valor_ent[2]);
+  mp.encoder.perimetro = atof(valor_ent[0]);
+  MaqConfigEncoder(mp.encoder);
+
+  mp.corte.tam_faca    = atol(valor_ent[7]);
+  MaqConfigCorte(mp.corte);
+
+/*
   MQ.MQ_Data.ndata      = 2;
   MQ.MQ_Data.funcao     = CV_MQFNC_PUTREGS;
   MQ.MQ_Data.data.dl[0] = CV_MQREG_VELMAX;
@@ -960,16 +902,78 @@ int GravarDadosConfig()
 */
   GravaDadosBanco();
 
+  MaqGravarConfig();
+
+  free(valor_ent);
+
   return 0;
 }
 
 void LerDadosConfig()
 {
-  char tmp[100], *opt_operacao[] = { "Normal", "Estático" };
-  unsigned int i, operacao;
+  char tmp[100];
+  unsigned int i;
+  struct strMaqParam mp;
   GtkWidget *obj;
   GSList *lst;
-  char valor_ent[9][10];
+  char **valor_ent;
+
+  // Diminui em 1 o número de campos devido ao elemento vazio no final.
+  i = sizeof(lista_ent)/sizeof(lista_ent[0])-1;
+  valor_ent = (char **)(malloc(i * sizeof(char *)));
+
+  mp.perfil  = MaqLerPerfil ();
+  mp.encoder = MaqLerEncoder();
+  mp.corte   = MaqLerCorte  ();
+
+  sprintf(tmp, "%f", mp.encoder.fator);
+  valor_ent[1] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[1], tmp);
+
+  sprintf(tmp, "%d", mp.encoder.precisao);
+  valor_ent[2] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[2], tmp);
+
+  sprintf(tmp, "%d", mp.encoder.perimetro);
+  valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[0], tmp);
+
+  sprintf(tmp, "%d", mp.perfil.vel_max);
+  valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[5], tmp);
+
+  sprintf(tmp, "%d", mp.perfil.vel_manual);
+  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[6], tmp);
+
+  sprintf(tmp, "%f", mp.perfil.acel);
+  valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[3], tmp);
+
+  sprintf(tmp, "%f", mp.perfil.desacel);
+  valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[4], tmp);
+
+  sprintf(tmp, "%d", mp.corte.tam_faca);
+  valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[7], tmp);
+
+  sprintf(tmp, "%f", mp.perfil.fator);
+  valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[8], tmp);
+
+  sprintf(tmp, "%d", mp.perfil.diam_rolo);
+  valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[9], tmp);
+
+  GravarValoresWidgets(lista_ent, valor_ent);
+
+  while(i--) {
+    if(valor_ent[i] != NULL)
+      free(valor_ent[i]);
+  }
+  free(valor_ent);
+
 /*
 // Carrega os parâmetros de curso da mesa, perímetro do encoder, fator de correção
 // e resolução do encoder
@@ -1811,21 +1815,145 @@ void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 
 void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
 {
-  int i;
-  char nome[30];
-
   PreviousWorkArea = CurrentWorkArea;
   CurrentWorkArea  = arg1;
-
-  for(i=0; i<6; i++) {
-    sprintf(nome, "btnF%d", i+1);
-    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, nome)), CurrentWorkArea<6);
-  }
 }
 
 void WorkAreaGoPrevious()
 {
   gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), PreviousWorkArea);
+}
+
+void cbGoHome(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+}
+
+void SairVirtualKeyboard()
+{
+  GtkButton *button;
+  guint signal_id;
+  gulong handler_id;
+
+  // Recebe o ID do sinal do callback
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+
+  // Remove do botao Cancelar
+  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  // Remove do botao OK
+  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  WorkAreaGoPrevious();
+}
+
+void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
+{
+  GtkTextBuffer *tb;
+  GtkTextIter cursor;
+  gchar *str = (gchar *)gtk_button_get_label(button);
+
+  // Verifica o label para identificar se foi clicado espaco, backspace ou enter.
+  if        (!strcmp(str, "Enter")) {
+    str = "\n";
+  } else if (!strcmp(str, "Espaço")) {
+    str = " ";
+  } else if (!strcmp(str, "gtk-go-back")) {
+    str = NULL;
+  }
+
+  tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+
+  if(str != NULL) {
+    gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
+  } else {
+    if (gtk_text_buffer_get_has_selection (tb)) {
+      gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
+    } else {
+      gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
+      gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
+    }
+  }
+}
+
+void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
+{
+  char *data;
+  GtkTextBuffer *tb;
+  GtkTextIter start, end;
+  GtkWidget *widget = (GtkWidget *)user_data;
+
+  tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+  gtk_text_buffer_get_start_iter(tb, &start);
+  gtk_text_buffer_get_end_iter(tb, &end);
+  data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+
+  if(GTK_IS_ENTRY(widget)) {
+    gtk_entry_set_text(GTK_ENTRY(widget), data);
+  } else if(GTK_IS_TEXT_VIEW(widget)) {
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget)), data, -1);
+  }
+
+  SairVirtualKeyboard();
+}
+
+void cbVirtualKeyboardCancelar(GtkButton *button, gpointer user_data)
+{
+  SairVirtualKeyboard();
+}
+
+void AbrirVirtualKeyboard(GtkWidget *widget)
+{
+  char *data;
+  GtkWidget *obj;
+  GtkTextBuffer *tb;
+  GtkTextIter start, end;
+
+  // Lê o texto atual.
+  if(GTK_IS_ENTRY(widget)) {
+    data = (char *)gtk_entry_get_text(GTK_ENTRY(widget));
+  } else if(GTK_IS_TEXT_VIEW(widget)) {
+    tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+    gtk_text_buffer_get_start_iter(tb, &start);
+    gtk_text_buffer_get_end_iter(tb, &end);
+    data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+  } else {
+    return; // Objeto nao suportado
+  }
+
+// Carrega o ponteiro para o botão de confirmar.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
+
+// Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardOK),
+              (gpointer)(widget));
+
+  // Carrega o ponteiro para o botão de cancelar.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
+
+  // Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardCancelar),
+                (gpointer)(widget));
+
+// Carrega o texto
+  gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard"))), data, -1);
+
+// Exibe a janela.
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_VIRTUAL_KB);
+}
+
+gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+  if(event->keyval == GDK_F1) {
+    AbrirVirtualKeyboard(gtk_window_get_focus(GTK_WINDOW(widget)));
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 // Funcoes que aumentam/reduzem horas e minutos.
