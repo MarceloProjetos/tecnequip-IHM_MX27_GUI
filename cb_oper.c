@@ -521,14 +521,73 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
   printf("%d: (%f,%f) - %d\n", event->time, event->x, event->y, event->type);
 }
 
+// defines que permitem selecionar o ponto de referencia para insercao da imagem
+#define LOADPB_REFPOS_UP      0x00
+#define LOADPB_REFPOS_DOWN    0x01
+#define LOADPB_REFPOS_LEFT    0x00
+#define LOADPB_REFPOS_RIGHT   0x02
+#define LOADPB_REFPOS_DEFAULT (LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT)
+
+void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, gdouble scale_y, gint refpos)
+{
+  GdkPixbuf *pbtmp;
+  gint width, height;
+  static gint last_x = 0, last_y = 0;
+
+// Verifica se devemos usar a ultima coordenada ou a passada como parametro
+  if(x<0)
+    x = last_x;
+  if(y<0)
+    y = last_y;
+
+// Carrega a nova imagem
+  pbtmp  = gdk_pixbuf_new_from_file(file, NULL);
+
+// Carrega as dimensoes da nova imagem
+  width  = gdk_pixbuf_get_width (pbtmp)*scale_x;
+  height = gdk_pixbuf_get_height(pbtmp)*scale_y;
+
+// Recalcula as coordenadas de acordo com o ponto de referencia passado como parametro
+  if(refpos & LOADPB_REFPOS_DOWN)
+    y = gdk_pixbuf_get_height(pb) - height - y;
+  if(refpos & LOADPB_REFPOS_RIGHT)
+    x = gdk_pixbuf_get_width (pb) - width  - x;
+
+// Agrega as duas imagens e remove a referencia a nova imagem
+  gdk_pixbuf_composite(pbtmp, pb,
+      x, y, width, height, x, y, scale_x, scale_y,
+      GDK_INTERP_BILINEAR, 255);
+  g_object_unref(pbtmp);
+
+// Atualiza as coordenadas atuais
+  last_x = x + width ;
+  last_y = y + height;
+}
+
+#define PERF_ALTURA_MESA 98
+
 gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
+//  GdkPixbuf *pbtmp;
   static unsigned int i=0;
   static GdkPixbuf *pb = NULL;
   if(pb == NULL) {
     pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
         widget->allocation.width, widget->allocation.height,
         FALSE, NULL);
+
+    LoadIntoPixbuf(pb, "images/maq-desbob.png"      ,  0,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadIntoPixbuf(pb, "images/maq-perf-ini.png"    , 10,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-mesa.png"   , -1,                0, 1.25, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-fim.png"    , -1,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+
+    LoadIntoPixbuf(pb, "images/maq-perf-prensa.png" , 20, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-guia.png"   , -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-castelo.png", -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-castelo.png", -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-castelo.png", -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(pb, "images/maq-perf-guia.png"   , -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
   }
 
   gdk_draw_pixbuf(widget->window,
