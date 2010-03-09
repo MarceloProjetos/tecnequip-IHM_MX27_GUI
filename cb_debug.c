@@ -19,12 +19,12 @@ void cbFunctionCodeChanged(GtkComboBox *widget, gpointer user_data)
 // Retorna para a tela anterior, saindo da tela de debug do modbus
 void cbDebugModBusVoltar(GtkButton *button, gpointer user_data)
 {
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+  WorkAreaGoPrevious();
 }
 
 void cbDebugModBus(GtkButton *button, gpointer user_data)
 {
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_MODBUS);
+  WorkAreaGoTo(NTB_ABA_MODBUS);
 }
 
 // Envia o comando selecionado pelo ModBus
@@ -66,7 +66,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_coils.size);
       for(i=0; i<rp.reply.read_coils.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_coils.val)[i]);
+        offset += sprintf(reply_string+offset, "%d: %02x\n", i, rp.reply.read_coils.data[i]);
     }
 
     break;
@@ -87,7 +87,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_discrete_inputs.size);
       for(i=0; i<rp.reply.read_discrete_inputs.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_discrete_inputs.val)[i]);
+        offset += sprintf(reply_string+offset, "%d: %02x\n", i, rp.reply.read_discrete_inputs.data[i]);
     }
 
     break;
@@ -108,7 +108,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_holding_registers.size);
       for(i=0; i<rp.reply.read_holding_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_holding_registers.val)[i]);
+        offset += sprintf(reply_string+offset, "%d: %02x\n", i, rp.reply.read_holding_registers.data[i]);
     }
 
     break;
@@ -129,7 +129,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.read_input_registers.size);
       for(i=0; i<rp.reply.read_input_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.read_input_registers.val)[i]);
+        offset += sprintf(reply_string+offset, "%d: %02x\n", i, rp.reply.read_input_registers.data[i]);
     }
 
     break;
@@ -266,7 +266,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "size: %d\n", rp.reply.rw_multiple_registers.size);
       for(i=0; i<rp.reply.rw_multiple_registers.size; i++)
-        offset += sprintf(reply_string+offset, "%d: %02x\n", i, (&rp.reply.rw_multiple_registers.val)[i]);
+        offset += sprintf(reply_string+offset, "%d: %02x\n", i, rp.reply.rw_multiple_registers.data[i]);
     }
 
     break;
@@ -298,10 +298,10 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
 
     if(!rp.ExceptionCode) {
       wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblReadDeviceIdentificationVal"));
-      gtk_label_set_text(GTK_LABEL(wdg), (gchar *)&rp.reply.read_device_identification.val);
+      gtk_label_set_text(GTK_LABEL(wdg), rp.reply.read_device_identification.data);
 
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
-      offset += sprintf(reply_string+offset, "string: %s\n", &rp.reply.read_device_identification.val);
+      offset += sprintf(reply_string+offset, "string: %s\n", rp.reply.read_device_identification.data);
     }
 
     break;

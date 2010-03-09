@@ -79,7 +79,7 @@ void cbAplicarDataLog(GtkButton *button, gpointer user_data)
 
   CarregaListaLogs(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
 
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_LOGS);
+  WorkAreaGoTo(NTB_ABA_LOGS);
 }
 
 void cbLogSelDataInicial(GtkButton *button, gpointer user_data)
@@ -123,5 +123,5 @@ void AbrirLog()
 
 void cbLogVoltar(GtkButton *button, gpointer user_data)
 {
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+  WorkAreaGoTo(NTB_ABA_HOME);
 }

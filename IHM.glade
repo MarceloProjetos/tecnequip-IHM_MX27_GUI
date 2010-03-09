@@ -250,14 +250,13 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
         <child internal-child="action_area">
           <object class="GtkHButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
-            <property name="layout_style">end</property>
+            <property name="layout_style">center</property>
             <child>
               <object class="GtkButton" id="btnPowerDownOK">
-                <property name="label">gtk-ok</property>
+                <property name="label">Desligar a M&#xE1;quina</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -267,11 +266,10 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
             </child>
             <child>
               <object class="GtkButton" id="btnPowerDownCancel">
-                <property name="label">gtk-cancel</property>
+                <property name="label">Continuar Ligado</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -526,10 +524,16 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
               </packing>
             </child>
             <child>
-              <object class="GtkDrawingArea" id="dwaMaquina">
+              <object class="GtkEventBox" id="evbMaquina">
                 <property name="visible">True</property>
-                <signal name="expose_event" handler="cbDesenharMaquina"/>
                 <signal name="button_press_event" handler="cbMaquinaButtonPress"/>
+                <signal name="button_release_event" handler="cbMaquinaButtonPress"/>
+                <child>
+                  <object class="GtkDrawingArea" id="dwaMaquina">
+                    <property name="visible">True</property>
+                    <signal name="expose_event" handler="cbDesenharMaquina"/>
+                  </object>
+                </child>
               </object>
               <packing>
                 <property name="position">1</property>
@@ -755,870 +759,1090 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <child>
-                  <object class="GtkTable" id="tblManutEntradaSaida">
+                  <object class="GtkTable" id="table30">
+                    <property name="visible">True</property>
+                    <property name="n_rows">6</property>
+                    <property name="n_columns">5</property>
+                    <property name="column_spacing">5</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox10">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt00">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-emergencia.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt00">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox11">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt01">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-hidr-termico.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt01">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label63">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Emerg&#xEA;ncia</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label64">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">T&#xE9;rmico - Hidr&#xE1;ulica</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label65">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Erro no inversor</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label96">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Sensor de Corte
+N&#xED;vel Superior</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label98">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Sensor de Piloto
+N&#xED;vel Superior</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label99">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Sensor de Piloto
+N&#xED;vel Inferior</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label100">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Posicionamento
+Finalizado</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label101">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Falta de Fase</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox33">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt02">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-inversor-erro.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt02">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox35">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt04">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-corte-superior.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt04">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox37">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt4">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-piloto-superior.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt06">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox38">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt5">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-piloto-inferior.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt07">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox39">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt6">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-inversor-posic.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt08">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox40">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt7">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-falta-fase.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt09">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox36">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt3">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-corte-inferior.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt05">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox34">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt03">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-material-fim.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt03">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label97">
+                        <property name="visible">True</property>
+                        <property name="ypad">3</property>
+                        <property name="label" translatable="yes">Sensor de Corte
+N&#xED;vel Inferior</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label87">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Fim de Material</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox42">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt9">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-avancar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt11">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label102">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Avan&#xE7;o Manual</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label103">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Corte Manual</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label62">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Recuo Manual</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox43">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt10">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-recuar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt12">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox41">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt8">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-manual-corte.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt10">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox31">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt1">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-manut-desbob.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt13">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label89">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Desbob. OK</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </object>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label95">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">Entradas</property>
+                  </object>
+                  <packing>
+                    <property name="position">3</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkTable" id="table20">
                     <property name="visible">True</property>
                     <property name="border_width">3</property>
-                    <property name="n_columns">2</property>
+                    <property name="n_rows">3</property>
+                    <property name="n_columns">4</property>
                     <property name="column_spacing">3</property>
                     <property name="row_spacing">3</property>
                     <child>
-                      <object class="GtkFrame" id="frame3">
+                      <object class="GtkToggleButton" id="tglManutSai00">
                         <property name="visible">True</property>
-                        <property name="border_width">3</property>
-                        <property name="label_xalign">0</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <signal name="toggled" handler="cbAtualSaidas"/>
                         <child>
-                          <object class="GtkAlignment" id="alignment19">
+                          <object class="GtkVBox" id="vbox27">
                             <property name="visible">True</property>
-                            <property name="left_padding">12</property>
+                            <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkTable" id="table19">
+                              <object class="GtkImage" id="imgManutHidrLigar">
                                 <property name="visible">True</property>
-                                <property name="border_width">3</property>
-                                <property name="n_rows">7</property>
-                                <property name="n_columns">4</property>
-                                <property name="column_spacing">3</property>
-                                <property name="row_spacing">3</property>
-                                <property name="homogeneous">True</property>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt00">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt01">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label96">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Emerg&#xEA;ncia</property>
-                                  </object>
-                                  <packing>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label97">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">T&#xE9;rmico da
-Unid. Hidr&#xE1;ulica</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label98">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Erro no inversor</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label99">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Fim de Material</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label100">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Sensor de Corte
-N&#xED;vel Superior</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label101">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Sensor de Corte
-N&#xED;vel Inferior</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label102">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Sensor de Piloto
-N&#xED;vel Superior</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">6</property>
-                                    <property name="bottom_attach">7</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt02">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt03">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt04">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt05">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt06">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">6</property>
-                                    <property name="bottom_attach">7</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label103">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Sensor de Piloto
-N&#xED;vel Inferior</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">2</property>
-                                    <property name="right_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label105">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Posicionamento
-Finalizado</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">2</property>
-                                    <property name="right_attach">3</property>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label104">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Falta de Fase</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">2</property>
-                                    <property name="right_attach">3</property>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label106">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Corte Manual</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">2</property>
-                                    <property name="right_attach">3</property>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label107">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Avan&#xE7;o Manual</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">2</property>
-                                    <property name="right_attach">3</property>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label232">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Recuo Manual</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">2</property>
-                                    <property name="right_attach">3</property>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt07">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">3</property>
-                                    <property name="right_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt08">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">3</property>
-                                    <property name="right_attach">4</property>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt09">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">3</property>
-                                    <property name="right_attach">4</property>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt10">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">3</property>
-                                    <property name="right_attach">4</property>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt11">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">3</property>
-                                    <property name="right_attach">4</property>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkImage" id="imgManutEnt12">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-media-record</property>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">3</property>
-                                    <property name="right_attach">4</property>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
-                                <child>
-                                  <placeholder/>
-                                </child>
+                                <property name="pixbuf">images/ihm-manut-hidr-ligar.png</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
-                          </object>
-                        </child>
-                        <child type="label">
-                          <object class="GtkLabel" id="label87">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Entradas</property>
-                            <property name="use_markup">True</property>
+                            <child>
+                              <object class="GtkLabel" id="label77">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Ligar hidr&#xE1;ulica</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </object>
                         </child>
                       </object>
                     </child>
                     <child>
-                      <object class="GtkFrame" id="frame4">
+                      <object class="GtkToggleButton" id="tglManutSai03">
                         <property name="visible">True</property>
-                        <property name="border_width">3</property>
-                        <property name="label_xalign">0</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
                         <child>
-                          <object class="GtkAlignment" id="alignment20">
+                          <object class="GtkVBox" id="vbox33">
                             <property name="visible">True</property>
-                            <property name="left_padding">12</property>
+                            <property name="orientation">vertical</property>
                             <child>
-                              <object class="GtkTable" id="table20">
+                              <object class="GtkImage" id="imgManutMesaTrava">
                                 <property name="visible">True</property>
-                                <property name="border_width">3</property>
-                                <property name="n_rows">12</property>
-                                <property name="n_columns">2</property>
-                                <property name="column_spacing">3</property>
-                                <property name="row_spacing">3</property>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai02">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai01">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai03">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai02">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai04">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai03">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai05">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai04">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai06">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai05">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai07">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai06">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">6</property>
-                                    <property name="bottom_attach">7</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai08">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai07">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">7</property>
-                                    <property name="bottom_attach">8</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label108">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Ligar hidr&#xE1;ulica</property>
-                                  </object>
-                                  <packing>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label109">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Avan&#xE7;a corte</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">1</property>
-                                    <property name="bottom_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label110">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Recua corte</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">2</property>
-                                    <property name="bottom_attach">3</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label111">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Trava da mesa</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label112">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Avan&#xE7;a piloto</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">4</property>
-                                    <property name="bottom_attach">5</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label113">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Recua piloto</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">5</property>
-                                    <property name="bottom_attach">6</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label114">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Freio do motor</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">6</property>
-                                    <property name="bottom_attach">7</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label115">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Desbobinador</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">7</property>
-                                    <property name="bottom_attach">8</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai01">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="yalign">0.40000000596046448</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai00">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label62">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Avan&#xE7;ar perfil</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">8</property>
-                                    <property name="bottom_attach">9</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label63">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Recuar perfil</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">9</property>
-                                    <property name="bottom_attach">10</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label64">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Posi&#xE7;&#xE3;o Bit 1</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">10</property>
-                                    <property name="bottom_attach">11</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkLabel" id="label65">
-                                    <property name="visible">True</property>
-                                    <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">Zerar encoder</property>
-                                  </object>
-                                  <packing>
-                                    <property name="top_attach">11</property>
-                                    <property name="bottom_attach">12</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai09">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="yalign">0.43000000715255737</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai08">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">8</property>
-                                    <property name="bottom_attach">9</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai10">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="yalign">0.43000000715255737</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai09">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">9</property>
-                                    <property name="bottom_attach">10</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai11">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="yalign">0.43000000715255737</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai10">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">10</property>
-                                    <property name="bottom_attach">11</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkToggleButton" id="tglManutSai12">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="receives_default">True</property>
-                                    <property name="yalign">0.43000000715255737</property>
-                                    <signal name="toggled" handler="cbManutAtualSaida"/>
-                                    <child>
-                                      <object class="GtkImage" id="imgManutSai11">
-                                        <property name="visible">True</property>
-                                        <property name="stock">gtk-media-record</property>
-                                      </object>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">11</property>
-                                    <property name="bottom_attach">12</property>
-                                    <property name="x_options">GTK_FILL</property>
-                                    <property name="y_options"></property>
-                                  </packing>
-                                </child>
+                                <property name="pixbuf">images/ihm-manut-mesa-trava.png</property>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
-                          </object>
-                        </child>
-                        <child type="label">
-                          <object class="GtkLabel" id="label88">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Sa&#xED;das</property>
-                            <property name="use_markup">True</property>
+                            <child>
+                              <object class="GtkLabel" id="label108">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Trava da mesa</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
                           </object>
                         </child>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="y_options">GTK_FILL</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai07">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox40">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutDesbob">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-desbob.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label151">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Desbobinador</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai11">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox41">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutEncoderZerar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-encoder-zerar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label156">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Zerar encoder</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai06">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox42">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutMotorFreio">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-motor-freio.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label157">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Freio do motor</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai10">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox43">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutPerfilPosic">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-perfil-posic.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label158">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Posicionar</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai05">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox35">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutPilotoRecuar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-piloto-recuar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label111">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Recua piloto</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai04">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox34">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutPilotoAvancar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-piloto-avancar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label88">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Avan&#xE7;a piloto</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai09">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox37">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutPerfilRecuar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-perfil-recuar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label147">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Recuar perfil</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai08">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox36">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutPerfilAvancar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-perfil-avancar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label137">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Avan&#xE7;ar perfil</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai02">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox39">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutCorteRecuar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-corte-recuar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label150">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Recua corte</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkToggleButton" id="tglManutSai01">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <child>
+                          <object class="GtkVBox" id="vbox38">
+                            <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <child>
+                              <object class="GtkImage" id="imgManutCorteAvancar">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-manut-corte-avancar.png</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label149">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">Avan&#xE7;a corte</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
                       </packing>
                     </child>
                   </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
                 </child>
                 <child type="tab">
                   <object class="GtkLabel" id="label93">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Entradas e Sa&#xED;das</property>
+                    <property name="label" translatable="yes">Sa&#xED;das</property>
                   </object>
                   <packing>
+                    <property name="position">1</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -2336,7 +2560,7 @@ Finalizado</property>
                     </child>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child type="tab">
@@ -2345,7 +2569,7 @@ Finalizado</property>
                     <property name="label" translatable="yes">Inversor</property>
                   </object>
                   <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -2454,16 +2678,16 @@ Finalizado</property>
                     </child>
                   </object>
                   <packing>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                   </packing>
                 </child>
                 <child type="tab">
-                  <object class="GtkLabel" id="label95">
+                  <object class="GtkLabel" id="label10">
                     <property name="visible">True</property>
                     <property name="label" translatable="yes">IHM</property>
                   </object>
                   <packing>
-                    <property name="position">2</property>
+                    <property name="position">3</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -2480,6 +2704,7 @@ Finalizado</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>
+                <signal name="clicked" handler="cbGoHome"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -2492,9 +2717,9 @@ Finalizado</property>
           </packing>
         </child>
         <child type="tab">
-          <object class="GtkLabel" id="label60">
+          <object class="GtkLabel" id="label138">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">Manuten&#xE7;&#xE3;o</property>
+            <property name="label" translatable="yes">Virtual Keyboard</property>
           </object>
           <packing>
             <property name="position">11</property>
@@ -3919,205 +4144,52 @@ Finalizado</property>
             <property name="visible">True</property>
             <property name="orientation">vertical</property>
             <child>
-              <object class="GtkNotebook" id="notebook1">
+              <object class="GtkVBox" id="vbox10">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
+                <property name="border_width">3</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">5</property>
                 <child>
-                  <object class="GtkVBox" id="vbox10">
+                  <object class="GtkFrame" id="frmPosic">
                     <property name="visible">True</property>
-                    <property name="border_width">3</property>
-                    <property name="orientation">vertical</property>
-                    <property name="spacing">5</property>
+                    <property name="label_xalign">0</property>
                     <child>
-                      <object class="GtkFrame" id="frmPosic">
+                      <object class="GtkAlignment" id="alignment7">
                         <property name="visible">True</property>
-                        <property name="label_xalign">0</property>
+                        <property name="top_padding">5</property>
+                        <property name="bottom_padding">5</property>
+                        <property name="left_padding">5</property>
+                        <property name="right_padding">5</property>
                         <child>
-                          <object class="GtkAlignment" id="alignment7">
+                          <object class="GtkVBox" id="vbox18">
                             <property name="visible">True</property>
+                            <property name="orientation">vertical</property>
+                            <property name="spacing">5</property>
                             <child>
-                              <object class="GtkVBox" id="vbox18">
+                              <object class="GtkHBox" id="hbox12">
                                 <property name="visible">True</property>
                                 <property name="border_width">3</property>
-                                <property name="orientation">vertical</property>
-                                <property name="spacing">10</property>
+                                <property name="spacing">3</property>
+                                <property name="homogeneous">True</property>
                                 <child>
-                                  <object class="GtkHBox" id="hbox10">
-                                    <property name="visible">True</property>
-                                    <property name="border_width">3</property>
-                                    <property name="spacing">3</property>
-                                    <child>
-                                      <object class="GtkLabel" id="lblPosic">
-                                        <property name="visible">True</property>
-                                        <property name="label" translatable="yes">Posi&#xE7;&#xE3;o da mesa (em mm):</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkEntry" id="entPosic">
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="invisible_char">&#x25CF;</property>
-                                      </object>
-                                      <packing>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkButton" id="btnMesaPosic">
+                                  <object class="GtkButton" id="btnMesaRecua">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <signal name="clicked" handler="cbPosicManual"/>
+                                    <signal name="pressed" handler="cbManualMesaRecua"/>
+                                    <signal name="released" handler="cbManualMesaParar"/>
                                     <child>
-                                      <object class="GtkAlignment" id="alignment8">
+                                      <object class="GtkImage" id="image3">
                                         <property name="visible">True</property>
-                                        <property name="xscale">0</property>
-                                        <property name="yscale">0</property>
-                                        <child>
-                                          <object class="GtkHBox" id="hbox11">
-                                            <property name="visible">True</property>
-                                            <property name="spacing">2</property>
-                                            <child>
-                                              <object class="GtkImage" id="image7">
-                                                <property name="visible">True</property>
-                                                <property name="stock">gtk-execute</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label10">
-                                                <property name="visible">True</property>
-                                                <property name="label" translatable="yes">Posicionar</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
-                                          </object>
-                                        </child>
+                                        <property name="pixbuf">images/ihm-operar-recuar.png</property>
                                       </object>
                                     </child>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
                                     <property name="fill">False</property>
-                                    <property name="position">1</property>
+                                    <property name="position">0</property>
                                   </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHSeparator" id="hseparator1">
-                                    <property name="visible">True</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="position">2</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkHBox" id="hbox12">
-                                    <property name="visible">True</property>
-                                    <property name="border_width">3</property>
-                                    <property name="spacing">3</property>
-                                    <property name="homogeneous">True</property>
-                                    <child>
-                                      <object class="GtkButton" id="btnMesaRecua">
-                                        <property name="label">gtk-go-back</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">True</property>
-                                        <property name="use_stock">True</property>
-                                        <signal name="pressed" handler="cbManualMesaRecua"/>
-                                        <signal name="released" handler="cbManualMesaParar"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">0</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkLabel" id="lblTxtMovLivre">
-                                        <property name="visible">True</property>
-                                        <property name="label" translatable="yes">Movimenta&#xE7;&#xE3;o livre</property>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">1</property>
-                                      </packing>
-                                    </child>
-                                    <child>
-                                      <object class="GtkButton" id="btnMesaAvanca">
-                                        <property name="label">gtk-go-forward</property>
-                                        <property name="visible">True</property>
-                                        <property name="can_focus">True</property>
-                                        <property name="receives_default">True</property>
-                                        <property name="use_stock">True</property>
-                                        <signal name="pressed" handler="cbManualMesaAvanca"/>
-                                        <signal name="released" handler="cbManualMesaParar"/>
-                                      </object>
-                                      <packing>
-                                        <property name="expand">False</property>
-                                        <property name="fill">False</property>
-                                        <property name="position">2</property>
-                                      </packing>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="position">3</property>
-                                  </packing>
-                                </child>
-                              </object>
-                            </child>
-                          </object>
-                        </child>
-                        <child type="label">
-                          <object class="GtkLabel" id="label75">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Posicionamento</property>
-                            <property name="use_markup">True</property>
-                          </object>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkFrame" id="frmMesaHidr">
-                        <property name="visible">True</property>
-                        <property name="label_xalign">0</property>
-                        <child>
-                          <object class="GtkAlignment" id="alignment15">
-                            <property name="visible">True</property>
-                            <property name="left_padding">12</property>
-                            <child>
-                              <object class="GtkHBox" id="hbox30">
-                                <property name="visible">True</property>
-                                <property name="border_width">3</property>
-                                <property name="spacing">3</property>
-                                <property name="homogeneous">True</property>
-                                <child>
-                                  <placeholder/>
                                 </child>
                                 <child>
                                   <object class="GtkButton" id="btnManualMesaCortar">
@@ -4131,32 +4203,9 @@ Finalizado</property>
                                         <property name="xscale">0</property>
                                         <property name="yscale">0</property>
                                         <child>
-                                          <object class="GtkHBox" id="hbox31">
+                                          <object class="GtkImage" id="image4">
                                             <property name="visible">True</property>
-                                            <property name="spacing">2</property>
-                                            <child>
-                                              <object class="GtkImage" id="image12">
-                                                <property name="visible">True</property>
-                                                <property name="stock">gtk-cut</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">0</property>
-                                              </packing>
-                                            </child>
-                                            <child>
-                                              <object class="GtkLabel" id="label76">
-                                                <property name="visible">True</property>
-                                                <property name="label" translatable="yes">Cortar</property>
-                                                <property name="use_underline">True</property>
-                                              </object>
-                                              <packing>
-                                                <property name="expand">False</property>
-                                                <property name="fill">False</property>
-                                                <property name="position">1</property>
-                                              </packing>
-                                            </child>
+                                            <property name="pixbuf">images/ihm-operar-cortar.png</property>
                                           </object>
                                         </child>
                                       </object>
@@ -4164,146 +4213,198 @@ Finalizado</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
+                                    <property name="fill">False</property>
                                     <property name="position">1</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <placeholder/>
+                                  <object class="GtkButton" id="btnMesaAvanca">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                    <signal name="pressed" handler="cbManualMesaAvanca"/>
+                                    <signal name="released" handler="cbManualMesaParar"/>
+                                    <child>
+                                      <object class="GtkImage" id="image5">
+                                        <property name="visible">True</property>
+                                        <property name="pixbuf">images/ihm-operar-avancar.png</property>
+                                      </object>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">2</property>
+                                  </packing>
                                 </child>
                               </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="hbox13">
+                                <property name="visible">True</property>
+                                <property name="spacing">5</property>
+                                <child>
+                                  <object class="GtkLabel" id="lblTxtEncMesa">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">Posi&#xE7;&#xE3;o atual do encoder:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="lblEncMesa">
+                                    <property name="visible">True</property>
+                                    <property name="label" translatable="yes">---</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">False</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="position">1</property>
+                              </packing>
                             </child>
                           </object>
                         </child>
-                        <child type="label">
-                          <object class="GtkLabel" id="label77">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Hidr&#xE1;ulica</property>
-                            <property name="use_markup">True</property>
-                          </object>
-                        </child>
                       </object>
-                      <packing>
-                        <property name="position">1</property>
-                      </packing>
                     </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox13">
+                    <child type="label">
+                      <object class="GtkLabel" id="label75">
                         <property name="visible">True</property>
-                        <property name="spacing">5</property>
-                        <child>
-                          <object class="GtkLabel" id="lblTxtEncMesa">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Posi&#xE7;&#xE3;o atual do encoder:</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="lblEncMesa">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">---</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
+                        <property name="label" translatable="yes">Movimenta&#xE7;&#xE3;o</property>
+                        <property name="use_markup">True</property>
                       </object>
-                      <packing>
-                        <property name="position">2</property>
-                      </packing>
                     </child>
-                  </object>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="label78">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Mesa</property>
                   </object>
                   <packing>
-                    <property name="tab_fill">False</property>
+                    <property name="expand">False</property>
+                    <property name="position">0</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkVBox" id="vbox27">
+                  <object class="GtkFrame" id="frmMesaHidr1">
                     <property name="visible">True</property>
-                    <property name="orientation">vertical</property>
+                    <property name="label_xalign">0</property>
                     <child>
-                      <object class="GtkHBox" id="hbox64">
+                      <object class="GtkAlignment" id="alignment2">
                         <property name="visible">True</property>
-                        <property name="border_width">3</property>
-                        <property name="spacing">3</property>
-                        <property name="homogeneous">True</property>
+                        <property name="bottom_padding">5</property>
+                        <property name="left_padding">12</property>
+                        <property name="right_padding">5</property>
                         <child>
-                          <object class="GtkButton" id="btnManualPerfRecua">
-                            <property name="label">gtk-go-back</property>
+                          <object class="GtkTable" id="table26">
                             <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="use_stock">True</property>
-                            <signal name="pressed" handler="cbManualPerfRecua"/>
-                            <signal name="released" handler="cbManualPerfParar"/>
+                            <property name="n_rows">3</property>
+                            <property name="n_columns">3</property>
+                            <property name="column_spacing">3</property>
+                            <property name="row_spacing">3</property>
+                            <child>
+                              <object class="GtkButton" id="btnOperarProduzir">
+                                <property name="label" translatable="yes">Produzir</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <signal name="clicked" handler="cbOperarProduzir"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label129">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">pe&#xE7;as</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label131">
+                                <property name="visible">True</property>
+                                <property name="label" translatable="yes">mm</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">2</property>
+                                <property name="right_attach">3</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="entOperarQtd">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="entOperarTam">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">&#x25CF;</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkImage" id="image1">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-prod-qtd.png</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkImage" id="image2">
+                                <property name="visible">True</property>
+                                <property name="pixbuf">images/ihm-prod-tam.png</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label89">
-                            <property name="visible">True</property>
-                            <property name="label" translatable="yes">Movimenta&#xE7;&#xE3;o livre</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="btnManualPerfAvanca">
-                            <property name="label">gtk-go-forward</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="use_stock">True</property>
-                            <signal name="pressed" handler="cbManualPerfAvanca"/>
-                            <signal name="released" handler="cbManualPerfParar"/>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">False</property>
-                            <property name="position">2</property>
-                          </packing>
                         </child>
                       </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="position">0</property>
-                      </packing>
                     </child>
-                    <child>
-                      <placeholder/>
+                    <child type="label">
+                      <object class="GtkLabel" id="label79">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Produ&#xE7;&#xE3;o</property>
+                        <property name="use_markup">True</property>
+                      </object>
                     </child>
                   </object>
                   <packing>
                     <property name="position">1</property>
-                    <property name="tab_fill">False</property>
-                  </packing>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="label79">
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">Perfil</property>
-                  </object>
-                  <packing>
-                    <property name="position">1</property>
-                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
               </object>
@@ -4600,7 +4701,7 @@ Finalizado</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="image">imgQuitCancel</property>
-                    <signal name="clicked" handler="cbQuitCancel"/>
+                    <signal name="clicked" handler="cbGoHome"/>
                   </object>
                   <packing>
                     <property name="position">1</property>
@@ -7114,9 +7215,9 @@ Finalizado</property>
           </packing>
         </child>
         <child type="tab">
-          <object class="GtkLabel" id="label138">
+          <object class="GtkLabel" id="label60">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">Virtual Keyboard</property>
+            <property name="label" translatable="yes">Manuten&#xE7;&#xE3;o</property>
           </object>
           <packing>
             <property name="position">11</property>
@@ -7124,18 +7225,78 @@ Finalizado</property>
           </packing>
         </child>
         <child>
-          <object class="GtkLabel" id="label74">
+          <object class="GtkVBox" id="vbox44">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">label</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="GtkImage" id="image6">
+                <property name="visible">True</property>
+                <property name="pixbuf">images/ihm-messagebox-erro.png</property>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lblMessageBox">
+                <property name="visible">True</property>
+                <attributes>
+                  <attribute name="weight" value="bold"/>
+                  <attribute name="size" value="20000"/>
+                </attributes>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHBox" id="hbox30">
+                <property name="visible">True</property>
+                <property name="homogeneous">True</property>
+                <child>
+                  <object class="GtkLabel" id="label76">
+                    <property name="visible">True</property>
+                  </object>
+                  <packing>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="button38">
+                    <property name="label">gtk-ok</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="use_stock">True</property>
+                    <signal name="clicked" handler="cbMessageBoxOk"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="label78">
+                    <property name="visible">True</property>
+                  </object>
+                  <packing>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="position">12</property>
           </packing>
         </child>
         <child type="tab">
-          <object class="GtkLabel" id="label9">
+          <object class="GtkLabel" id="teclabel9">
             <property name="visible">True</property>
-            <property name="label" translatable="yes">page 12</property>
+            <property name="label" translatable="yes">MessageBox</property>
           </object>
           <packing>
             <property name="position">13</property>
@@ -7155,6 +7316,25 @@ Finalizado</property>
           <object class="GtkLabel" id="label56">
             <property name="visible">True</property>
             <property name="label" translatable="yes">page 13</property>
+          </object>
+          <packing>
+            <property name="position">13</property>
+            <property name="tab_fill">False</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label74">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">label</property>
+          </object>
+          <packing>
+            <property name="position">14</property>
+          </packing>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="label9">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">page14</property>
           </object>
           <packing>
             <property name="position">13</property>
@@ -7294,5 +7474,94 @@ Finalizado</property>
   <object class="GtkImage" id="imgQuitCancel">
     <property name="visible">True</property>
     <property name="stock">gtk-cancel</property>
+  </object>
+  <object class="GtkWindow" id="wndInitError">
+    <signal name="destroy" handler="gtk_main_quit"/>
+    <child>
+      <object class="GtkVBox" id="vbox45">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="homogeneous">True</property>
+        <child>
+          <object class="GtkLabel" id="lblInitMessage">
+            <property name="visible">True</property>
+            <property name="label" translatable="yes">Ocorreu um erro grave durante a inicializa&#xE7;&#xE3;o do programa.
+Favor entrar em contato com o respons&#xE1;vel.
+Ao clicar em OK o programa ser&#xE1; finalizado!</property>
+            <property name="justify">center</property>
+          </object>
+          <packing>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox44">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkLabel" id="label104">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Favor informar este c&#xF3;digo de erro:</property>
+                <property name="justify">right</property>
+                <property name="angle">0.040000000000000001</property>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lblInitErrorCode">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkHBox" id="hbox45">
+            <property name="visible">True</property>
+            <property name="homogeneous">True</property>
+            <child>
+              <object class="GtkLabel" id="label105">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="button39">
+                <property name="label">gtk-ok</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_stock">True</property>
+                <signal name="clicked" handler="gtk_main_quit"/>
+              </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="label106">
+                <property name="visible">True</property>
+              </object>
+              <packing>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
   </object>
 </interface>

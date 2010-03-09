@@ -61,8 +61,13 @@ struct strMaqParam
 
 /*** Fim das estruturas de informacoes da maquina ***/
 
-uint16_t MaqLerModo   (void);
-uint16_t MaqLerProdQtd(void);
+uint16_t MaqLerStatus (void);
+char    *MaqStrErro(uint16_t status);
+
+uint16_t MaqLerModo    (void);
+uint16_t MaqLerProdQtd (void);
+uint32_t MaqLerEntradas(void);
+uint32_t MaqLerSaidas  (void);
 
 void                      MaqConfigModo   (uint16_t  modo);
 void                      MaqConfigProdQtd(uint16_t quant);

@@ -13,8 +13,6 @@ extern void AbrirConfig(unsigned int pos);
 struct MB_Device mbdev;
 struct strDB     mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
-int CurrentWorkArea  = 0; // Variavel que armazena a tela atual.
-int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
 pthread_mutex_t mutex_ipcmq_rd = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_ipcmq_wr = PTHREAD_MUTEX_INITIALIZER;
@@ -27,7 +25,7 @@ void Log(char *evento, int tipo)
   if(mainDB.res != NULL) // Banco conectado
     {
     sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", idUser, tipo, evento);
-    DB_Execute(&mainDB, 0, sql);
+    DB_Execute(&mainDB, 3, sql);
     }
 }
 
@@ -175,7 +173,7 @@ int IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg)
 // Timers
 gboolean tmrAD(gpointer data)
 {
-  if(CurrentWorkArea == NTB_ABA_HOME) {
+  if(WorkAreaGet() == NTB_ABA_HOME) {
     comm_put(&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
   }
 
@@ -230,7 +228,7 @@ void IPC_Update(void)
     case IPCMQ_FNC_MODBUS:
       switch(rcv.data.modbus_reply.FunctionCode) {
       case MB_FC_READ_DEVICE_IDENTIFICATION:
-        printf("Identificador %d: %s\n", rcv.data.modbus_reply.reply.read_device_identification.object_id, &rcv.data.modbus_reply.reply.read_device_identification.val);
+        printf("Identificador %d: %s\n", rcv.data.modbus_reply.reply.read_device_identification.object_id, rcv.data.modbus_reply.reply.read_device_identification.data);
         break;
       default:
         printf("Funcao desconhecida do modbus: %d\n", rcv.data.modbus_reply.FunctionCode);
@@ -251,23 +249,69 @@ gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
   char tmp[40];
+  uint32_t val, i;
+  GtkWidget *wdg;
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
+  static GdkPixbuf *pb_on = NULL, *pb_off = NULL;
+  static int ciclos = 0, current_status = 0, last_status = 0;
 
-  if(lbl == NULL)
-    lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
+  if(pb_on == NULL) { // Inicializa pixbufs
+    pb_on  = gdk_pixbuf_new_from_file("images/ihm-status-on.png" , NULL);
+    pb_off = gdk_pixbuf_new_from_file("images/ihm-status-off.png", NULL);
+  }
 
-  now = time(NULL);
-  timeptr = localtime(&now);
+  if(ciclos++ == 4) {
+    ciclos = 0;
 
-  sprintf(tmp, "%02d/%02d/%d, %.2d:%.2d",
-      timeptr->tm_mday,
-      timeptr->tm_mon + 1,
-      1900 + timeptr->tm_year,
-      timeptr->tm_hour,
-      timeptr->tm_min);
-  if(strcmp(tmp, gtk_label_get_text(lbl)))
-    gtk_label_set_label(lbl, tmp);
+    // Leitura do estado dos CLPs, exibindo mensagem de erro caso houver
+    current_status = MaqLerStatus();
+    if(last_status != current_status && current_status) { // houve mudanca e com erro
+      gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), MaqStrErro(current_status));
+      WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
+    }
+    last_status = current_status;
+
+    // Atualiza a hora da tela inicial
+    if(lbl == NULL)
+      lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
+
+    now = time(NULL);
+    timeptr = localtime(&now);
+
+    sprintf(tmp, "%02d/%02d/%d, %.2d:%.2d",
+        timeptr->tm_mday,
+        timeptr->tm_mon + 1,
+        1900 + timeptr->tm_year,
+        timeptr->tm_hour,
+        timeptr->tm_min);
+    if(strcmp(tmp, gtk_label_get_text(lbl)))
+      gtk_label_set_label(lbl, tmp);
+  } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+    if(WorkAreaGet() == NTB_ABA_MANUT) {
+      val = MaqLerSaidas();
+      for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as saidas
+        sprintf(tmp, "tglManutSai%02d", i);
+        wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+        if(wdg == NULL) // Acabaram as saidas
+          break; // Sai do loop
+
+        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), (val>>i)&1);
+      }
+    }
+  } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+    if(WorkAreaGet() == NTB_ABA_MANUT) {
+      val = MaqLerEntradas();
+      for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
+        sprintf(tmp, "imgStatusEnt%02d", i);
+        wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+        if(wdg == NULL) // Acabaram as saidas
+          break; // Sai do loop
+
+        gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
+      }
+    }
+  }
 
   IPC_Update();
 
@@ -281,7 +325,7 @@ void ReadID(void *dt, void *res)
 {
   union uniIPCMQ_Data *data = (union uniIPCMQ_Data *)dt;
 
-  printf("recebido: %s\n", &data->modbus_reply.reply.read_device_identification.val);
+  printf("recebido: %s\n", data->modbus_reply.reply.read_device_identification.data);
 }
 
 /****************************************************************************
@@ -293,7 +337,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
 {
   uint32_t idx;
   const gchar *nome = gtk_widget_get_name(GTK_WIDGET(button));
-  GtkWidget *ntb = GTK_WIDGET(gtk_builder_get_object(builder, "ntbWorkArea"));
   struct strIPCMQ_Message ipc_msg;
 
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
@@ -305,7 +348,7 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   IPCMQ_Main_Enviar(&ipc_msg);
 
   idx = nome[strlen(nome)-1]-'0';
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), idx);
+  WorkAreaGoTo(idx);
 
   switch(idx) {
   case NTB_ABA_CONFIG:
@@ -318,13 +361,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
     AbrirLog();
     break;
   }
-}
-
-// Volta para a aba Home se cancelar desligamento
-void cbQuitCancel(GtkButton *button, gpointer user_data)
-{
-  GtkWidget *ntb = GTK_WIDGET(gtk_builder_get_object(builder, "ntbWorkArea"));
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(ntb), 0);
 }
 
 void cbLogoff(GtkButton *button, gpointer user_data)
@@ -392,7 +428,7 @@ void * ihm_update(void *args)
       comm_get(&msg);
       switch(msg.fnc) {
       case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
-        if(CurrentWorkArea == NTB_ABA_HOME) {
+        if(WorkAreaGet() == NTB_ABA_HOME) {
           gdk_threads_enter();
           if(msg.data.ad.vin != ad_vin) {
             ad_vin = msg.data.ad.vin;
@@ -461,8 +497,7 @@ void * ihm_update(void *args)
   return NULL;
 }
 
-//Inicia a aplicacao
-int main(int argc, char *argv[])
+uint32_t IHM_Init(int argc, char *argv[])
 {
   int32_t opts;
   pthread_t tid;
@@ -470,6 +505,38 @@ int main(int argc, char *argv[])
   GtkComboBox *cmb;
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
   char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
+
+  /* init threads */
+  g_thread_init (NULL);
+  gdk_threads_init ();
+
+  gdk_threads_enter();
+
+  gtk_init( &argc, &argv );
+
+  //Carrega a interface a partir do arquivo glade
+  builder = gtk_builder_new();
+  gtk_builder_add_from_file(builder, "IHM.glade", NULL);
+  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
+  cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
+
+  //Conecta Sinais aos Callbacks
+  gtk_builder_connect_signals(builder, NULL);
+
+//  g_object_unref (G_OBJECT (builder));
+
+  // Configura TreeView da tela de Tarefas
+  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), campos_tarefa,
+    GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_tarefa)/sizeof(campos_tarefa[0]))-1,
+        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+
+  // Configura TreeView da tela de Logs
+  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")), campos_log,
+      GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
+          G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+
+  // Configura o ComboBoxEntry para usar o modo de texto. Pelo Glade nao funciona!
+  gtk_combo_box_entry_set_text_column(GTK_COMBO_BOX_ENTRY(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0);
 
 #ifdef DEBUG_PC
   ps = SerialInit("/dev/ttyUSB0");
@@ -532,45 +599,13 @@ int main(int argc, char *argv[])
     // Configura socket para o modo non-blocking e retorna zero no erro.
     opts = fcntl(tcp_socket,F_GETFL);
     if (opts < 0)
-      return 0;
+      return 2;
     if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0)
-      return 0;
+      return 2;
   } else {
-    return 0;
+    return 2;
   }
 #endif
-
-  /* init threads */
-  g_thread_init (NULL);
-  gdk_threads_init ();
-
-  gdk_threads_enter();
-
-  gtk_init( &argc, &argv );
-
-  //Carrega a interface a partir do arquivo glade
-  builder = gtk_builder_new();
-  gtk_builder_add_from_file(builder, "IHM.glade", NULL);
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
-  cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
-
-  //Conecta Sinais aos Callbacks
-  gtk_builder_connect_signals(builder, NULL);
-
-//  g_object_unref (G_OBJECT (builder));
-
-  // Configura TreeView da tela de Tarefas
-  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), campos_tarefa,
-    GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_tarefa)/sizeof(campos_tarefa[0]))-1,
-        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
-  // Configura TreeView da tela de Logs
-  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")), campos_log,
-      GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
-          G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
-  // Configura o ComboBoxEntry para usar o modo de texto. Pelo Glade nao funciona!
-  gtk_combo_box_entry_set_text_column(GTK_COMBO_BOX_ENTRY(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0);
 
   gtk_widget_show_all(wnd);
 
@@ -610,4 +645,26 @@ int main(int argc, char *argv[])
   MaqGravarConfig();
 
   return 0;
+}
+
+//Inicia a aplicacao
+int main(int argc, char *argv[])
+{
+  char tmp[10];
+  GtkWidget *wdg;
+  uint32_t ret;
+
+  // Se ocorrer erro abrindo o programa, cria janela para avisar o usuario.
+  if((ret = IHM_Init(argc, argv)) != 0) {
+    printf("terminou com erro %d\n", ret);
+    sprintf(tmp, "%02d", ret);
+
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblInitErrorCode")), tmp);
+    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "wndInitError"));
+    gtk_widget_show_all(wdg);
+
+    gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
+  }
+
+  return ret;
 }

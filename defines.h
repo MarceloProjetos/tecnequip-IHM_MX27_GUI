@@ -22,6 +22,7 @@
 
 /*** Definições gerais ***/
 
+// Ativar a linha abaixo para rodar o programa em um PC
 //#define DEBUG_PC
 
 // Senha master do sistema usada quando não há conexão com o BD
@@ -69,6 +70,7 @@
 
 // Numeracao das abas que contem a tela (ntbWorkArea)
 #define NTB_ABA_HOME        0
+#define NTB_ABA_MANUT       1
 #define NTB_ABA_CONFIG      2
 #define NTB_ABA_OPERAR      3
 #define NTB_ABA_LOGS        5
@@ -77,8 +79,12 @@
 #define NTB_ABA_DATA        9
 #define NTB_ABA_EXECUTAR   10
 #define NTB_ABA_VIRTUAL_KB 11
+#define NTB_ABA_MESSAGEBOX 12
 
 /*** Fim das definições gerais ***/
+
+int  WorkAreaGet (void);
+void WorkAreaGoTo(int NewWorkArea);
 
 /*** Definições para Comunicação entre Threads ***/
 

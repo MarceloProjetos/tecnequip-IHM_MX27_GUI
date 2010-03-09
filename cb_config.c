@@ -16,8 +16,8 @@ extern struct MB_Device mbdev;
 /*** Funcoes e variáveis de suporte ***/
 
 int idUser=0; // Indica usuário que logou se for diferente de zero.
-extern int CurrentWorkArea;  // Variavel que armazena a tela atual.
-extern int PreviousWorkArea; // Variavel que armazena a tela anterior.
+int CurrentWorkArea  = 0;  // Variavel que armazena a tela atual.
+int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
@@ -1652,8 +1652,7 @@ void AbrirConfig(unsigned int pos)
       return;
       }
 
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "ntbWorkArea"));
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(wnd), NTB_ABA_CONFIG);
+  WorkAreaGoTo(NTB_ABA_CONFIG);
 
 // Se pos != 0, foi chamada a janela forçadamente e portanto esta ação não pode ser cancelada!
   if(pos) {
@@ -1674,12 +1673,12 @@ void cbConfigOk(GtkButton *button, gpointer user_data)
   Log("Alterada configuração da máquina", LOG_TIPO_CONFIG);
 
   GravarDadosConfig();
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+  WorkAreaGoTo(NTB_ABA_HOME);
 }
 
 void cbConfigVoltar(GtkButton *button, gpointer user_data)
 {
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+  WorkAreaGoTo(NTB_ABA_HOME);
 }
 
 void cbLoginOk(GtkButton *button, gpointer user_data)
@@ -1735,7 +1734,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
         AbrirJanelaModal(wnd);
         gtk_grab_add(wnd);
-        gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), 0);
+        WorkAreaGoTo(NTB_ABA_HOME);
 
 // Funcao para captura de mensagens do processo do Corte Voador
 //        g_timeout_add(200,(GtkFunction)sync_cv, (gpointer *)(wnd));
@@ -1819,14 +1818,40 @@ void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint ar
   CurrentWorkArea  = arg1;
 }
 
+void WorkAreaGoTo(int NewWorkArea)
+{
+  // Caso estiver na aba de MessageBox, nao permite mudanca.
+  // Marca a anterior como a nova e, ao sair do message box, esta nova sera selecionada.
+  if(CurrentWorkArea != NTB_ABA_MESSAGEBOX)
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NewWorkArea);
+  else if(NewWorkArea != NTB_ABA_MESSAGEBOX)
+    PreviousWorkArea = NewWorkArea;
+}
+
 void WorkAreaGoPrevious()
 {
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), PreviousWorkArea);
+  WorkAreaGoTo(PreviousWorkArea);
+}
+
+int WorkAreaGet()
+{
+  return CurrentWorkArea;
+}
+
+void cbMessageBoxOk(GtkButton *button, gpointer user_data)
+{
+  CurrentWorkArea = NTB_ABA_HOME;
+  WorkAreaGoPrevious();
+}
+
+void cbGoPrevious(GtkButton *button, gpointer user_data)
+{
+  WorkAreaGoPrevious();
 }
 
 void cbGoHome(GtkButton *button, gpointer user_data)
 {
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_HOME);
+  WorkAreaGoTo(NTB_ABA_HOME);
 }
 
 void SairVirtualKeyboard()
@@ -1943,7 +1968,7 @@ void AbrirVirtualKeyboard(GtkWidget *widget)
   gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard"))), data, -1);
 
 // Exibe a janela.
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_VIRTUAL_KB);
+  WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
 }
 
 gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
@@ -2073,7 +2098,7 @@ void AbrirData(GtkEntry *entry, GCallback cb)
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataMinuto")), tmp);
 
 // Exibe a janela.
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NTB_ABA_DATA);
+  WorkAreaGoTo(NTB_ABA_DATA);
 }
 
 #endif
