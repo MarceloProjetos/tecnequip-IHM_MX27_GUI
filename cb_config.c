@@ -1973,7 +1973,7 @@ void AbrirVirtualKeyboard(GtkWidget *widget)
 
 gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 {
-  if(event->keyval == GDK_F1) {
+  if(event->keyval == GDK_F2) {
     AbrirVirtualKeyboard(gtk_window_get_focus(GTK_WINDOW(widget)));
     return TRUE;
   }

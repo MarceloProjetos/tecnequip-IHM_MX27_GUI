@@ -8,6 +8,10 @@
 #define MAQ_MODO_MANUAL 0x0000
 #define MAQ_MODO_AUTO   0x8000
 
+// Mascara para desligar os bits que nao pertencem ao modo ou status
+#define MAQ_MASK_MODO   0xF000
+#define MAQ_MASK_STATUS 0x0FFF
+
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01
 #define MAQ_SYNC_ENCODER 0x02

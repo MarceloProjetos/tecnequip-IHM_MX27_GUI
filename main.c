@@ -538,6 +538,14 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Configura o ComboBoxEntry para usar o modo de texto. Pelo Glade nao funciona!
   gtk_combo_box_entry_set_text_column(GTK_COMBO_BOX_ENTRY(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0);
 
+  // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
+  fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
+  fd_wr = msgget(IPC_PRIVATE, IPC_CREAT);
+  if(fd_wr < 0) {
+    printf("erro criando fila fd_wr (%d): %s\n", errno, strerror(errno));
+    return 4;
+  }
+
 #ifdef DEBUG_PC
   ps = SerialInit("/dev/ttyUSB0");
 #else
@@ -548,15 +556,6 @@ uint32_t IHM_Init(int argc, char *argv[])
     printf("Erro abrindo porta serial!\n");
     return 1;
   }
-
-  if(!MaqLerConfig())
-    printf("Erro carregando configuracao\n");
-
-  // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
-  fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
-  fd_wr = msgget(IPC_PRIVATE, IPC_CREAT);
-  if(fd_wr < 0)
-    printf("erro criando fila fd_wr (%d): %s\n", errno, strerror(errno));
 
   SerialConfig(ps, 115200, 8, 1, SerialParidadeNenhum, 0);
 
@@ -574,29 +573,10 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.mode              = MB_MODE_MASTER;
   mbdev.TX                = IHM_MB_TX;
 
-  // Limpa a estrutura do banco, zerando ponteiros, etc...
-  DB_Clear(&mainDB);
-
-#ifndef DEBUG_PC
-  // Carrega configuracoes do arquivo de configuracao e conecta ao banco
-  if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
-    {
-    mainDB.server  = "192.168.0.2";
-    mainDB.user    = "root";
-    mainDB.passwd  = "y1cGH3WK20";
-    mainDB.nome_db = "cv";
-    }
-#else
-  mainDB.server  = "192.168.0.2";
-  mainDB.user    = "root";
-  mainDB.passwd  = "y1cGH3WK20";
-  mainDB.nome_db = "cv";
-#endif
-
 #ifndef DEBUG_PC
   tcp_socket = ihm_connect("192.168.0.235", 502);
   if(tcp_socket >= 0) {
-    // Configura socket para o modo non-blocking e retorna zero no erro.
+    // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
     if (opts < 0)
       return 2;
@@ -606,6 +586,25 @@ uint32_t IHM_Init(int argc, char *argv[])
     return 2;
   }
 #endif
+
+  if(!MaqLerConfig()) {
+    printf("Erro carregando configuracao\n");
+    return 3;
+  }
+
+  // Limpa a estrutura do banco, zerando ponteiros, etc...
+  DB_Clear(&mainDB);
+
+#ifndef DEBUG_PC
+  // Carrega configuracoes do arquivo de configuracao e conecta ao banco
+  if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
+#endif
+    {
+    mainDB.server  = "192.168.0.2";
+    mainDB.user    = "root";
+    mainDB.passwd  = "y1cGH3WK20";
+    mainDB.nome_db = "cv";
+    }
 
   gtk_widget_show_all(wnd);
 
@@ -626,6 +625,9 @@ uint32_t IHM_Init(int argc, char *argv[])
     CarregaItemCombo(cmb, "Master");
     gtk_combo_box_set_active(cmb, 0);
   }
+
+  // Configura a máquina para modo manual.
+  MaqConfigModo(MAQ_MODO_MANUAL);
 
   gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
 

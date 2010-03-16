@@ -205,7 +205,7 @@ uint16_t MaqLerModo(void)
   modo = ((uint16_t)(buf[0]) << 8) | buf[1];
 
   printf("Modo lido: %04x\n", modo);
-  return modo;
+  return modo & MAQ_MASK_MODO;
 }
 
 char *MaqStrErro(uint16_t status)
@@ -218,6 +218,8 @@ char *MaqStrErro(uint16_t status)
       "Erro na unidade hidráulica",
       "Erro no inversor",
       "Erro no desbobinador",
+      "Erro de comunicação - Inversor",
+      "Erro de configuração",
 //      "Baixa pressão de ar",
   };
 
@@ -239,7 +241,7 @@ void retMaqLerStatus(void *dt, void *res)
   union uniIPCMQ_Data *data   = (union uniIPCMQ_Data *)dt;
   unsigned char       *buf    = data->modbus_reply.reply.read_holding_registers.data;
 
-  *status = (((uint16_t)(buf[0]) << 8) | buf[1]) & 0x0FFF; // ignorando 4 bits de modo
+  *status = (((uint16_t)(buf[0]) << 8) | buf[1]) & MAQ_MASK_STATUS; // ignorando 4 bits de modo
 }
 
 uint16_t MaqLerStatus(void)
