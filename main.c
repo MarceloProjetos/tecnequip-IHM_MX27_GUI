@@ -248,7 +248,7 @@ void IPC_Update(void)
 gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
-  char tmp[40];
+  char tmp[40], *msg_error;
   uint32_t val, i;
   GtkWidget *wdg;
   struct tm *timeptr;
@@ -267,7 +267,9 @@ gboolean tmrGtkUpdate(gpointer data)
     // Leitura do estado dos CLPs, exibindo mensagem de erro caso houver
     current_status = MaqLerStatus();
     if(last_status != current_status && current_status) { // houve mudanca e com erro
-      gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), MaqStrErro(current_status));
+      msg_error = MaqStrErro(current_status);
+      Log(msg_error, LOG_TIPO_ERRO);
+      gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
       WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
     }
     last_status = current_status;
@@ -499,6 +501,7 @@ void * ihm_update(void *args)
 
 uint32_t IHM_Init(int argc, char *argv[])
 {
+  uint32_t ret = 0;
   int32_t opts;
   pthread_t tid;
   GtkWidget *wnd;
@@ -540,10 +543,17 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
   fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
+  if(fd_rd < 0) {
+    printf("erro criando fila fd_rd (%d): %s\n", errno, strerror(errno));
+    ret = 1;
+    goto fim_fila_rd;
+  }
+
   fd_wr = msgget(IPC_PRIVATE, IPC_CREAT);
   if(fd_wr < 0) {
     printf("erro criando fila fd_wr (%d): %s\n", errno, strerror(errno));
-    return 4;
+    ret = 2;
+    goto fim_fila_wr;
   }
 
 #ifdef DEBUG_PC
@@ -554,7 +564,8 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   if(ps == NULL) {
     printf("Erro abrindo porta serial!\n");
-    return 1;
+    ret = 3;
+    goto fim_serial;
   }
 
   SerialConfig(ps, 115200, 8, 1, SerialParidadeNenhum, 0);
@@ -578,18 +589,24 @@ uint32_t IHM_Init(int argc, char *argv[])
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
-    if (opts < 0)
-      return 2;
-    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0)
-      return 2;
+    if (opts < 0) {
+      ret = 4;
+      goto fim_opt;
+    }
+    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0) {
+      ret = 5;
+      goto fim_opt;
+    }
   } else {
-    return 2;
+    ret = 6;
+    goto fim_tcp;
   }
 #endif
 
   if(!MaqLerConfig()) {
     printf("Erro carregando configuracao\n");
-    return 3;
+    ret = 7;
+    goto fim_config;
   }
 
   // Limpa a estrutura do banco, zerando ponteiros, etc...
@@ -631,22 +648,31 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
 
-  SerialClose(ps);
   DB_Close(&mainDB);
 
-  pthread_mutex_destroy(&mutex_ipcmq_rd);
-  pthread_mutex_destroy(&mutex_ipcmq_wr);
+// A partir deste ponto iniciam os desligamentos. Em caso de erro na inicializacao, o programa
+// salta para o label correspondente a etapa que falhou para desfazer o que ja havia sido feito
 
-  gdk_threads_leave();
-
-  msgctl(fd_rd, IPC_RMID, NULL);
-  msgctl(fd_wr, IPC_RMID, NULL);
-
-  close(tcp_socket);
-
+fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
 
-  return 0;
+fim_opt: // Encerrando por erro na configuracao da conexao TCP
+  close(tcp_socket);
+
+fim_tcp: // Encerrando por falha ao tentar estabelecer a conexao TCP
+  SerialClose(ps);
+
+fim_serial: // Encerrando por erro ao abrir a porta serial
+  msgctl(fd_wr, IPC_RMID, NULL);
+
+fim_fila_wr: // Encerrando por falha ao criar fila de mensagens para escrita
+  msgctl(fd_rd, IPC_RMID, NULL);
+
+fim_fila_rd: // Encerrando por falha ao criar fila de mensagens para leitura
+  pthread_mutex_destroy(&mutex_ipcmq_wr);
+  pthread_mutex_destroy(&mutex_ipcmq_rd);
+
+  return ret;
 }
 
 //Inicia a aplicacao

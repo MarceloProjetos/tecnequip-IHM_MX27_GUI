@@ -29,44 +29,62 @@ int MaqSync(unsigned int mask)
       rel_motor_perfil = (unsigned long)((maq_param.perfil.fator * 1000000) / ((float)(3.14159 * maq_param.perfil.diam_rolo)));
     }
 
-    printf("rel_motor_perfil...........: %ld\n", rel_motor_perfil);
-    printf("maq_param.perfil.fator.....: %f\n" , maq_param.perfil.fator);
-    printf("maq_param.perfil.diam_rolo.: %d\n" , maq_param.perfil.diam_rolo);
-    printf("maq_param.perfil.vel_max...: %d\n" , maq_param.perfil.vel_max);
-    printf("maq_param.perfil.vel_manual: %d\n" , maq_param.perfil.vel_manual);
-    printf("maq_param.perfil.acel......: %f\n" , maq_param.perfil.acel);
-    printf("maq_param.perfil.desacel...: %f\n" , maq_param.perfil.desacel);
+    printf("rel_motor_perfil...............: %ld\n", rel_motor_perfil);
+    printf("maq_param.perfil.fator.........: %f\n" , maq_param.perfil.fator);
+    printf("maq_param.perfil.diam_rolo.....: %d\n" , maq_param.perfil.diam_rolo);
+    printf("maq_param.perfil.auto_vel......: %d\n" , maq_param.perfil.auto_vel);
+    printf("maq_param.perfil.auto_acel.....: %f\n" , maq_param.perfil.auto_acel);
+    printf("maq_param.perfil.auto_desacel..: %f\n" , maq_param.perfil.auto_desacel);
+    printf("maq_param.perfil.manual_vel....: %d\n" , maq_param.perfil.manual_vel);
+    printf("maq_param.perfil.manual_acel...: %f\n" , maq_param.perfil.manual_acel);
+    printf("maq_param.perfil.manual_desacel: %f\n" , maq_param.perfil.manual_desacel);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
     ipc_msg.fnc   = NULL;
     ipc_msg.res   = NULL;
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_ACEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.acel*100);
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_VEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.auto_vel;
     IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
     ipc_msg.fnc   = NULL;
     ipc_msg.res   = NULL;
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_DESACEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.desacel*100);
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_ACEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.auto_acel*100);
     IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
     ipc_msg.fnc   = NULL;
     ipc_msg.res   = NULL;
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_VEL_MAX;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.vel_max;
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_DESACEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.auto_desacel*100);
     IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
     ipc_msg.fnc   = NULL;
     ipc_msg.res   = NULL;
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_VEL_MANUAL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.vel_manual;
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_MAN_VEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.manual_vel;
+    IPCMQ_Main_Enviar(&ipc_msg);
+
+    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+    ipc_msg.fnc   = NULL;
+    ipc_msg.res   = NULL;
+    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_MAN_ACEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.manual_acel*100);
+    IPCMQ_Main_Enviar(&ipc_msg);
+
+    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+    ipc_msg.fnc   = NULL;
+    ipc_msg.res   = NULL;
+    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_MAN_DESACEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.manual_desacel*100);
     IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
@@ -303,7 +321,7 @@ uint32_t MaqLerEntradas(void)
 //    return 0;
 //  }
 
-  printf("input: %d\n", val);
+  printf("input: %05x\n", val);
   return val;
 }
 
@@ -339,7 +357,7 @@ uint32_t MaqLerSaidas(void)
 //    return 0;
 //  }
 
-  printf("output: %d\n", val);
+  printf("output: %04x\n", val);
   return val;
 }
 

@@ -810,10 +810,12 @@ char *lista_ent[] = {
     "entEncoderPerim",
     "entEncoderFator",
     "entEncoderResol",
-    "spbConfigPerfAcel",
-    "spbConfigPerfDesacel",
-    "spbConfigPerfVelMax",
-    "spbConfigPerfVelManual",
+    "spbConfigPerfVelMaxAuto",
+    "spbConfigPerfAcelAuto",
+    "spbConfigPerfDesacelAuto",
+    "spbConfigPerfVelMaxManual",
+    "spbConfigPerfAcelManual",
+    "spbConfigPerfDesacelManual",
     "entCorteFaca",
     "spbConfigPerfReducao",
     "spbConfigPerfDiamRolo",
@@ -833,12 +835,14 @@ int GravarDadosConfig()
   for(i=0; lista_ent[i][0]; i++)
     printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
 
-  mp.perfil.vel_max    = atol(valor_ent[5]);
-  mp.perfil.vel_manual = atol(valor_ent[6]);
-  mp.perfil.acel       = atof(valor_ent[3]);
-  mp.perfil.desacel    = atof(valor_ent[4]);
-  mp.perfil.fator      = atof(valor_ent[8]);
-  mp.perfil.diam_rolo  = atol(valor_ent[9]);
+  mp.perfil.auto_vel       = atol(valor_ent[ 3]);
+  mp.perfil.auto_acel      = atof(valor_ent[ 4]);
+  mp.perfil.auto_desacel   = atof(valor_ent[ 5]);
+  mp.perfil.manual_vel     = atol(valor_ent[ 6]);
+  mp.perfil.manual_acel    = atof(valor_ent[ 7]);
+  mp.perfil.manual_desacel = atof(valor_ent[ 8]);
+  mp.perfil.fator          = atof(valor_ent[10]);
+  mp.perfil.diam_rolo      = atol(valor_ent[11]);
   MaqConfigPerfil(mp.perfil);
 
   mp.encoder.fator     = atof(valor_ent[1]);
@@ -846,60 +850,9 @@ int GravarDadosConfig()
   mp.encoder.perimetro = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.corte.tam_faca    = atol(valor_ent[7]);
+  mp.corte.tam_faca    = atol(valor_ent[9]);
   MaqConfigCorte(mp.corte);
 
-/*
-  MQ.MQ_Data.ndata      = 2;
-  MQ.MQ_Data.funcao     = CV_MQFNC_PUTREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_VELMAX;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_VELJOG;
-  MQ.MQ_Data.data.dl[2] = atol(valor_ent[4]);
-  MQ.MQ_Data.data.dl[3] = atol(valor_ent[5]);
-
-  if(MQ_Send(&MQ) != MQ_ERRO_NENHUM)
-    return 1;
-
-  MQ.MQ_Data.ndata      = 2;
-  MQ.MQ_Data.funcao     = CV_MQFNC_PUTREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_FATOR;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_RESOL;
-  MQ.MQ_Data.data.df[2] = atof(valor_ent[2]);
-  MQ.MQ_Data.data.dl[3] = atol(valor_ent[3]);
-
-  if(MQ_Send(&MQ) != MQ_ERRO_NENHUM)
-    return 1;
-
-  MQ.MQ_Data.ndata      = 2;
-  MQ.MQ_Data.funcao     = CV_MQFNC_PUTREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_CURSO;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_PERIM;
-  MQ.MQ_Data.data.df[2] = atof(valor_ent[0]);
-  MQ.MQ_Data.data.df[3] = atof(valor_ent[1]);
-
-  if(MQ_Send(&MQ) != MQ_ERRO_NENHUM)
-    return 1;
-
-  MQ.MQ_Data.ndata      = 2;
-  MQ.MQ_Data.funcao     = CV_MQFNC_PUTREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_PERF_ACEL;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_PERF_DESACEL;
-  MQ.MQ_Data.data.df[2] = atof(valor_ent[6]);
-  MQ.MQ_Data.data.df[3] = atof(valor_ent[7]);
-
-  if(MQ_Send(&MQ) != MQ_ERRO_NENHUM)
-    return 1;
-
-  MQ.MQ_Data.ndata      = 2;
-  MQ.MQ_Data.funcao     = CV_MQFNC_PUTREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_PERF_VELMAX;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_OPERACAO;
-  MQ.MQ_Data.data.df[2] = atof(valor_ent[8]);
-  MQ.MQ_Data.data.dl[3] = nova_operacao;
-
-  if(MQ_Send(&MQ) != MQ_ERRO_NENHUM)
-    return 1;
-*/
   GravaDadosBanco();
 
   MaqGravarConfig();
@@ -938,33 +891,41 @@ void LerDadosConfig()
   valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[0], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.vel_max);
-  valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[5], tmp);
-
-  sprintf(tmp, "%d", mp.perfil.vel_manual);
-  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[6], tmp);
-
-  sprintf(tmp, "%f", mp.perfil.acel);
+  sprintf(tmp, "%d", mp.perfil.auto_vel);
   valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[3], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.desacel);
+  sprintf(tmp, "%f", mp.perfil.auto_acel);
   valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[4], tmp);
 
-  sprintf(tmp, "%d", mp.corte.tam_faca);
+  sprintf(tmp, "%f", mp.perfil.auto_desacel);
+  valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[5], tmp);
+
+  sprintf(tmp, "%d", mp.perfil.manual_vel);
+  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[6], tmp);
+
+  sprintf(tmp, "%f", mp.perfil.manual_acel);
   valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[7], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.fator);
+  sprintf(tmp, "%f", mp.perfil.manual_desacel);
   valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[8], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.diam_rolo);
+  sprintf(tmp, "%d", mp.corte.tam_faca);
   valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[9], tmp);
+
+  sprintf(tmp, "%f", mp.perfil.fator);
+  valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[10], tmp);
+
+  sprintf(tmp, "%d", mp.perfil.diam_rolo);
+  valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[11], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -974,87 +935,6 @@ void LerDadosConfig()
   }
   free(valor_ent);
 
-/*
-// Carrega os parâmetros de curso da mesa, perímetro do encoder, fator de correção
-// e resolução do encoder
-  MQ.MQ_Data.ndata      = 4;
-  MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_CURSO;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_PERIM;
-  MQ.MQ_Data.data.dl[2] = CV_MQREG_FATOR;
-  MQ.MQ_Data.data.dl[3] = CV_MQREG_RESOL;
-
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    sprintf(valor_ent[0], "%.02f", MQ.MQ_Data.data.df[0]);
-    sprintf(valor_ent[1], "%.02f", MQ.MQ_Data.data.df[1]);
-    sprintf(valor_ent[2], "%.04f", MQ.MQ_Data.data.df[2]);
-    sprintf(valor_ent[3],    "%d", MQ.MQ_Data.data.dl[3]);
-
-    for(i=0; i<4; i++)
-      {
-      obj = lookup_widget(wdg, lista_ent[i]);
-      gtk_entry_set_alignment(GTK_ENTRY(obj),1); // Alinha a esquerda
-      gtk_entry_set_text(GTK_ENTRY(obj), valor_ent[i]);
-      }
-    }
-
-// Carrega os parâmetros de velocidade máxima e manual
-  MQ.MQ_Data.ndata      = 2;
-  MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_VELMAX;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_VELJOG;
-
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    sprintf(valor_ent[4], "%ld", MQ.MQ_Data.data.dl[0]);
-    sprintf(valor_ent[5], "%ld", MQ.MQ_Data.data.dl[1]);
-
-    for(i=4; i<6; i++)
-      {
-      obj = lookup_widget(wdg, lista_ent[i]);
-      gtk_entry_set_alignment(GTK_ENTRY(obj),1); // Alinha a esquerda
-      gtk_entry_set_text(GTK_ENTRY(obj), valor_ent[i]);
-      }
-    }
-
-// Carrega os parâmetros da perfiladeira
-  MQ.MQ_Data.ndata      = 3;
-  MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_PERF_ACEL;
-  MQ.MQ_Data.data.dl[1] = CV_MQREG_PERF_DESACEL;
-  MQ.MQ_Data.data.dl[2] = CV_MQREG_PERF_VELMAX;
-
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    for(i=6; i<9; i++)
-      {
-      obj = lookup_widget(wdg, lista_ent[i]);
-      gtk_spin_button_set_value(GTK_SPIN_BUTTON(obj), MQ.MQ_Data.data.df[i-6]);
-      }
-    }
-
-// Carrega os parâmetros gerais
-  MQ.MQ_Data.ndata      = 1;
-  MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-  MQ.MQ_Data.data.dl[0] = CV_MQREG_OPERACAO;
-
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    obj = lookup_widget(wdg, lista_ent[i]);
-    lst = gtk_radio_button_get_group(GTK_RADIO_BUTTON(obj));
-    while(lst)
-      {
-      if(!strcmp(gtk_button_get_label(GTK_BUTTON(lst->data)), opt_operacao[MQ.MQ_Data.data.dl[0]]))
-        {
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(lst->data), TRUE);
-        break;
-        }
-
-      lst = lst->next;
-      }
-    }
-*/
   if(mainDB.res != NULL) // Somente carrega se há conexão com o DB
     {
     // Carrega clientes cadastrados

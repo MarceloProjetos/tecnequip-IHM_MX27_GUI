@@ -21,19 +21,21 @@
 // Registradores do CLP
 #define MAQ_REG_STATUS          0
 
-#define MAQ_REG_PROD_QTD        200
-#define MAQ_REG_PROD_TAM        201
+#define MAQ_REG_PROD_QTD          200
+#define MAQ_REG_PROD_TAM          201
 
-#define MAQ_REG_PERF_FATOR_LOW  400
-#define MAQ_REG_PERF_FATOR_HIGH 401
-#define MAQ_REG_PERF_ACEL       402
-#define MAQ_REG_PERF_DESACEL    403
-#define MAQ_REG_PERF_VEL_MAX    404
-#define MAQ_REG_PERF_VEL_MANUAL 405
-#define MAQ_REG_ENC_FATOR       410
-#define MAQ_REG_ENC_RESOL       411
-#define MAQ_REG_ENC_PERIM       412
-#define MAQ_REG_CRT_FACA        420
+#define MAQ_REG_PERF_FATOR_LOW    400
+#define MAQ_REG_PERF_FATOR_HIGH   401
+#define MAQ_REG_PERF_AUTO_ACEL    402
+#define MAQ_REG_PERF_AUTO_DESACEL 403
+#define MAQ_REG_PERF_AUTO_VEL     404
+#define MAQ_REG_PERF_MAN_ACEL     405
+#define MAQ_REG_PERF_MAN_DESACEL  406
+#define MAQ_REG_PERF_MAN_VEL      407
+#define MAQ_REG_ENC_FATOR         410
+#define MAQ_REG_ENC_RESOL         411
+#define MAQ_REG_ENC_PERIM         412
+#define MAQ_REG_CRT_FACA          420
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -54,10 +56,12 @@ struct strMaqParam
 // Parametros relacionados com a perfiladeira
   struct strMaqParamPerfil {
     // Parâmetros do inversor
-    unsigned int vel_manual; // % da velocidade maxima usada na velocidade manual
-    unsigned int vel_max; // Velocidade em Hz
-    float acel; // Tempo de segundos
-    float desacel; // Tempo em segundos
+    unsigned int auto_vel; // % da velocidade maxima usada na velocidade automatica
+    float auto_acel; // Tempo em segundos
+    float auto_desacel; // Tempo em segundos
+    unsigned int manual_vel; // % da velocidade maxima usada na velocidade manual
+    float manual_acel; // Tempo em segundos
+    float manual_desacel; // Tempo em segundos
     float fator; // Relacao de transmissao da maquina.
     unsigned int diam_rolo; // Diametro primitivo do rolo da perfiladeira
     } perfil;
