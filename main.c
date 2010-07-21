@@ -14,8 +14,10 @@ struct MB_Device mbdev;
 struct strDB     mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
-pthread_mutex_t mutex_ipcmq_rd = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_ipcmq_wr = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ipcmq_rd  = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ipcmq_wr  = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_gui_lock  = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_comm_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
@@ -131,6 +133,9 @@ MB_HANDLER_TX(IHM_MB_TX)
 // Objeto que contem toda a interface GTK
 GtkBuilder *builder;
 
+// Variavel indicando que a tela de desligamento esta ativada
+uint32_t OnPowerDown = 0;
+
 extern key_t fd_rd;
 extern key_t fd_wr;
 
@@ -173,8 +178,10 @@ int IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg)
 // Timers
 gboolean tmrAD(gpointer data)
 {
-  if(WorkAreaGet() == NTB_ABA_HOME) {
+  if(WorkAreaGet() == NTB_ABA_HOME || WorkAreaGet() == NTB_ABA_MANUT) {
+    pthread_mutex_lock  (&mutex_comm_lock);
     comm_put(&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+    pthread_mutex_unlock(&mutex_comm_lock);
   }
 
   return TRUE;
@@ -203,7 +210,7 @@ gboolean tmrPowerDown(gpointer data)
     comm_update();
     if(comm_ready()) {
       comm_get(&cmsg);
-      if(cmsg.data.pwr) {
+      if(cmsg.fnc == COMM_FNC_PWR && cmsg.data.pwr) {
         timeout = 30;
         gtk_dialog_response(dlg, 2);
       }
@@ -256,61 +263,63 @@ gboolean tmrGtkUpdate(gpointer data)
   static GdkPixbuf *pb_on = NULL, *pb_off = NULL;
   static int ciclos = 0, current_status = 0, last_status = 0;
 
-  if(pb_on == NULL) { // Inicializa pixbufs
-    pb_on  = gdk_pixbuf_new_from_file("images/ihm-status-on.png" , NULL);
-    pb_off = gdk_pixbuf_new_from_file("images/ihm-status-off.png", NULL);
-  }
-
-  if(ciclos++ == 4) {
-    ciclos = 0;
-
-    // Leitura do estado dos CLPs, exibindo mensagem de erro caso houver
-    current_status = MaqLerStatus();
-    if(last_status != current_status && current_status) { // houve mudanca e com erro
-      msg_error = MaqStrErro(current_status);
-      Log(msg_error, LOG_TIPO_ERRO);
-      gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
-      WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
+  if(!OnPowerDown) {
+    if(pb_on == NULL) { // Inicializa pixbufs
+      pb_on  = gdk_pixbuf_new_from_file("images/ihm-status-on.png" , NULL);
+      pb_off = gdk_pixbuf_new_from_file("images/ihm-status-off.png", NULL);
     }
-    last_status = current_status;
 
-    // Atualiza a hora da tela inicial
-    if(lbl == NULL)
-      lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
+    if(ciclos++ == 4) {
+      ciclos = 0;
 
-    now = time(NULL);
-    timeptr = localtime(&now);
-
-    sprintf(tmp, "%02d/%02d/%d, %.2d:%.2d",
-        timeptr->tm_mday,
-        timeptr->tm_mon + 1,
-        1900 + timeptr->tm_year,
-        timeptr->tm_hour,
-        timeptr->tm_min);
-    if(strcmp(tmp, gtk_label_get_text(lbl)))
-      gtk_label_set_label(lbl, tmp);
-  } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-    if(WorkAreaGet() == NTB_ABA_MANUT) {
-      val = MaqLerSaidas();
-      for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as saidas
-        sprintf(tmp, "tglManutSai%02d", i);
-        wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
-        if(wdg == NULL) // Acabaram as saidas
-          break; // Sai do loop
-
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), (val>>i)&1);
+      // Leitura do estado dos CLPs, exibindo mensagem de erro caso houver
+      current_status = MaqLerErros();
+      if(last_status != current_status && current_status) { // houve mudanca e com erro
+        msg_error = MaqStrErro(current_status);
+        Log(msg_error, LOG_TIPO_ERRO);
+        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
+        WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
       }
-    }
-  } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-    if(WorkAreaGet() == NTB_ABA_MANUT) {
-      val = MaqLerEntradas();
-      for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
-        sprintf(tmp, "imgStatusEnt%02d", i);
-        wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
-        if(wdg == NULL) // Acabaram as saidas
-          break; // Sai do loop
+      last_status = current_status;
 
-        gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
+      // Atualiza a hora da tela inicial
+      if(lbl == NULL)
+        lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
+
+      now = time(NULL);
+      timeptr = localtime(&now);
+
+      sprintf(tmp, "%02d/%02d/%d, %.2d:%.2d",
+          timeptr->tm_mday,
+          timeptr->tm_mon + 1,
+          1900 + timeptr->tm_year,
+          timeptr->tm_hour,
+          timeptr->tm_min);
+      if(strcmp(tmp, gtk_label_get_text(lbl)))
+        gtk_label_set_label(lbl, tmp);
+    } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+      if(WorkAreaGet() == NTB_ABA_MANUT) {
+        val = MaqLerSaidas();
+        for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as saidas
+          sprintf(tmp, "tglManutSai%02d", i);
+          wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+          if(wdg == NULL) // Acabaram as saidas
+            break; // Sai do loop
+
+          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), (val>>i)&1);
+        }
+      }
+    } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+      if(WorkAreaGet() == NTB_ABA_MANUT) {
+        val = MaqLerEntradas();
+        for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
+          sprintf(tmp, "imgStatusEnt%02d", i);
+          wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+          if(wdg == NULL) // Acabaram as saidas
+            break; // Sai do loop
+
+          gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
+        }
       }
     }
   }
@@ -367,7 +376,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
 
 void cbLogoff(GtkButton *button, gpointer user_data)
 {
-  GtkWidget *wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
   struct strIPCMQ_Message ipc_msg;
 
   ipc_msg.mtype = IPCMQ_FNC_TEXT;
@@ -383,10 +391,7 @@ void cbLogoff(GtkButton *button, gpointer user_data)
   DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
   CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
 
-  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop")));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
+  WorkAreaGoTo(NTB_ABA_LOGIN);
 }
 
 /****************************************************************************
@@ -395,11 +400,15 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
-  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp;
+  char tmp[25];
+  int32_t  batt_level, curr_batt_level = -1;
+  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp, i, ChangedAD = 0, ciclos = 0;
   struct comm_msg msg;
   GtkDialog      *dlg;
-  GtkStatusbar   *sts;
+  GtkLabel       *lbl;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
+  GtkImage       *imgBatt;
+  GdkPixbuf      *pbBatt[4];
 
   struct strIPCMQ_Message ipc_msg;
 
@@ -414,8 +423,14 @@ void * ihm_update(void *args)
   pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"      ));
   pgbTERM = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbTERM"     ));
   pgbVBAT = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"     ));
-  sts     = GTK_STATUSBAR   (gtk_builder_get_object(builder, "stsMensagem" ));
+  imgBatt = GTK_IMAGE       (gtk_builder_get_object(builder, "imgBateria"  ));
+  lbl     = GTK_LABEL       (gtk_builder_get_object(builder, "lblTemp"     ));
   dlg     = GTK_DIALOG      (gtk_builder_get_object(builder, "dlgPowerDown"));
+
+  for(i=0; i<4; i++) {
+    sprintf(tmp, "images/ihm-battery-%d.png", i);
+    pbBatt[i] = gdk_pixbuf_new_from_file(tmp, NULL);
+  }
 
   gdk_threads_leave();
 
@@ -430,30 +445,63 @@ void * ihm_update(void *args)
       comm_get(&msg);
       switch(msg.fnc) {
       case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
-        if(WorkAreaGet() == NTB_ABA_HOME) {
+        if(!pthread_mutex_trylock(&mutex_gui_lock)) {
           gdk_threads_enter();
+
+          sprintf(tmp, "%.01f °C", (float)(msg.data.ad.temp)/1000);
+          if(strcmp(tmp, gtk_label_get_text(lbl)))
+            gtk_label_set_text(lbl, tmp);
+
           if(msg.data.ad.vin != ad_vin) {
+            ChangedAD = 1;
             ad_vin = msg.data.ad.vin;
-            gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(msg.data.ad.vin )/3150);
           }
+
           if(msg.data.ad.term != ad_term) {
+            ChangedAD = 1;
             ad_term = msg.data.ad.term;
-            gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(msg.data.ad.term)/3150);
           }
           if(msg.data.ad.vbat != ad_vbat) {
+            ChangedAD = 1;
             ad_vbat = msg.data.ad.vbat;
-            gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/3150);
+            // Bateria com tensao inferior a 3V, sistema deve desligar!
+            if(ad_vbat < 3000 && ad_vin < 8000)
+              gtk_main_quit();
           }
+
+          if((WorkAreaGet() == NTB_ABA_MANUT) && ChangedAD) {
+            ChangedAD = 0;
+
+            gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(ad_vin)/35000);
+            sprintf(tmp, "%.02f Volts", (gdouble)(ad_vin)/1000);
+            gtk_progress_bar_set_text(pgbVIN , tmp);
+
+            gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(ad_term)/3150);
+            sprintf(tmp, "%.02f Volts", (gdouble)(ad_term)/1000);
+            gtk_progress_bar_set_text(pgbTERM , tmp);
+
+            gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(ad_vbat)/4500);
+            sprintf(tmp, "%.02f Volts", (gdouble)(ad_vbat)/1000);
+            gtk_progress_bar_set_text(pgbVBAT , tmp);
+          }
+
           gdk_threads_leave();
+          pthread_mutex_unlock(&mutex_gui_lock);
         }
         break;
 
       case COMM_FNC_PWR:
         gdk_threads_enter();
         if(msg.data.pwr) {
-          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema energizado");
+          printf("Sistema energizado");
+
+          // Avisa o LPC2109 que nao deve manter o sistema ligado caso haja nova queda de energia.
+          pthread_mutex_lock  (&mutex_comm_lock);
+          comm_put(&(struct comm_msg){ COMM_FNC_PWR, { 0x0 } });
+          pthread_mutex_unlock(&mutex_comm_lock);
         } else {
-          gtk_statusbar_push(sts, gtk_statusbar_get_context_id(sts, "pwr"), "Sistema sem energia");
+          OnPowerDown = 1;
+          printf("Sistema sem energia");
 
           gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
               "30 segundos");
@@ -463,7 +511,22 @@ void * ihm_update(void *args)
           if(!rp) // Clicado ok, desligar!
             gtk_main_quit();
           gtk_widget_hide_all(GTK_WIDGET(dlg));
+
+          if(rp != 2) { // 2: energia reestabelecida, nao pedir para manter ligado
+            // Para manter o sistema ligado, devemos informar o LPC2109
+            pthread_mutex_lock  (&mutex_comm_lock);
+            comm_put(&(struct comm_msg){ COMM_FNC_PWR, { 0x1 } });
+            pthread_mutex_unlock(&mutex_comm_lock);
+          }
+
+          OnPowerDown = 0;
         }
+        gdk_threads_leave();
+        break;
+
+      case COMM_FNC_ON: // Pressionado botao ON/OFF, termina o programa
+        gdk_threads_enter();
+        gtk_main_quit();
         gdk_threads_leave();
         break;
 
@@ -476,6 +539,35 @@ void * ihm_update(void *args)
         printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
       }
     }
+
+    /*** Loop para atualizacao da imagem da bateria ***/
+
+    if(ciclos++ > 100) {
+      ciclos = 0;
+
+      // Tensao superior a 8 volts indica presenca de alimentacao externa
+      if(ad_vin > 8000) {
+        batt_level = curr_batt_level-1; // Cicla entre as imagens
+        if(batt_level < 0) {
+          batt_level = 3;
+        }
+      } else { // Sistema alimentado pela bateria, calcula seu nivel atual
+        batt_level = 3999 - ad_vbat;
+        if(batt_level < 0) {
+          batt_level = 0;
+        } else if(batt_level > 1000) {
+          batt_level = 1000;
+        }
+        batt_level /= 250; // Nivel entre 0 (cheia) e 3 (vazia).
+      }
+
+      if(curr_batt_level != batt_level) { // Alterado o nivel, atualiza imagem
+        curr_batt_level = batt_level;
+        gtk_image_set_from_pixbuf(imgBatt, pbBatt[curr_batt_level]);
+      }
+    }
+
+    /*** Fim do loop para atualizacao da imagem da bateria ***/
 
     // Loop de checagem de mensagens vindas da thread principal
     if(IPCMQ_Threads_Receber(&ipc_msg) >= 0) {
@@ -520,13 +612,14 @@ uint32_t IHM_Init(int argc, char *argv[])
   //Carrega a interface a partir do arquivo glade
   builder = gtk_builder_new();
   gtk_builder_add_from_file(builder, "IHM.glade", NULL);
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
+  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
   cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
 
   //Conecta Sinais aos Callbacks
   gtk_builder_connect_signals(builder, NULL);
 
 //  g_object_unref (G_OBJECT (builder));
+  gtk_rc_parse("gtk.rc");
 
   // Configura TreeView da tela de Tarefas
   TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), campos_tarefa,
@@ -585,7 +678,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.TX                = IHM_MB_TX;
 
 #ifndef DEBUG_PC
-  tcp_socket = ihm_connect("192.168.0.235", 502);
+  tcp_socket = ihm_connect("192.168.0.237", 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
@@ -623,6 +716,7 @@ uint32_t IHM_Init(int argc, char *argv[])
     mainDB.nome_db = "cv";
     }
 
+  WorkAreaGoTo(NTB_ABA_LOGIN);
   gtk_widget_show_all(wnd);
 
   // Iniciando os timers

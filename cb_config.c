@@ -816,7 +816,9 @@ char *lista_ent[] = {
     "spbConfigPerfVelMaxManual",
     "spbConfigPerfAcelManual",
     "spbConfigPerfDesacelManual",
+    "rdbModoSerra",
     "entCorteFaca",
+    "entCorteSerra",
     "spbConfigPerfReducao",
     "spbConfigPerfDiamRolo",
     ""
@@ -841,8 +843,8 @@ int GravarDadosConfig()
   mp.perfil.manual_vel     = atol(valor_ent[ 6]);
   mp.perfil.manual_acel    = atof(valor_ent[ 7]);
   mp.perfil.manual_desacel = atof(valor_ent[ 8]);
-  mp.perfil.fator          = atof(valor_ent[10]);
-  mp.perfil.diam_rolo      = atol(valor_ent[11]);
+  mp.perfil.fator          = atof(valor_ent[12]);
+  mp.perfil.diam_rolo      = atol(valor_ent[13]);
   MaqConfigPerfil(mp.perfil);
 
   mp.encoder.fator     = atof(valor_ent[1]);
@@ -850,7 +852,9 @@ int GravarDadosConfig()
   mp.encoder.perimetro = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.corte.tam_faca    = atol(valor_ent[9]);
+  mp.corte.modo        = atol(valor_ent[ 9]);
+  mp.corte.tam_faca    = atol(valor_ent[10]);
+  mp.corte.tam_serra   = atol(valor_ent[11]);
   MaqConfigCorte(mp.corte);
 
   GravaDadosBanco();
@@ -915,19 +919,34 @@ void LerDadosConfig()
   valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[8], tmp);
 
-  sprintf(tmp, "%d", mp.corte.tam_faca);
+  sprintf(tmp, "%d", mp.corte.modo);
   valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[9], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.fator);
+  sprintf(tmp, "%d", mp.corte.tam_faca);
   valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[10], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.diam_rolo);
+  sprintf(tmp, "%d", mp.corte.tam_serra);
   valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[11], tmp);
 
+  sprintf(tmp, "%f", mp.perfil.fator);
+  valor_ent[12] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[12], tmp);
+
+  sprintf(tmp, "%d", mp.perfil.diam_rolo);
+  valor_ent[13] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[13], tmp);
+
   GravarValoresWidgets(lista_ent, valor_ent);
+
+  // Seleciona o modo correto
+  if(mp.corte.modo == MODO_CORTE_HIDR) {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "rdbModoHidr" )), 1);
+  } else {
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "rdbModoSerra")), 1);
+  }
 
   while(i--) {
     if(valor_ent[i] != NULL)
@@ -1574,11 +1593,6 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
       idUser=1; // Grava 1 para indicar que foi logado
 
 // Exibe a janela de configuração na aba de configuração do banco de dados
-      // Cria a janela principal
-      wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-      AbrirJanelaModal(wnd);
-      gtk_grab_add(wnd);
-
       AbrirConfig(pos);
 
       return;
@@ -1600,24 +1614,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         Log("Entrada no sistema", LOG_TIPO_SISTEMA);
 
         // Oculta a janela de login.
-        gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin")));
-
-        // Cria a janela principal
-        wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-
-        // Configura o estado inicial dos botoes.
-        // Habilita os botões conforme estado atual da máquina.
-//        if(MaquinaEspera(CHECAR_MANUAL))
-//          EstadoBotoes(wnd, BTN_TODOS);
-//        else
-//          EstadoBotoes(wnd, BTN_CFG | BTN_INIT);
-
-        AbrirJanelaModal(wnd);
-        gtk_grab_add(wnd);
         WorkAreaGoTo(NTB_ABA_HOME);
-
-// Funcao para captura de mensagens do processo do Corte Voador
-//        g_timeout_add(200,(GtkFunction)sync_cv, (gpointer *)(wnd));
 
         return;
         }

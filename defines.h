@@ -80,6 +80,11 @@
 #define NTB_ABA_EXECUTAR   10
 #define NTB_ABA_VIRTUAL_KB 11
 #define NTB_ABA_MESSAGEBOX 12
+#define NTB_ABA_LOGIN      13
+
+// Modos de corte da peça
+#define MODO_CORTE_HIDR  0
+#define MODO_CORTE_SERRA 1
 
 /*** Fim das definições gerais ***/
 

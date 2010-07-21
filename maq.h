@@ -8,10 +8,6 @@
 #define MAQ_MODO_MANUAL 0x0000
 #define MAQ_MODO_AUTO   0x8000
 
-// Mascara para desligar os bits que nao pertencem ao modo ou status
-#define MAQ_MASK_MODO   0xF000
-#define MAQ_MASK_STATUS 0x0FFF
-
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01
 #define MAQ_SYNC_ENCODER 0x02
@@ -19,7 +15,9 @@
 #define MAQ_SYNC_TODOS   (MAQ_SYNC_PERFIL | MAQ_SYNC_ENCODER | MAQ_SYNC_CORTE)
 
 // Registradores do CLP
-#define MAQ_REG_STATUS          0
+#define MAQ_REG_ERROS  0
+#define MAQ_REG_STATUS 1
+#define MAQ_REG_MODO   2
 
 #define MAQ_REG_PROD_QTD          200
 #define MAQ_REG_PROD_TAM          201
@@ -36,6 +34,8 @@
 #define MAQ_REG_ENC_RESOL         411
 #define MAQ_REG_ENC_PERIM         412
 #define MAQ_REG_CRT_FACA          420
+#define MAQ_REG_CRT_SERRA         421
+#define MAQ_REG_CRT_MODO          422
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -50,7 +50,9 @@ struct strMaqParam
 
 // Parametros relacionados com a ferramenta de corte
   struct strMaqParamCorte {
+    unsigned int modo;
     unsigned int tam_faca;
+    unsigned int tam_serra;
   } corte;
 
 // Parametros relacionados com a perfiladeira
@@ -69,8 +71,8 @@ struct strMaqParam
 
 /*** Fim das estruturas de informacoes da maquina ***/
 
-uint16_t MaqLerStatus (void);
-char    *MaqStrErro(uint16_t status);
+uint16_t MaqLerErros   (void);
+char    *MaqStrErro    (uint16_t status);
 
 uint16_t MaqLerModo    (void);
 uint16_t MaqLerProdQtd (void);
