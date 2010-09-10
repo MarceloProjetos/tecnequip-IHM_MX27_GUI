@@ -2,6 +2,7 @@
 #include <gtk/gtk.h>
 #include "GtkUtils.h"
 #include <time.h>
+#include <sys/time.h>
 
 extern SERIAL_TX_FNC(SerialTX);
 extern SERIAL_RX_FNC(SerialRX);
@@ -24,7 +25,7 @@ void Log(char *evento, int tipo)
 {
   char sql[200];
 
-  if(mainDB.res != NULL) // Banco conectado
+  if(mainDB.res != NULL && idUser) // Banco conectado
     {
     sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", idUser, tipo, evento);
     DB_Execute(&mainDB, 3, sql);
@@ -101,10 +102,32 @@ COMM_FNC(CommRX)
 
 MB_HANDLER_TX(IHM_MB_TX)
 {
-  uint32_t i, tent = 50;
-  int32_t resp;
+  struct timeval tv;
+  static struct timeval tv_last;
+  static uint32_t primeiro = 1;
 
-  printf("MB Send: ");
+  uint32_t i, tent = 50;
+  int32_t resp, wait_usec, wait;
+
+
+  if(primeiro) {
+    primeiro = 0;
+    gettimeofday(&tv_last, NULL);
+  }
+
+  gettimeofday(&tv, NULL);
+  wait_usec =  tv.tv_usec - tv_last.tv_usec;
+  wait      = (tv.tv_sec  - tv_last.tv_sec) * 1000000;
+
+  if(wait_usec < 0)
+    wait += 1000000;
+  wait += wait_usec;
+
+  if(wait < 250000 && wait > 0)
+    usleep(250000 - wait);
+
+  gettimeofday(&tv, NULL);
+  printf("\n%3d.%04d - MB Send: ", tv.tv_sec, tv.tv_usec);
   for(i=0; i<size; i++)
     printf("%02x ", data[i]);
   printf("\n");
@@ -118,14 +141,18 @@ MB_HANDLER_TX(IHM_MB_TX)
 
   if(resp<=0) {
     size = 0;
-    printf("Tempo para resposta esgotado...\n");
+    gettimeofday(&tv, NULL);
+    printf("%3d.%04d - Tempo para resposta esgotado...\n", tv.tv_sec, tv.tv_usec);
   } else {
     size = resp;
-    printf("Retorno de MB Send: ");
+    gettimeofday(&tv, NULL);
+    printf("%3d.%04d - Retorno de MB Send: ", tv.tv_sec, tv.tv_usec);
     for(i=0; i<size; i++)
       printf("%02x ", data[i]);
     printf("\n");
   }
+
+  tv_last = tv;
 
   return size;
 }
@@ -277,8 +304,11 @@ gboolean tmrGtkUpdate(gpointer data)
       if(last_status != current_status && current_status) { // houve mudanca e com erro
         msg_error = MaqStrErro(current_status);
         Log(msg_error, LOG_TIPO_ERRO);
+        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);
         gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
         WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
+      } else if (last_status != current_status) {
+        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), "Sem Erros");
       }
       last_status = current_status;
 
@@ -439,7 +469,7 @@ void * ihm_update(void *args)
    ***************************************************************************/
   while (1) {
     usleep(500);
-    // Loop de checagem de mensagens vindas da CPU LPC2109
+    /*** Loop de checagem de mensagens vindas da CPU LPC2109 ***/
     comm_update();
     if(comm_ready()) {
       comm_get(&msg);
@@ -678,7 +708,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.TX                = IHM_MB_TX;
 
 #ifndef DEBUG_PC
-  tcp_socket = ihm_connect("192.168.0.237", 502);
+  tcp_socket = ihm_connect("192.168.0.235", 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);

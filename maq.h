@@ -5,8 +5,23 @@
 #define MAQ_CFG_MAGIC  0x78B2A5F0
 
 // Modos de operacao
+#define MAQ_MODO_MASK   0x0001
 #define MAQ_MODO_MANUAL 0x0000
 #define MAQ_MODO_AUTO   0x0001
+#define MAQ_MODO_CORTAR 0x0002
+#define MAQ_MODO_LIMPAR 0x0004
+
+// Flag solicitando sincronizacao dos parametros do CLP com o Inversor
+#define MAQ_MODO_PERF_SYNC 0x0020
+
+// Flags para controle manual da perfiladeira
+#define MAQ_MODO_PERF_MASK   0x0018
+#define MAQ_MODO_PERF_AVANCA 0x0008
+#define MAQ_MODO_PERF_RECUA  0x0010
+
+#define PERF_PARAR  0
+#define PERF_AVANCA 1
+#define PERF_RECUA  2
 
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01

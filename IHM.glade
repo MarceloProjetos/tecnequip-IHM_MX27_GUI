@@ -376,9 +376,9 @@ Al&#xE9;m disso, a bateria manter&#xE1; o sistema funcionando por cerca de 2 hor
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="label130">
+                  <object class="GtkLabel" id="lblMensagens">
                     <property name="visible">True</property>
-                    <property name="label" translatable="yes">Mensagens</property>
+                    <property name="label" translatable="yes">Sem Erros</property>
                   </object>
                   <packing>
                     <property name="position">1</property>

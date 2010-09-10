@@ -1717,6 +1717,7 @@ int WorkAreaGet()
 
 void cbMessageBoxOk(GtkButton *button, gpointer user_data)
 {
+  MaqLimparErro();
   CurrentWorkArea = NTB_ABA_HOME;
   WorkAreaGoPrevious();
 }

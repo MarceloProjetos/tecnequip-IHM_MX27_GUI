@@ -104,6 +104,8 @@ int MaqSync(unsigned int mask)
     ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_FATOR_HIGH;
     ipc_msg.data.modbus_query.data.write_single_register.val     = (rel_motor_perfil>>16) & 0XFFFF;
     IPCMQ_Main_Enviar(&ipc_msg);
+
+    MaqConfigModo(MAQ_MODO_PERF_SYNC);
   }
 
   if(mask & MAQ_SYNC_ENCODER) {
@@ -232,7 +234,7 @@ char *MaqStrErro(uint16_t erro)
   uint32_t i;
   char *msg_erro[] = {
       "Erro na comunicação",
-      "Emergência",
+      "Emergência Acionada",
       "Falta de fase",
       "Erro na unidade hidráulica",
       "Erro no inversor",
@@ -471,6 +473,33 @@ void MaqConfigModo(uint16_t modo)
   printf("modo = %d\n", modo);
 
   IPCMQ_Main_Enviar(&ipc_msg);
+}
+
+void MaqLimparErro()
+{
+  uint16_t modo = MaqLerModo();
+  modo |= MAQ_MODO_LIMPAR;
+  MaqConfigModo(modo);
+}
+
+void MaqCortar()
+{
+  uint16_t modo = MaqLerModo();
+  modo |= MAQ_MODO_CORTAR;
+  MaqConfigModo(modo);
+}
+
+void MaqPerfManual(uint16_t cmd)
+{
+  uint16_t modo = MaqLerModo();
+
+  modo &= ~MAQ_MODO_PERF_MASK;
+  if     (cmd == PERF_AVANCA)
+    modo |= MAQ_MODO_PERF_AVANCA;
+  else if(cmd == PERF_RECUA)
+    modo |= MAQ_MODO_PERF_RECUA;
+
+  MaqConfigModo(modo);
 }
 
 void MaqConfigProdQtd(uint16_t qtd)
