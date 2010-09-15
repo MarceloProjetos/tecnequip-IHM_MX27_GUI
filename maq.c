@@ -240,7 +240,7 @@ char *MaqStrErro(uint16_t erro)
       "Erro no inversor",
       "Erro no desbobinador",
       "Erro de comunicação - Inversor",
-      "Erro de configuração",
+      "Erro no Corte do Tubo",
 //      "Baixa pressão de ar",
   };
 
