@@ -22,32 +22,6 @@ int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
 
-// Vetor de erros da máquina e função que retorna o erro atual conforme prioridade
-char *StrErro[] =
-  {
-  "Emergencia",
-  "Problema no servo",
-  "Problema no Posicionamento",
-  "Falha seguindo Perfil",
-  "Erro na configuração",
-  "Tempo máximo de inatividade alcançado",
-  "Tempo máximo de atuação do cilindro excedida",
-  "Supervisor indicando falta de fase",
-  "Erro no sistema hidráulico",
-  "Falha na comunicação",
-  };
-
-char * LerStrErro(unsigned int erro)
-{
-  unsigned int i;
-
-  for(i=0;erro>>i;i++)
-    if((erro>>i)&1)
-      return StrErro[i];
-
-  return "Desconhecido";
-}
-
 char * Crypto(char *str)
 {
   return (char *)(crypt(str,"bc")+2);
@@ -77,415 +51,6 @@ int GetUserPerm(char *permissao)
 }
 
 #if 0
-// Função que é executada a cada 200 ms e que serve para checar o estado da máquina.
-gint sync_cv(gpointer dados)
-{
-  static unsigned int erro_ant = CV_ERRO_NENHUM, num_erros_timeout=0;
-  char str[100];
-
-  MQ.MQ_Data.funcao = CV_MQFNC_ERRO;
-  switch(MQ_Transfer(&MQ))
-    {
-    default: // Erro não foi de timeout, limpa erros.
-      num_erros_timeout=0;
-      break;
-
-    case MQ_ERRO_NENHUM:
-      num_erros_timeout=0;
-      // Verifica se o processo filho está pedindo encerramento
-      if(MQ.MQ_Data.funcao == CV_MQFNC_FINAL)
-        {
-        MessageBox("Erro no Corte Voador! Saindo...");
-        gtk_main_quit();
-        return FALSE;
-        }
-
-      if(MQ.MQ_Data.data.di[0]!=erro_ant)
-        {
-        erro_ant = MQ.MQ_Data.data.di[0];
-
-        if(erro_ant & CV_ERRO_CONFIG)
-          {
-          AbrirConfig(NULL, NULL); // Abre a janela de configuração da máquina
-          sprintf(str, "Erro na configuração da máquina! Favor reconfigurar");
-          }
-        else if(erro_ant != CV_ERRO_NENHUM && erro_ant != CV_ERRO_ESCRAVO)
-          {
-          EstadoBotoes((GtkWidget *)(dados), (guint)(BTN_CFG | BTN_INIT)); // Habilita apenas config e init.
-          sprintf(str, "Erro: %s", LerStrErro(erro_ant));
-          }
-        else
-          {
-          EstadoBotoes((GtkWidget *)(dados), (guint)(BTN_CFG | BTN_INIT | BTN_OPER | BTN_MANUAL)); // Habilita tudo.
-          strcpy(str, "Sem erros");
-          }
-
-        // Registra o erro ocorrido
-        Log(str, LOG_TIPO_ERRO);
-
-        MessageBox(str);
-        }
-
-      break;
-
-    case MQ_ERRO_TIMEOUT:
-      if(num_erros_timeout++ > 10) // Se ocorreram mais que 10 erros de comunicação seguidos
-        {
-        // Registra o erro ocorrido
-        Log("Erro entre os processos", LOG_TIPO_ERRO);
-
-        MessageBox("Processo de controle da máquina não está respondendo! Saindo...");
-        gtk_main_quit();
-        return FALSE;
-        }
-    }
-
-  return TRUE;
-}
-
-int MaquinaEspera(int checar_manual)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_STATUS;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    if(MQ.MQ_Data.data.di[0] != CV_ST_ESPERA && (checar_manual ? MQ.MQ_Data.data.di[0] != CV_ST_MANUAL : 1))
-      MessageBox("Existe algum erro na máquina! Reinicialize.");
-    else
-      return 1;
-    }
-
-  return 0;
-}
-
-gint AtualInfoProd(gpointer dados)
-{
-  static int DeveAtualizar = 1; // Faz com que na primeira vez a tela seja atualizada.
-  static long InfoTotal;
-  long InfoProd;
-  float InfoPos;
-  char tmp[20];
-  GtkWidget *lblInfoPos, *lblInfoProd;
-
-  if(DeveAtualizar)
-    InfoTotal = atol(gtk_label_get_text(GTK_LABEL(lookup_widget((GtkWidget *)(dados), "lblMsgTotal"))));
-
-  lblInfoPos = lookup_widget((GtkWidget *)(dados), "lblMsgPos");
-  if(lblInfoPos==NULL)
-    {
-    DeveAtualizar=1;
-    return FALSE;
-    }
-
-  MQ.MQ_Data.funcao = CV_MQFNC_TAM_ATUAL;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    // Carrega o valor atual
-    InfoPos   = atof(gtk_label_get_text(GTK_LABEL(lblInfoPos)));
-
-    // Atualiza o campo se houve alteração desde a última atualização
-    if(MQ.MQ_Data.data.df[0] != InfoPos || DeveAtualizar)
-      {
-      sprintf(tmp, "%.03f", MQ.MQ_Data.data.df[0]);
-      gtk_label_set_text(GTK_LABEL(lblInfoPos), tmp);
-      }
-    }
-
-  MQ.MQ_Data.funcao = CV_MQFNC_QTDPROD;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    // Encontra a referência do objeto e retorna se não existir
-    lblInfoProd  = lookup_widget((GtkWidget *)(dados), "lblMsgProd");
-    if(lblInfoProd==NULL) // Não existe! A janela deve ter sido fechada
-      {
-      DeveAtualizar=1;
-      return FALSE;
-      }
-
-    // Carrega o valor atual
-    InfoProd  = atol(gtk_label_get_text(GTK_LABEL(lblInfoProd)));
-
-    // Atualiza os campos se houve alteração desde a última atualização
-    if(MQ.MQ_Data.data.dl[0] != InfoProd || DeveAtualizar)
-      {
-      // Atualiza a contagem de peças produzidas
-      sprintf(tmp, "%d", MQ.MQ_Data.data.di[0]);
-      gtk_label_set_text(GTK_LABEL(lblInfoProd), tmp);
-
-      // Atualiza o saldo a produzir se não for a primeira vez
-      if(DeveAtualizar == 0)
-        {
-        sprintf(tmp, "%d", InfoTotal - MQ.MQ_Data.data.di[0]);
-        gtk_label_set_text(GTK_LABEL(lookup_widget((GtkWidget *)(dados), "lblMsgSaldo")), tmp);
-        }
-      }
-    }
-
-  DeveAtualizar = 0;
-
-  return TRUE;
-}
-
-void
-cbSairLoop                             (GtkObject       *object,
-                                        gpointer         user_data)
-{
-  *(unsigned int *)(user_data) = 0; // Força saída do loop
-}
-
-int EnviaComando(struct strMQ *MQS, struct strMQD *MQD, void *userdata)
-{
-  int ret = 1;
-  unsigned char msg[50];
-  unsigned int espera=0, i, FicarEmLoop = 1;
-  GtkWidget *wdg = create_wndMsg(), *lbl;
-
-  switch(MQD->funcao)
-    {
-    case CV_MQFNC_CORTAR:
-      strcpy(msg, "Cortando");
-      break;
-
-    case CV_MQFNC_RELENC:
-      strcpy(msg, "Calculando fator entre encoders");
-      break;
-
-    case CV_MQFNC_INIT:
-      strcpy(msg, "Inicializando");
-      break;
-
-    case CV_MQFNC_POSIC:
-      strcpy(msg, "Posicionando");
-      break;
-
-    case CV_MQFNC_CALC_FATOR:
-      strcpy(msg, "Calculando fator de correção");
-      break;
-
-    case CV_MQFNC_PRODUZ:
-      gtk_widget_show_all(lookup_widget(wdg, "frmMsgInfo"));
-
-      gtk_label_set_text(GTK_LABEL(lookup_widget(wdg, "lblMsgProd" )), "0");
-
-      sprintf(msg, "%d", MQD->data.dl[0]);
-      gtk_label_set_text(GTK_LABEL(lookup_widget(wdg, "lblMsgTotal")), msg);
-      gtk_label_set_text(GTK_LABEL(lookup_widget(wdg, "lblMsgSaldo")), msg);
-
-      // Funcao para atualizacao do campos de informação
-      g_timeout_add(100,(GtkFunction)AtualInfoProd, (gpointer)(wdg));
-
-      sprintf(msg, "Produzindo %d peças de %.03f mm", MQD->data.dl[0], MQD->data.df[1]);
-      break;
-    }
-
-  lbl = lookup_widget(wdg, "lblMsg");
-  gtk_label_set_text(GTK_LABEL(lbl), msg);
-
-  g_signal_connect ((gpointer) wdg, "destroy",
-            G_CALLBACK (cbSairLoop),
-            (gpointer)(&FicarEmLoop));
-
-  gtk_window_set_modal(GTK_WINDOW(wdg), 1);
-  gtk_widget_show_now(wdg);
-
-  MQS->MQ_Data.id     = MQD->id;
-  MQS->MQ_Data.ndata  = MQD->ndata;
-  MQS->MQ_Data.funcao = MQD->funcao;
-
-  for(i=0; i<sizeof(MQD->data); i++)
-    MQS->MQ_Data.data.dc[i] = MQD->data.dc[i];
-
-  MQ_Send(MQS);
-
-  while(FicarEmLoop)
-    {
-    gtk_main_iteration_do(FALSE);
-
-    if(espera++>1000)
-      {
-      espera=0;
-
-      MQS->MQ_Data.funcao = CV_MQFNC_STATUS;
-      if(MQ_Transfer(MQS)==MQ_ERRO_NENHUM)
-        {
-        if(MQS->MQ_Data.data.di[0]==CV_ST_ERRO) // Ocorreu um erro
-          {
-          ret = 0;
-          break;
-          }
-        else if(MQS->MQ_Data.data.di[0]==CV_ST_ESPERA) // Operação finalizada
-          break;
-        }
-      }
-    }
-
-  if(!FicarEmLoop) // Saiu forçado do loop! Devemos retornar erro.
-    {
-    // Envia comando para interromper operação atual.
-    MQ.MQ_Data.funcao = CV_MQFNC_PARAR;
-    MQ_Send(&MQ);
-
-    ret = 0;
-    }
-
-  gtk_widget_destroy(wdg);
-
-  return ret;
-}
-
-/*** Fim das funcoes de suporte ***/
-
-void
-CalcRelEnc                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_ESPERA))
-    return;
-
-  Log("Calculando relação entre encoders", LOG_TIPO_CONFIG);
-
-  MQD.funcao = CV_MQFNC_RELENC;
-  EnviaComando(&MQ, &MQD, NULL);
-}
-
-void
-Inicializar                            (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!GetUserPerm(PERM_ACESSO_OPER))
-    {
-    MessageBox("Sem permissão para operar a máquina!");
-    return;
-    }
-
-  Log("Inicializando máquina", LOG_TIPO_TAREFA);
-
-  MQD.funcao = CV_MQFNC_INIT;
-  EnviaComando(&MQ, &MQD, NULL);
-
-  MQ.MQ_Data.funcao = CV_MQFNC_STATUS;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    if(MQ.MQ_Data.data.di[0]==CV_ST_ESPERA)
-      {
-      EstadoBotoes(GTK_WIDGET(button), (guint)(BTN_CFG | BTN_INIT | BTN_OPER | BTN_MANUAL)); // Habilita tudo.
-      MessageBox("Maquina pronta para operar!");
-      }
-    else
-      {
-      EstadoBotoes(GTK_WIDGET(button), (guint)(BTN_CFG | BTN_INIT)); // Desabilita operacao.
-      MessageBox("Erro encontrado enquanto inicializando!");
-      }
-    }
-}
-
-void
-SaiManual                              (GtkObject       *object,
-                                        gpointer         user_data)
-{
-  gtk_grab_remove(GTK_WIDGET(object));
-}
-
-
-void
-PosicManual                            (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  GtkWidget *wdg;
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_MANUAL))
-    return;
-
-  wdg = lookup_widget(GTK_WIDGET(button), "entPosic");
-
-  MQD.funcao = CV_MQFNC_POSIC;
-  MQD.data.df[0] = atof((unsigned char *)(gtk_entry_get_text(GTK_ENTRY(wdg))));
-
-  EnviaComando(&MQ, &MQD, NULL);
-}
-
-gint AtualEnc(gpointer dados)
-{
-  static int DeveAtualizar=1;
-  long ValEnc;
-  char tmp[20];
-  GtkWidget *lbl;
-
-  lbl = lookup_widget((GtkWidget *)(dados), "lblEncMesa");
-  if(lbl==NULL)
-    {
-// Configura maquina para modo de espera
-    MQ.MQ_Data.funcao = CV_MQFNC_MANUAL;
-    MQ.MQ_Data.data.di[0] = 0;
-    MQ_Transfer(&MQ);
-
-    DeveAtualizar=1;
-    return FALSE;
-    }
-
-  MQ.MQ_Data.funcao = CV_MQFNC_LERENC;
-  MQ.MQ_Data.data.dl[0] = CV_ENC_MESA;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    ValEnc = atol(gtk_label_get_text(GTK_LABEL(lbl)));
-
-    if(MQ.MQ_Data.data.dl[0] != ValEnc || DeveAtualizar)
-      {
-      DeveAtualizar=0;
-      sprintf(tmp, "%d", MQ.MQ_Data.data.dl[0]);
-      gtk_label_set_text(GTK_LABEL(lbl), tmp);
-      }
-    }
-
-  return TRUE;
-}
-
-void UpdateImageBoxes(GtkWidget *ref, char *nome, unsigned long valor)
-{
-  int i = 0;
-  GtkWidget *obj;
-  char nome_obj[20];
-
-  while(1) // Sai apenas quando não encontra o objeto
-    {
-    sprintf(nome_obj, "%s%02d", nome, i);
-    obj = lookup_widget(ref, nome_obj);
-
-    // Acabaram os controles, saindo
-    if(obj == NULL)
-      break;
-
-    gtk_image_set_from_stock(GTK_IMAGE(obj), (valor>>i)&1 ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
-
-    i++; // Próximo controle.
-    }
-}
-
-void UpdateToggleButtons(GtkWidget *ref, char *nome, unsigned long valor)
-{
-  int i = 0;
-  GtkWidget *obj;
-  char nome_obj[20];
-
-  while(1) // Sai apenas quando não encontra o objeto
-    {
-    sprintf(nome_obj, "%s%02d", nome, i);
-    obj = lookup_widget(ref, nome_obj);
-
-    // Acabaram os controles, saindo
-    if(obj == NULL)
-      break;
-
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), (valor>>i)&1);
-
-    i++; // Próximo controle.
-    }
-}
-
 gint AtualIOs(gpointer dados)
 {
   unsigned long val;
@@ -589,149 +154,6 @@ gint AtualIOs(gpointer dados)
   return TRUE;
 }
 
-void
-AbrirManut                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  GtkWidget *wnd;
-
-  if(!GetUserPerm(PERM_ACESSO_MANUT))
-    {
-    MessageBox("Sem permissão para acesso à manutenção!");
-    return;
-    }
-
-  wnd = (GtkWidget *)(create_wndManut());
-
-// Funcao para atualizacao do estado dos I/Os
-  g_timeout_add(1500,(GtkFunction)AtualIOs, (gpointer)(wnd));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
-void
-CalcFatorMesa                          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_ESPERA))
-    return;
-
-  Log("Calculando fator de correção da mesa", LOG_TIPO_CONFIG);
-
-  MQD.funcao = CV_MQFNC_CALC_FATOR;
-  EnviaComando(&MQ, &MQD, NULL);
-  LerDadosConfig(GTK_WIDGET(button));
-}
-
-void
-cbManualMesaRecua                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_REVERSO;
-  MQ_Transfer(&MQ);
-}
-
-void
-cbManualMesaParar                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_DESLIGA;
-  MQ_Transfer(&MQ);
-}
-
-void
-cbManualMesaAvanca                     (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_AVANTE;
-  MQ_Transfer(&MQ);
-}
-
-void
-cbManualMesaCortar                     (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_MANUAL))
-    return;
-
-  MQD.funcao = CV_MQFNC_CORTAR;
-  EnviaComando(&MQ, &MQD, NULL);
-}
-
-void
-cbMsgParar                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PARAR;
-// Se enviou o comando para interromper operação, desabilita o botão para não
-// permitir reenvio.
-  if(MQ_Send(&MQ)==MQ_ERRO_NENHUM)
-    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
-}
-
-void
-cbOperacaoManual                       (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  GtkWidget *wnd;
-
-  if(!GetUserPerm(PERM_ACESSO_OPER))
-    {
-    MessageBox("Sem permissão para operar a máquina!");
-    return;
-    }
-
-  wnd = (GtkWidget *)(create_wndManual());
-
-// Configura maquina para operar em modo manual
-  MQ.MQ_Data.funcao = CV_MQFNC_MANUAL;
-  MQ.MQ_Data.data.di[0] = 1;
-  MQ_Transfer(&MQ);
-
-// Funcao para atualizacao do valor dos encoders
-  g_timeout_add(100,(GtkFunction)AtualEnc, (gpointer)(wnd));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
-void
-cbManualPerfRecua                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PERF_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_REVERSO;
-  MQ_Transfer(&MQ);
-}
-
-
-void
-cbManualPerfParar                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PERF_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_DESLIGA;
-  MQ_Transfer(&MQ);
-}
-
-
-void
-cbManualPerfAvanca                     (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PERF_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_AVANTE;
-  MQ_Transfer(&MQ);
-}
-
 #else
 void CarregaComboClientes()
 {
@@ -816,9 +238,7 @@ char *lista_ent[] = {
     "spbConfigPerfVelMaxManual",
     "spbConfigPerfAcelManual",
     "spbConfigPerfDesacelManual",
-    "rdbModoSerra",
     "entCorteFaca",
-    "entCorteSerra",
     "spbConfigPerfReducao",
     "spbConfigPerfDiamRolo",
     ""
@@ -843,8 +263,8 @@ int GravarDadosConfig()
   mp.perfil.manual_vel     = atol(valor_ent[ 6]);
   mp.perfil.manual_acel    = atof(valor_ent[ 7]);
   mp.perfil.manual_desacel = atof(valor_ent[ 8]);
-  mp.perfil.fator          = atof(valor_ent[12]);
-  mp.perfil.diam_rolo      = atol(valor_ent[13]);
+  mp.perfil.fator          = atof(valor_ent[10]);
+  mp.perfil.diam_rolo      = atol(valor_ent[11]);
   MaqConfigPerfil(mp.perfil);
 
   mp.encoder.fator     = atof(valor_ent[1]);
@@ -852,9 +272,7 @@ int GravarDadosConfig()
   mp.encoder.perimetro = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.corte.modo        = atol(valor_ent[ 9]);
-  mp.corte.tam_faca    = atol(valor_ent[10]);
-  mp.corte.tam_serra   = atol(valor_ent[11]);
+  mp.corte.tam_faca    = atol(valor_ent[9]);
   MaqConfigCorte(mp.corte);
 
   GravaDadosBanco();
@@ -919,34 +337,19 @@ void LerDadosConfig()
   valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[8], tmp);
 
-  sprintf(tmp, "%d", mp.corte.modo);
+  sprintf(tmp, "%d", mp.corte.tam_faca);
   valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[9], tmp);
 
-  sprintf(tmp, "%d", mp.corte.tam_faca);
+  sprintf(tmp, "%f", mp.perfil.fator);
   valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[10], tmp);
 
-  sprintf(tmp, "%d", mp.corte.tam_serra);
+  sprintf(tmp, "%d", mp.perfil.diam_rolo);
   valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[11], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.fator);
-  valor_ent[12] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[12], tmp);
-
-  sprintf(tmp, "%d", mp.perfil.diam_rolo);
-  valor_ent[13] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[13], tmp);
-
   GravarValoresWidgets(lista_ent, valor_ent);
-
-  // Seleciona o modo correto
-  if(mp.corte.modo == MODO_CORTE_HIDR) {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "rdbModoHidr" )), 1);
-  } else {
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "rdbModoSerra")), 1);
-  }
 
   while(i--) {
     if(valor_ent[i] != NULL)
@@ -1166,6 +569,10 @@ void cbExcluirUsuario(GtkButton *button, gpointer user_data)
       sprintf(sql, "Removendo usuário %s", ativo);
       Log(sql, LOG_TIPO_SISTEMA);
 
+      sprintf(sql, "update log set ID_Usuario='1' where ID_Usuario='%d'", id);
+      DB_Execute(&mainDB, 0, sql);
+      sprintf(sql, "delete from permissoes where ID_user='%d'", id);
+      DB_Execute(&mainDB, 0, sql);
       sprintf(sql, "delete from usuarios where login='%s'", ativo);
       DB_Execute(&mainDB, 0, sql);
       ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
@@ -1547,6 +954,7 @@ void AbrirConfig(unsigned int pos)
   if(mainDB.res != NULL) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
+      WorkAreaGoTo(NTB_ABA_HOME);
       MessageBox("Sem permissão para acesso à configuração!");
       return;
       }
@@ -1671,7 +1079,7 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
 
 void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 {
-  const gchar *nome = gtk_widget_get_name(GTK_WIDGET(togglebutton));
+  const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(togglebutton));
   char nome_img[30];
   union MB_FCD_Data data;
   struct MB_Reply rp;

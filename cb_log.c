@@ -104,6 +104,7 @@ void AbrirLog()
 
   if(!GetUserPerm(PERM_ACESSO_LOGS))
     {
+    WorkAreaGoTo(NTB_ABA_HOME);
     MessageBox("Sem permissão para acesso aos registros!");
     return;
     }

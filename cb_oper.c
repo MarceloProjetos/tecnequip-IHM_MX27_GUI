@@ -462,6 +462,7 @@ void AbrirOper()
 {
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
+    WorkAreaGoTo(NTB_ABA_HOME);
     MessageBox("Sem permissão para operar a máquina!");
     return;
     }
@@ -528,6 +529,12 @@ void cbExecParar(GtkButton *button, gpointer user_data)
 
 void cbOperarProduzir(GtkButton *button, gpointer user_data)
 {
+  if(!GetUserPerm(PERM_ACESSO_OPER))
+    {
+    MessageBox("Sem permissão para operar a máquina!");
+    return;
+    }
+
   IniciarDadosTarefa();
 
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaQtd")),
@@ -562,7 +569,7 @@ void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
 
 void cbManualMesaRecua(GtkButton *button, gpointer user_data)
 {
-//  MaqPerfManual(PERF_RECUA);
+  MaqPerfManual(PERF_RECUA);
 }
 
 void cbManualMesaParar(GtkButton *button, gpointer user_data)

@@ -139,17 +139,7 @@ int MaqSync(unsigned int mask)
   }
 
   if(mask & MAQ_SYNC_CORTE) {
-    printf("maq_param.corte.modo.......: %d\n", maq_param.corte.modo);
     printf("maq_param.corte.tam_faca...: %d\n", maq_param.corte.tam_faca);
-    printf("maq_param.corte.tam_serra..: %d\n", maq_param.corte.tam_serra);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_MODO;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.modo;
-    IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
     ipc_msg.fnc   = NULL;
@@ -157,14 +147,6 @@ int MaqSync(unsigned int mask)
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
     ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_FACA;
     ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.tam_faca;
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_SERRA;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.tam_serra;
     IPCMQ_Main_Enviar(&ipc_msg);
   }
 

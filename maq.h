@@ -49,8 +49,6 @@
 #define MAQ_REG_ENC_RESOL         21
 #define MAQ_REG_ENC_PERIM         22
 #define MAQ_REG_CRT_FACA          25
-#define MAQ_REG_CRT_SERRA         26
-#define MAQ_REG_CRT_MODO          27
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -65,9 +63,7 @@ struct strMaqParam
 
 // Parametros relacionados com a ferramenta de corte
   struct strMaqParamCorte {
-    unsigned int modo;
     unsigned int tam_faca;
-    unsigned int tam_serra;
   } corte;
 
 // Parametros relacionados com a perfiladeira
