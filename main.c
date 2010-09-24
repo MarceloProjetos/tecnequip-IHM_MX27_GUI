@@ -109,6 +109,9 @@ MB_HANDLER_TX(IHM_MB_TX)
   uint32_t i, tent = 50;
   int32_t resp, wait_usec, wait;
 
+#ifdef DEBUG_PC
+  return 0;
+#endif
 
   if(primeiro) {
     primeiro = 0;
@@ -127,7 +130,7 @@ MB_HANDLER_TX(IHM_MB_TX)
     usleep(250000 - wait);
 
   gettimeofday(&tv, NULL);
-  printf("\n%3d.%04d - MB Send: ", tv.tv_sec, tv.tv_usec);
+  printf("\n%3d.%04ld - MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
   for(i=0; i<size; i++)
     printf("%02x ", data[i]);
   printf("\n");
@@ -142,11 +145,11 @@ MB_HANDLER_TX(IHM_MB_TX)
   if(resp<=0) {
     size = 0;
     gettimeofday(&tv, NULL);
-    printf("%3d.%04d - Tempo para resposta esgotado...\n", tv.tv_sec, tv.tv_usec);
+    printf("%3d.%04ld - Tempo para resposta esgotado...\n", (int)tv.tv_sec, (long)tv.tv_usec);
   } else {
     size = resp;
     gettimeofday(&tv, NULL);
-    printf("%3d.%04d - Retorno de MB Send: ", tv.tv_sec, tv.tv_usec);
+    printf("%3d.%04ld - Retorno de MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
     for(i=0; i<size; i++)
       printf("%02x ", data[i]);
     printf("\n");
@@ -377,7 +380,7 @@ void ReadID(void *dt, void *res)
 void cbFunctionKey(GtkButton *button, gpointer user_data)
 {
   uint32_t idx;
-  const gchar *nome = gtk_widget_get_name(GTK_WIDGET(button));
+  const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(button));
   struct strIPCMQ_Message ipc_msg;
 
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
@@ -395,9 +398,16 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   case NTB_ABA_CONFIG:
     AbrirConfig(0);
     break;
+
   case NTB_ABA_OPERAR:
     AbrirOper();
     break;
+
+  case NTB_ABA_MANUAL:
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarQtd")), "");
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarTam")), "");
+    break;
+
   case NTB_ABA_LOGS:
     AbrirLog();
     break;
