@@ -4143,11 +4143,11 @@ N&#xED;vel Inferior</property>
                                 <property name="spacing">3</property>
                                 <property name="homogeneous">True</property>
                                 <child>
-                                  <object class="GtkButton" id="btnMesaRecua">
+                                  <object class="GtkButton" id="btnMesaAvanca">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <signal name="pressed" handler="cbManualMesaRecua"/>
+                                    <signal name="pressed" handler="cbManualMesaAvanca"/>
                                     <signal name="released" handler="cbManualMesaParar"/>
                                     <child>
                                       <object class="GtkImage" id="image3">
@@ -4189,11 +4189,11 @@ N&#xED;vel Inferior</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkButton" id="btnMesaAvanca">
+                                  <object class="GtkButton" id="btnMesaRecua">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="receives_default">True</property>
-                                    <signal name="pressed" handler="cbManualMesaAvanca"/>
+                                    <signal name="pressed" handler="cbManualMesaRecua"/>
                                     <signal name="released" handler="cbManualMesaParar"/>
                                     <child>
                                       <object class="GtkImage" id="image5">

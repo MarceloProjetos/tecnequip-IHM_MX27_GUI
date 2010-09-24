@@ -1024,6 +1024,9 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         // Oculta a janela de login.
         WorkAreaGoTo(NTB_ABA_HOME);
 
+        // Limpa a senha digitada
+        gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")), "");
+
         return;
         }
       else // Erro durante login. Gera log informando esta falha.
