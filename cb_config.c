@@ -1166,6 +1166,10 @@ void cbExcluirUsuario(GtkButton *button, gpointer user_data)
       sprintf(sql, "Removendo usuário %s", ativo);
       Log(sql, LOG_TIPO_SISTEMA);
 
+      sprintf(sql, "update log set ID_Usuario='1' where ID_Usuario='%d'", id);
+      DB_Execute(&mainDB, 0, sql);
+      sprintf(sql, "delete from permissoes where ID_user='%d'", id);
+      DB_Execute(&mainDB, 0, sql);
       sprintf(sql, "delete from usuarios where login='%s'", ativo);
       DB_Execute(&mainDB, 0, sql);
       ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
