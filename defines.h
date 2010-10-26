@@ -73,6 +73,7 @@
 #define NTB_ABA_MANUT       1
 #define NTB_ABA_CONFIG      2
 #define NTB_ABA_OPERAR      3
+#define NTB_ABA_MANUAL      4
 #define NTB_ABA_LOGS        5
 #define NTB_ABA_TAREFA      7
 #define NTB_ABA_MODBUS      8

@@ -43,8 +43,9 @@ gboolean tmrExec(gpointer data)
 
   qtdprod = MaqLerProdQtd();
 
-  if(MaqLerModo() == MAQ_MODO_MANUAL) {
+  if((MaqLerEstado() & MAQ_MODO_MASK) == MAQ_MODO_MANUAL) {
     iniciando = 1;
+    MaqConfigModo(MAQ_MODO_MANUAL);
 
     // Carrega a quantidade de peças da tarefa
     qtd = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd")));
@@ -461,6 +462,7 @@ void AbrirOper()
 {
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
+    WorkAreaGoTo(NTB_ABA_HOME);
     MessageBox("Sem permissão para operar a máquina!");
     return;
     }
@@ -499,6 +501,7 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo")), tmp);
 
   tam = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Tamanho")));
+  sprintf(tmp, "%d", tam);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPos" )), tmp);
 
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd")), "0");
@@ -526,6 +529,12 @@ void cbExecParar(GtkButton *button, gpointer user_data)
 
 void cbOperarProduzir(GtkButton *button, gpointer user_data)
 {
+  if(!GetUserPerm(PERM_ACESSO_OPER))
+    {
+    MessageBox("Sem permissão para operar a máquina!");
+    return;
+    }
+
   IniciarDadosTarefa();
 
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaQtd")),
@@ -551,6 +560,26 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 
   last = *event;
   return TRUE;
+}
+
+void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
+{
+  MaqPerfManual(PERF_AVANCA);
+}
+
+void cbManualMesaRecua(GtkButton *button, gpointer user_data)
+{
+  MaqPerfManual(PERF_RECUA);
+}
+
+void cbManualMesaParar(GtkButton *button, gpointer user_data)
+{
+  MaqPerfManual(PERF_PARAR);
+}
+
+void cbManualMesaCortar(GtkButton *button, gpointer user_data)
+{
+  MaqCortar();
 }
 
 // defines que permitem selecionar o ponto de referencia para insercao da imagem

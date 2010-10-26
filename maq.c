@@ -104,6 +104,8 @@ int MaqSync(unsigned int mask)
     ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_FATOR_HIGH;
     ipc_msg.data.modbus_query.data.write_single_register.val     = (rel_motor_perfil>>16) & 0XFFFF;
     IPCMQ_Main_Enviar(&ipc_msg);
+
+    MaqConfigModo(MAQ_MODO_PERF_SYNC);
   }
 
   if(mask & MAQ_SYNC_ENCODER) {
@@ -137,17 +139,7 @@ int MaqSync(unsigned int mask)
   }
 
   if(mask & MAQ_SYNC_CORTE) {
-    printf("maq_param.corte.modo.......: %d\n", maq_param.corte.modo);
     printf("maq_param.corte.tam_faca...: %d\n", maq_param.corte.tam_faca);
-    printf("maq_param.corte.tam_serra..: %d\n", maq_param.corte.tam_serra);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_MODO;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.modo;
-    IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
     ipc_msg.fnc   = NULL;
@@ -155,14 +147,6 @@ int MaqSync(unsigned int mask)
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
     ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_FACA;
     ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.tam_faca;
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_SERRA;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.tam_serra;
     IPCMQ_Main_Enviar(&ipc_msg);
   }
 
@@ -232,13 +216,13 @@ char *MaqStrErro(uint16_t erro)
   uint32_t i;
   char *msg_erro[] = {
       "Erro na comunicação",
-      "Emergência",
+      "Emergência Acionada",
       "Falta de fase",
       "Erro na unidade hidráulica",
       "Erro no inversor",
       "Erro no desbobinador",
       "Erro de comunicação - Inversor",
-      "Erro de configuração",
+      "Erro no Corte do Perfil",
 //      "Baixa pressão de ar",
   };
 
@@ -471,6 +455,33 @@ void MaqConfigModo(uint16_t modo)
   printf("modo = %d\n", modo);
 
   IPCMQ_Main_Enviar(&ipc_msg);
+}
+
+void MaqLimparErro()
+{
+  uint16_t modo = MaqLerModo();
+  modo |= MAQ_MODO_LIMPAR;
+  MaqConfigModo(modo);
+}
+
+void MaqCortar()
+{
+  uint16_t modo = MaqLerModo();
+  modo |= MAQ_MODO_CORTAR;
+  MaqConfigModo(modo);
+}
+
+void MaqPerfManual(uint16_t cmd)
+{
+  uint16_t modo = MaqLerModo();
+
+  modo &= ~MAQ_MODO_PERF_MASK;
+  if     (cmd == PERF_AVANCA)
+    modo |= MAQ_MODO_PERF_AVANCA;
+  else if(cmd == PERF_RECUA)
+    modo |= MAQ_MODO_PERF_RECUA;
+
+  MaqConfigModo(modo);
 }
 
 void MaqConfigProdQtd(uint16_t qtd)
