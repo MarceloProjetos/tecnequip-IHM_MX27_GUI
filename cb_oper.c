@@ -83,6 +83,26 @@ gboolean tmrExec(gpointer data)
   return TRUE;
 }
 
+gboolean tmrAguardaFimOperacao(gpointer data)
+{
+  if(MaqOperando()) {
+    return TRUE;
+  } else {
+    if(data != NULL)
+      (*((void (*)(void))(data)))();
+
+    gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndOperando")));
+
+    return FALSE;
+  }
+}
+
+void AguardarFimOperacao(void (*fnc)(void))
+{
+  gtk_widget_show_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndOperando")));
+  g_timeout_add(500, tmrAguardaFimOperacao, (gpointer)fnc);
+}
+
 void ConfigBotoesTarefa(GtkWidget *wdg, gboolean modo)
 {
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecTarefa"   )), modo);
@@ -476,8 +496,8 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
   GtkWidget *wdg;
   char tmp[30], sql[300];
 
-//  if(!MaquinaEspera(CHECAR_ESPERA))
-//    return;
+  if(!(MaqLerEstado() & MAQ_STATUS_INITOK))
+    return;
 
   if(button == NULL) { // Produzindo pela operacao manual.
     // Carrega os dados da ultima tarefa adicionada
@@ -529,6 +549,8 @@ void cbExecParar(GtkButton *button, gpointer user_data)
 
 void cbOperarProduzir(GtkButton *button, gpointer user_data)
 {
+  int ret;
+
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
     MessageBox("Sem permissão para operar a máquina!");
@@ -543,11 +565,12 @@ void cbOperarProduzir(GtkButton *button, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaTam")),
       gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarTam"))));
 
-  AplicarTarefa();
+  ret = AplicarTarefa();
   LimparDadosTarefa();
 
   // Passando nulos executa ultima tarefa adicionada.
-  cbExecTarefa(NULL, NULL);
+  if(ret == TRUE)
+    cbExecTarefa(NULL, NULL);
 }
 
 gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
@@ -562,24 +585,89 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
   return TRUE;
 }
 
-void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
+void cbManualPerfAvanca(GtkButton *button, gpointer user_data)
 {
   MaqPerfManual(PERF_AVANCA);
 }
 
-void cbManualMesaRecua(GtkButton *button, gpointer user_data)
+void cbManualPerfRecua(GtkButton *button, gpointer user_data)
 {
   MaqPerfManual(PERF_RECUA);
 }
 
-void cbManualMesaParar(GtkButton *button, gpointer user_data)
+void cbManualPerfParar(GtkButton *button, gpointer user_data)
 {
   MaqPerfManual(PERF_PARAR);
+}
+
+void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
+{
+  MaqMesaManual(MESA_AVANCA);
+}
+
+void cbManualMesaRecua(GtkButton *button, gpointer user_data)
+{
+  MaqMesaManual(MESA_RECUA);
+}
+
+void cbManualMesaParar(GtkButton *button, gpointer user_data)
+{
+  MaqMesaManual(MESA_PARAR);
 }
 
 void cbManualMesaCortar(GtkButton *button, gpointer user_data)
 {
   MaqCortar();
+  AguardarFimOperacao(NULL);
+}
+
+void cbManualMesaPosic(GtkButton *button, gpointer user_data)
+{
+  MaqMesaPosic(0);
+  AguardarFimOperacao(NULL);
+}
+
+void retCalcFatorPerfil()
+{
+  char tmp[10];
+
+  sprintf(tmp, "%.03f", (float)(MaqLerNovoFator())/1000);
+  GravarValorWidget("entEncoderFator", tmp);
+}
+
+void cbCalcFatorPerfil(GtkButton *button, gpointer user_data)
+{
+  MaqCalcFatorPerfil();
+  AguardarFimOperacao(retCalcFatorPerfil);
+}
+
+void retCalcRelEnc()
+{
+  char tmp[10];
+
+  sprintf(tmp, "%.03f", (float)(MaqLerNovoRelEnc())/1000);
+  printf("%s\n", tmp);
+//  GravarValorWidget("lblMaqRelEncoders", tmp);
+}
+
+void cbCalcRelEnc(GtkButton *button, gpointer user_data)
+{
+  MaqCalcRelEnc();
+  AguardarFimOperacao(retCalcRelEnc);
+}
+
+void retCalcTamMin()
+{
+  char tmp[10];
+
+  sprintf(tmp,"%d", MaqLerNovoTamMin()/10);
+  GravarValorWidget("entConfigTamMin", tmp);
+}
+
+void cbCalcTamMin(GtkButton *button, gpointer user_data)
+{
+  MaqCalcTamMin();
+  AguardarFimOperacao(retCalcTamMin);
 }
 
 // defines que permitem selecionar o ponto de referencia para insercao da imagem

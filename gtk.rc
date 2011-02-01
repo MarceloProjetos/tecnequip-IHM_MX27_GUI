@@ -1,7 +1,18 @@
 gtk-icon-theme-name="IHM27"
-style "font"
+
+style "default"
 {
 font_name = "Arial 16"
 }
-widget_class "*" style "font"
-gtk-font-name = "Arial 16" 
+
+style "reduced"
+{
+font_name = "Arial 14"
+}
+
+widget_class "*" style "default"
+widget "*.lblConfigCalcFatorMesa" style "reduced"
+widget "*.lblConfigCalcRelEnc" style "reduced"
+widget "*.lblConfigCalcTamMin" style "reduced"
+widget "*.lblConfigRelEnc" style "reduced"
+widget "*.lblConfigTamMin" style "reduced"

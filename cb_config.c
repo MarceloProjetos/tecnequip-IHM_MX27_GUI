@@ -238,9 +238,11 @@ char *lista_ent[] = {
     "spbConfigPerfVelMaxManual",
     "spbConfigPerfAcelManual",
     "spbConfigPerfDesacelManual",
-    "entCorteFaca",
-    "spbConfigPerfReducao",
-    "spbConfigPerfDiamRolo",
+    "entConfigMesaCurso",
+    "spbConfigMesaVelMaxAuto",
+    "spbConfigMesaVelMaxManual",
+    "spbConfigMesaOffset",
+    "entConfigTamMin",
     ""
 };
 
@@ -263,8 +265,6 @@ int GravarDadosConfig()
   mp.perfil.manual_vel     = atol(valor_ent[ 6]);
   mp.perfil.manual_acel    = atof(valor_ent[ 7]);
   mp.perfil.manual_desacel = atof(valor_ent[ 8]);
-  mp.perfil.fator          = atof(valor_ent[10]);
-  mp.perfil.diam_rolo      = atol(valor_ent[11]);
   MaqConfigPerfil(mp.perfil);
 
   mp.encoder.fator     = atof(valor_ent[1]);
@@ -272,8 +272,12 @@ int GravarDadosConfig()
   mp.encoder.perimetro = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.corte.tam_faca    = atol(valor_ent[9]);
-  MaqConfigCorte(mp.corte);
+  mp.mesa.curso      = atol(valor_ent[ 9]);
+  mp.mesa.auto_vel   = atol(valor_ent[10]);
+  mp.mesa.manual_vel = atol(valor_ent[11]);
+  mp.mesa.offset     = atol(valor_ent[12]);
+  mp.mesa.tam_min    = atol(valor_ent[13]);
+  MaqConfigMesa(mp.mesa);
 
   GravaDadosBanco();
 
@@ -299,7 +303,7 @@ void LerDadosConfig()
 
   mp.perfil  = MaqLerPerfil ();
   mp.encoder = MaqLerEncoder();
-  mp.corte   = MaqLerCorte  ();
+  mp.mesa    = MaqLerMesa   ();
 
   sprintf(tmp, "%f", mp.encoder.fator);
   valor_ent[1] = (char *)malloc(sizeof(tmp)+1);
@@ -337,17 +341,25 @@ void LerDadosConfig()
   valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[8], tmp);
 
-  sprintf(tmp, "%d", mp.corte.tam_faca);
+  sprintf(tmp, "%d", mp.mesa.curso);
   valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[9], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.fator);
+  sprintf(tmp, "%f", mp.mesa.auto_vel);
   valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[10], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.diam_rolo);
+  sprintf(tmp, "%f", mp.mesa.manual_vel);
   valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[11], tmp);
+
+  sprintf(tmp, "%f", mp.mesa.offset);
+  valor_ent[12] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[12], tmp);
+
+  sprintf(tmp, "%d", mp.mesa.tam_min);
+  valor_ent[13] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[13], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -792,11 +804,11 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
     return; // Sem item ativo.
 
   if(CarregaCampos(combobox, lst_campos, lst_botoes, "modelos", "nome"))
-    pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar")));
+    pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar"))) ? 1 : 0;
   else
     pilotar = 0;
 
-  lst = gtk_radio_button_get_group(GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "rbtModPilotarSim")));
+  lst = gtk_radio_button_get_group(GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "rdbModPilotarSim")));
   while(lst)
     {
     if(!strcmp(gtk_button_get_label(GTK_BUTTON(lst->data)), opt_piloto[pilotar]))
@@ -818,7 +830,7 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
   char *campos[] =
     {
     "cmbModNome",
-    "rbtModPilotarSim",
+    "rdbModPilotarSim",
     "entModPasso",
     "entModTamMax",
     "entModTamMin",
@@ -847,7 +859,7 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
     if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
       {
       sprintf(sql, "update modelos set pilotar='%d', passo='%s', tam_max='%s', tam_min='%s' where nome='%s'",
-        BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], valores[0]);
+        atoi(valores[1]), valores[2], valores[3], valores[4], valores[0]);
       DB_Execute(&mainDB, 0, sql);
 
       gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
@@ -992,6 +1004,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 {
   int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
   char sql[100], *lembrete = "";
+  static int first_time = 1;
   GtkWidget *wnd;
 
   if(mainDB.res==NULL) // Banco não conectado!
@@ -1026,6 +1039,20 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
         // Limpa a senha digitada
         gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")), "");
+
+        // Executa apenas se for o primeiro login.
+        if(first_time) {
+          first_time = 0;
+
+          // Sincroniza os parâmetros
+          MaqSync(MAQ_SYNC_TODOS);
+
+          // Configura a máquina para modo manual.
+          MaqConfigModo(MAQ_MODO_MANUAL);
+
+          // Libera o uso da máquina.
+          MaqLiberar(1);
+        }
 
         return;
         }
