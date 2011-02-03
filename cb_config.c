@@ -249,7 +249,6 @@ char *lista_ent[] = {
 int GravarDadosConfig()
 {
   unsigned int i;
-  GtkWidget *obj;
   char **valor_ent;
   struct strMaqParam mp;
   valor_ent = (char **)(malloc(10*sizeof(char[10])));
@@ -293,8 +292,6 @@ void LerDadosConfig()
   char tmp[100];
   unsigned int i;
   struct strMaqParam mp;
-  GtkWidget *obj;
-  GSList *lst;
   char **valor_ent;
 
   // Diminui em 1 o número de campos devido ao elemento vazio no final.
@@ -401,7 +398,7 @@ void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
 void cbRemoverCliente(GtkButton *button, gpointer user_data)
 {
   int id;
-  char sql[100], tmp[10];
+  char sql[100];
   GtkWidget *dialog;
   GtkComboBox *obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbClientes"));
 
@@ -720,7 +717,7 @@ void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
       {
       *(ptrIDs+tam-i) = atoi((char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
 
-      Asc2Utf(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "descricao")), tmp);
+      Asc2Utf((unsigned char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "descricao")), (unsigned char *)tmp);
       wdg = gtk_label_new(tmp);
       gtk_table_attach_defaults(GTK_TABLE(tbl), wdg, 0, 1, i, i+1);
 
@@ -823,7 +820,6 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
 
 void cbAplicarModelo(GtkButton *button, gpointer user_data)
 {
-  int i;
   char sql[400], *nome;
 
   char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
@@ -961,8 +957,6 @@ void cbRemoverModelo(GtkButton *button, gpointer user_data)
 
 void AbrirConfig(unsigned int pos)
 {
-  GtkWidget *wnd;
-
   if(mainDB.res != NULL) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
@@ -1005,31 +999,25 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
   int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
   char sql[100], *lembrete = "";
   static int first_time = 1;
-  GtkWidget *wnd;
 
-  if(mainDB.res==NULL) // Banco não conectado!
-    {
-    if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) // Senha correta
-      {
+  if(mainDB.res==NULL) { // Banco não conectado!
+    if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) { // Senha correta
       idUser=1; // Grava 1 para indicar que foi logado
 
 // Exibe a janela de configuração na aba de configuração do banco de dados
       AbrirConfig(pos);
 
       return;
-      }
-    else
+    } else {
       lembrete = LEMBRETE_SENHA_MASTER;
     }
-  else
-    {
+  } else {
     sprintf(sql, "select senha, lembrete, ID from usuarios where login='%s'",
       LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
 
     DB_Execute(&mainDB, 0, sql);
-    if(DB_GetNextRow(&mainDB, 0)>0)
-      if(!strcmp(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "senha")),Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")))))))
-        {
+    if(DB_GetNextRow(&mainDB, 0)>0) {
+      if(!strcmp(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "senha")),Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))))) {
         // Carrega o ID do usuário que está logando.
         idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
         Log("Entrada no sistema", LOG_TIPO_SISTEMA);
@@ -1055,9 +1043,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         }
 
         return;
-        }
-      else // Erro durante login. Gera log informando esta falha.
-        {
+      } else { // Erro durante login. Gera log informando esta falha.
         lembrete = DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "lembrete"));
 
         // Carrega Id para associar o log a este usuário
@@ -1068,8 +1054,9 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
         // Volta para zero pois o usuário não logou.
         idUser = 0;
-        }
+      }
     }
+  }
 
   // Se lembrete for nulo, seleciona para texto em branco.
   if(lembrete == NULL)

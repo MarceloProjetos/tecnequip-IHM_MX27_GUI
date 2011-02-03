@@ -31,7 +31,7 @@ gboolean tmrExec(gpointer data)
 {
   static int qtd, iniciando = 1;
   char tmp[30], sql[300];
-  int qtdprod, status, tam;
+  int qtdprod, status;
   static GtkLabel *lblSaldo = NULL, *lblProd = NULL;
 
   if(iniciando) {
@@ -492,7 +492,7 @@ void AbrirOper()
 
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
-  int qtd, qtdprod, status, tam;
+  int qtd, tam;
   GtkWidget *wdg;
   char tmp[30], sql[300];
 
@@ -717,8 +717,6 @@ void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, 
 
 gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
-//  GdkPixbuf *pbtmp;
-  static unsigned int i=0;
   static GdkPixbuf *pb = NULL;
   if(pb == NULL) {
     pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",

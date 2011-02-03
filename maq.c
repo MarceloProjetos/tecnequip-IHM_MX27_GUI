@@ -282,6 +282,28 @@ void retMaqMB(void *dt, void *res)
   rp->ready = 1; // Recebida resposta
 }
 
+uint16_t MaqLerRegistrador(uint16_t reg)
+{
+  struct strMaqReply rp;
+  struct strIPCMQ_Message ipc_msg;
+
+  memset(&rp, 0, sizeof(rp));
+
+  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+  ipc_msg.fnc   = retMaqMB;
+  ipc_msg.res   = (void *)&rp;
+  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
+  ipc_msg.data.modbus_query.data.read_holding_registers.start = reg;
+  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
+
+  EnviarMB(&ipc_msg, &rp);
+
+  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+    return 0; // Erro de comunicacao
+
+  return CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
+}
+
 uint16_t MaqLerErros(void)
 {
   uint16_t erro;
@@ -302,7 +324,7 @@ uint16_t MaqLerErros(void)
   if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
     return 1; // Erro de comunicacao
 
-  erro = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
+  erro = CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
   printf("Erro lido: %04x\n", erro);
 
   return erro << 1;
@@ -310,50 +332,14 @@ uint16_t MaqLerErros(void)
 
 uint16_t MaqLerFlags(void)
 {
-  uint16_t flags;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
-
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_FLAGS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  flags = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
-
-  return flags;
+  return MaqLerRegistrador(MAQ_REG_FLAGS);
 }
 
 uint16_t MaqLerEstado(void)
 {
   uint16_t status;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_STATUS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 0x01;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  status = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
+  status = MaqLerRegistrador(MAQ_REG_STATUS);
   printf("status: %d\n", status);
 
   return status;
@@ -419,24 +405,8 @@ uint32_t MaqLerSaidas(void)
 uint16_t MaqLerProdQtd(void)
 {
   volatile uint16_t qtd;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_PROD_QTD;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  qtd = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
+  qtd = MaqLerRegistrador(MAQ_REG_PROD_QTD);
   printf("Restando %d pecas\n", qtd);
 
   return qtd;
@@ -444,25 +414,9 @@ uint16_t MaqLerProdQtd(void)
 
 uint16_t MaqLerNovoFator(void)
 {
-  volatile uint16_t fator;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
+  uint16_t fator;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_ENC_FATOR_NOVO;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  fator = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
+  fator = MaqLerRegistrador(MAQ_REG_ENC_FATOR_NOVO);
   printf("Novo fator: %.03f\n", (float)(fator)/1000);
 
   return fator;
@@ -470,25 +424,9 @@ uint16_t MaqLerNovoFator(void)
 
 uint16_t MaqLerNovoRelEnc(void)
 {
-  volatile uint16_t fator;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
+  uint16_t fator;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_ENC_REL_NOVO;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  fator = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
+  fator = MaqLerRegistrador(MAQ_REG_ENC_REL_NOVO);
   printf("Novo fator: %.03f\n", (float)(fator)/1000);
 
   return fator;
@@ -496,25 +434,9 @@ uint16_t MaqLerNovoRelEnc(void)
 
 uint16_t MaqLerNovoTamMin(void)
 {
-  volatile uint16_t tammin;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
+  uint16_t tammin;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_NOVO_TAM_MIN;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  tammin = *(uint16_t *)(&rp.modbus_reply.reply.read_holding_registers.data);
+  tammin = MaqLerRegistrador(MAQ_REG_NOVO_TAM_MIN);
   printf("Novo Tamanho Minimo: %d\n", tammin);
 
   return tammin;

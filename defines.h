@@ -5,6 +5,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
+#include <crypt.h>
+
+#include <gtk/gtk.h>
 
 // Para que a funcao atof funcione corretamente
 #include <stdio.h>
@@ -26,7 +29,7 @@
 #define DEBUG_PC
 
 // Ativar a linha abaixo para não conectar à POP
-#define DEBUG_PC_NOETH
+//#define DEBUG_PC_NOETH
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"
@@ -92,6 +95,9 @@
 
 /*** Fim das definições gerais ***/
 
+// Definições para cast de variáveis, evitando problemas com alinhamento.
+#define CONV_PCHAR_UINT16(data) (((uint16_t)(*(data+1))<<8) | (uint16_t)(*data))
+
 int  WorkAreaGet (void);
 void WorkAreaGoTo(int NewWorkArea);
 
@@ -124,6 +130,11 @@ struct strIPCMQ_Message {
   } data;
 };
 
+int  GetUserPerm          (char *permissao);
+void AbrirData            (GtkEntry *entry, GCallback cb);
+void WorkAreaGoPrevious   (void);
+
+void IPC_Update           (void);
 void IPCMQ_Main_Enviar    (struct strIPCMQ_Message *msg);
 int  IPCMQ_Main_Receber   (struct strIPCMQ_Message *msg, int tipo);
 void IPCMQ_Threads_Enviar (struct strIPCMQ_Message *msg);

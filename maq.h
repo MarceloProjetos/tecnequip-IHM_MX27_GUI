@@ -128,19 +128,32 @@ struct strMaqParam
 uint16_t MaqLerErros   (void);
 char    *MaqStrErro    (uint16_t status);
 
+int      MaqSync       (unsigned int mask);
+uint16_t MaqOperando   (void);
+void     MaqLimparErro (void);
+
 uint16_t MaqLerModo    (void);
 uint16_t MaqLerProdQtd (void);
 uint32_t MaqLerEntradas(void);
 uint32_t MaqLerSaidas  (void);
 
-void                      MaqConfigFlags  (uint16_t flags);
-void                      MaqConfigModo   (uint16_t modo);
-void                      MaqLiberar      (uint16_t liberar);
-void                      MaqConfigPosMesa(uint16_t pos);
-void                      MaqConfigProdQtd(uint16_t quant);
-void                      MaqConfigProdTam(uint16_t tam);
+void                      MaqConfigFlags    (uint16_t flags);
+void                      MaqConfigModo     (uint16_t modo);
+void                      MaqLiberar        (uint16_t liberar);
+void                      MaqConfigPosMesa  (uint16_t pos);
+void                      MaqConfigProdQtd  (uint16_t quant);
+void                      MaqConfigProdTam  (uint16_t tam);
 
-void                      MaqMesaPosic    (uint16_t pos);
+void                      MaqMesaPosic      (uint16_t pos);
+void                      MaqPerfManual     (uint16_t cmd);
+void                      MaqMesaManual     (uint16_t cmd);
+void                      MaqCortar         (void);
+uint16_t                  MaqLerNovoFator   (void);
+uint16_t                  MaqLerNovoRelEnc  (void);
+uint16_t                  MaqLerNovoTamMin  (void);
+void                      MaqCalcFatorPerfil(void);
+void                      MaqCalcRelEnc     (void);
+void                      MaqCalcTamMin     (void);
 
 void                      MaqConfigPerfil (struct strMaqParamPerfil pf);
 struct strMaqParamPerfil  MaqLerPerfil    (void);

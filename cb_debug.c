@@ -298,7 +298,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
 
     if(!rp.ExceptionCode) {
       wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblReadDeviceIdentificationVal"));
-      gtk_label_set_text(GTK_LABEL(wdg), rp.reply.read_device_identification.data);
+      gtk_label_set_text(GTK_LABEL(wdg), (const gchar *)rp.reply.read_device_identification.data);
 
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "string: %s\n", rp.reply.read_device_identification.data);

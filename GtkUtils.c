@@ -188,7 +188,6 @@ void GravarValoresWidgets(char **lst_wdg, char **lst_val)
 
 char * LerValorWidget(char *nome)
 {
-	char tmp[30];
 	GtkTextIter start, end;
 	GtkTextBuffer *tb;
 	GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, nome));
@@ -267,7 +266,7 @@ int BuscaStringLista(char *lista[], char *string, gboolean modo_UTF)
 	if(modo_UTF)
 		{
 		string_UTF = (char *)(malloc(strlen(string)*2)); // UTF usa até o dobro.
-		Utf2Asc(string, string_UTF);
+		Utf2Asc((unsigned char *)string, (unsigned char *)string_UTF);
 		}
 	else
 		string_UTF = string;

@@ -1,7 +1,9 @@
 #ifndef SERIAL_H
 #define SERIAL_H
 
+
 #include <fcntl.h>
+#include <unistd.h>
 #include <malloc.h>
 #include <string.h>
 #include <termios.h>
