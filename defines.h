@@ -26,7 +26,7 @@
 /*** Definições gerais ***/
 
 // Ativar a linha abaixo para rodar o programa em um PC
-#define DEBUG_PC
+//#define DEBUG_PC
 
 // Ativar a linha abaixo para não conectar à POP
 //#define DEBUG_PC_NOETH

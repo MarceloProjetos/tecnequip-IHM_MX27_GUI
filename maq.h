@@ -30,14 +30,14 @@
 #define MAQ_MODO_CORTAR     0x0002
 #define MAQ_MODO_LIMPAR     0x0004
 #define MAQ_MODO_LIBERA     0x0008
-#define MAQ_MODO_POSIC      0x0400
+#define MAQ_MODO_POSIC      0x0040
 #define MAQ_MODO_CALC_FATOR 0x0800
 #define MAQ_MODO_CALC_REL   0x1000
 #define MAQ_MODO_CALC_MIN   0x2000
 
 // Flag solicitando sincronizacao dos parametros do CLP com o Servo e Inversor
-#define MAQ_MODO_MESA_SYNC 0x0010
-#define MAQ_MODO_PERF_SYNC 0x0020
+#define MAQ_MODO_MESA_SYNC  0x0010
+#define MAQ_MODO_PERF_SYNC  0x0020
 
 // Flags para controle manual da perfiladeira
 #define MAQ_MODO_PERF_MASK   0x0180
