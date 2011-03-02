@@ -439,11 +439,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
     AbrirOper();
     break;
 
-  case NTB_ABA_MANUAL:
-    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarQtd")), "");
-    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarTam")), "");
-    break;
-
   case NTB_ABA_LOGS:
     AbrirLog();
     break;
@@ -685,7 +680,6 @@ uint32_t IHM_Init(int argc, char *argv[])
   GtkWidget *wnd;
   GtkComboBox *cmb;
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
-  char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
 
   /* init threads */
   g_thread_init (NULL);
@@ -715,18 +709,10 @@ uint32_t IHM_Init(int argc, char *argv[])
 //  g_object_unref (G_OBJECT (builder));
   gtk_rc_parse("gtk.rc");
 
-  // Configura TreeView da tela de Tarefas
-  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), campos_tarefa,
-    GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_tarefa)/sizeof(campos_tarefa[0]))-1,
-        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
   // Configura TreeView da tela de Logs
   TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")), campos_log,
       GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
-  // Configura o ComboBoxEntry para usar o modo de texto. Pelo Glade nao funciona!
-  gtk_combo_box_entry_set_text_column(GTK_COMBO_BOX_ENTRY(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0);
 
   // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
   fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);

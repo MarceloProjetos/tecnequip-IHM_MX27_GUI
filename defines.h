@@ -26,10 +26,10 @@
 /*** Definições gerais ***/
 
 // Ativar a linha abaixo para rodar o programa em um PC
-//#define DEBUG_PC
+#define DEBUG_PC
 
 // Ativar a linha abaixo para não conectar à POP
-//#define DEBUG_PC_NOETH
+#define DEBUG_PC_NOETH
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"
@@ -76,22 +76,15 @@
 
 // Numeracao das abas que contem a tela (ntbWorkArea)
 #define NTB_ABA_HOME        0
-#define NTB_ABA_MANUT       1
-#define NTB_ABA_CONFIG      2
-#define NTB_ABA_OPERAR      3
-#define NTB_ABA_MANUAL      4
-#define NTB_ABA_LOGS        5
-#define NTB_ABA_TAREFA      7
-#define NTB_ABA_MODBUS      8
-#define NTB_ABA_DATA        9
-#define NTB_ABA_EXECUTAR   10
-#define NTB_ABA_VIRTUAL_KB 11
-#define NTB_ABA_MESSAGEBOX 12
-#define NTB_ABA_LOGIN      13
-
-// Modos de corte da peça
-#define MODO_CORTE_HIDR  0
-#define MODO_CORTE_SERRA 1
+#define NTB_ABA_CONFIG      1
+#define NTB_ABA_OPERAR      2
+#define NTB_ABA_MANUT       3
+#define NTB_ABA_LOGS        4
+#define NTB_ABA_MODBUS      6
+#define NTB_ABA_DATA        7
+#define NTB_ABA_VIRTUAL_KB  8
+#define NTB_ABA_MESSAGEBOX  9
+#define NTB_ABA_LOGIN      10
 
 /*** Fim das definições gerais ***/
 

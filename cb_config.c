@@ -50,120 +50,6 @@ int GetUserPerm(char *permissao)
   return 0;
 }
 
-#if 0
-gint AtualIOs(gpointer dados)
-{
-  unsigned long val;
-  GtkWidget *obj, *ref = (GtkWidget *)dados;
-  char txt[20];
-
-  obj = lookup_widget(ref, "ntbManut");
-  if(obj == NULL) // objeto não existe, janela foi fechada!
-    return FALSE; // Retorna FALSE para que esta função não seja recarregada.
-
-// Checa a aba atual para atualizar apenas ela.
-  switch(gtk_notebook_get_current_page(GTK_NOTEBOOK(obj)))
-    {
-    case 0: // Entradas e saídas digitais
-      MQ.MQ_Data.ndata      = 2;
-      MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-      MQ.MQ_Data.data.dl[0] = CV_MQREG_PIO_DIGIN;
-      MQ.MQ_Data.data.dl[1] = CV_MQREG_PIO_DIGOUT;
-
-      MQ_Transfer(&MQ);
-
-      UpdateImageBoxes   (ref, "imgManutSai", MQ.MQ_Data.data.dl[1]);
-      UpdateToggleButtons(ref, "tglManutSai", MQ.MQ_Data.data.dl[1]);
-      UpdateImageBoxes   (ref, "imgManutEnt", MQ.MQ_Data.data.dl[0]^MASK_GERAL_DIGIN);
-
-      break;
-
-    case 1: // Perfiladeira (Inversor Nord)
-      MQ.MQ_Data.ndata      = 3;
-      MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-      MQ.MQ_Data.data.dl[0] = CV_MQREG_PERF_VIN;
-      MQ.MQ_Data.data.dl[1] = CV_MQREG_PERF_AOUT;
-      MQ.MQ_Data.data.dl[2] = CV_MQREG_PERF_TORQUE;
-
-      MQ_Transfer(&MQ);
-
-      if(MQ.MQ_Data.data.dl[0] == CV_PERF_USSDATA_INVAL)
-        txt[0] = 0;
-      else
-        sprintf(txt, "%d", MQ.MQ_Data.data.dl[0]);
-
-      gtk_entry_set_text(GTK_ENTRY(lookup_widget(ref, "entManutInvTensao")), txt);
-
-      if(MQ.MQ_Data.data.dl[1] == CV_PERF_USSDATA_INVAL)
-        txt[0] = 0;
-      else
-        sprintf(txt, "%.01f", (float)(MQ.MQ_Data.data.dl[1])/10);
-
-      gtk_entry_set_text(GTK_ENTRY(lookup_widget(ref, "entManutInvCorrente")), txt);
-
-      if(MQ.MQ_Data.data.dl[2] == CV_PERF_USSDATA_INVAL)
-        txt[0] = 0;
-      else
-        sprintf(txt, "%d", MQ.MQ_Data.data.dl[2]);
-
-      gtk_entry_set_text(GTK_ENTRY(lookup_widget(ref, "entManutInvTorque")), txt);
-
-      MQ.MQ_Data.ndata      = 2;
-      MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-      MQ.MQ_Data.data.dl[0] = CV_MQREG_PERF_DIGIN;
-      MQ.MQ_Data.data.dl[1] = CV_MQREG_PERF_DIGOUT;
-
-      MQ_Transfer(&MQ);
-
-      UpdateImageBoxes(ref, "imgManutInvEnt", MQ.MQ_Data.data.dl[0]);
-      UpdateImageBoxes(ref, "imgManutInvSai", MQ.MQ_Data.data.dl[1]);
-
-      break;
-
-    case 2: // Mesa (Servomotor Yaskawa)
-      MQ.MQ_Data.ndata      = 3;
-      MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-      MQ.MQ_Data.data.dl[0] = CV_MQREG_SERVO_VELRPM;
-      MQ.MQ_Data.data.dl[1] = CV_MQREG_SERVO_VELMM;
-      MQ.MQ_Data.data.dl[2] = CV_MQREG_SERVO_TORQUE;
-
-      MQ_Transfer(&MQ);
-
-      sprintf(txt, "%d", MQ.MQ_Data.data.dl[0]);
-      gtk_entry_set_text(GTK_ENTRY(lookup_widget(ref, "entManutServoVelMotor")), txt);
-
-      sprintf(txt, "%d", MQ.MQ_Data.data.dl[1]);
-      gtk_entry_set_text(GTK_ENTRY(lookup_widget(ref, "entManutServoVelMesa")), txt);
-
-      sprintf(txt, "%.02f", (float)(MQ.MQ_Data.data.dl[2])/100);
-      gtk_entry_set_text(GTK_ENTRY(lookup_widget(ref, "entManutServoTorque")), txt);
-
-      MQ.MQ_Data.ndata      = 2;
-      MQ.MQ_Data.funcao     = CV_MQFNC_GETREGS;
-      MQ.MQ_Data.data.dl[0] = CV_MQREG_SERVO_DIGIN;
-      MQ.MQ_Data.data.dl[1] = CV_MQREG_SERVO_STATUS;
-
-      MQ_Transfer(&MQ);
-
-      UpdateImageBoxes(ref, "imgManutServoEnt", MQ.MQ_Data.data.dl[0]^MASK_SERVO_DIGIN);
-      UpdateImageBoxes(ref, "imgManutServoSai", MQ.MQ_Data.data.dl[1]);
-
-      break;
-    }
-
-  return TRUE;
-}
-
-#else
-void CarregaComboClientes()
-{
-  GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbClientes"));
-
-// Carregamento dos clientes cadastrados no MySQL no ComboBox.
-  DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj),0, NULL);
-}
-
 void CarregaComboUsuarios()
 {
   GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
@@ -258,25 +144,16 @@ int GravarDadosConfig()
   for(i=0; lista_ent[i][0]; i++)
     printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
 
-  mp.perfil.auto_vel       = atol(valor_ent[ 3]);
-  mp.perfil.auto_acel      = atof(valor_ent[ 4]);
-  mp.perfil.auto_desacel   = atof(valor_ent[ 5]);
-  mp.perfil.manual_vel     = atol(valor_ent[ 6]);
-  mp.perfil.manual_acel    = atof(valor_ent[ 7]);
-  mp.perfil.manual_desacel = atof(valor_ent[ 8]);
-  MaqConfigPerfil(mp.perfil);
+//  mp.perfil.auto_vel       = atol(valor_ent[ 3]);
+  MaqConfigPrensa(mp.prensa);
 
   mp.encoder.fator     = atof(valor_ent[1]);
   mp.encoder.precisao  = atol(valor_ent[2]);
   mp.encoder.perimetro = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.mesa.curso      = atol(valor_ent[ 9]);
-  mp.mesa.auto_vel   = atol(valor_ent[10]);
-  mp.mesa.manual_vel = atol(valor_ent[11]);
-  mp.mesa.offset     = atol(valor_ent[12]);
-  mp.mesa.tam_min    = atol(valor_ent[13]);
-  MaqConfigMesa(mp.mesa);
+//  mp.mesa.curso      = atol(valor_ent[ 9]);
+  MaqConfigAplan(mp.aplanadora);
 
   GravaDadosBanco();
 
@@ -298,9 +175,9 @@ void LerDadosConfig()
   i = sizeof(lista_ent)/sizeof(lista_ent[0])-1;
   valor_ent = (char **)(malloc(i * sizeof(char *)));
 
-  mp.perfil  = MaqLerPerfil ();
-  mp.encoder = MaqLerEncoder();
-  mp.mesa    = MaqLerMesa   ();
+  mp.prensa     = MaqLerPrensa ();
+  mp.encoder    = MaqLerEncoder();
+  mp.aplanadora = MaqLerAplan  ();
 
   sprintf(tmp, "%f", mp.encoder.fator);
   valor_ent[1] = (char *)malloc(sizeof(tmp)+1);
@@ -314,50 +191,6 @@ void LerDadosConfig()
   valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[0], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.auto_vel);
-  valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[3], tmp);
-
-  sprintf(tmp, "%f", mp.perfil.auto_acel);
-  valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[4], tmp);
-
-  sprintf(tmp, "%f", mp.perfil.auto_desacel);
-  valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[5], tmp);
-
-  sprintf(tmp, "%d", mp.perfil.manual_vel);
-  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[6], tmp);
-
-  sprintf(tmp, "%f", mp.perfil.manual_acel);
-  valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[7], tmp);
-
-  sprintf(tmp, "%f", mp.perfil.manual_desacel);
-  valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[8], tmp);
-
-  sprintf(tmp, "%d", mp.mesa.curso);
-  valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[9], tmp);
-
-  sprintf(tmp, "%f", mp.mesa.auto_vel);
-  valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[10], tmp);
-
-  sprintf(tmp, "%f", mp.mesa.manual_vel);
-  valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[11], tmp);
-
-  sprintf(tmp, "%f", mp.mesa.offset);
-  valor_ent[12] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[12], tmp);
-
-  sprintf(tmp, "%d", mp.mesa.tam_min);
-  valor_ent[13] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[13], tmp);
-
   GravarValoresWidgets(lista_ent, valor_ent);
 
   while(i--) {
@@ -368,74 +201,12 @@ void LerDadosConfig()
 
   if(mainDB.res != NULL) // Somente carrega se há conexão com o DB
     {
-    // Carrega clientes cadastrados
-    CarregaComboClientes();
-
     // Carrega dados da aba de usuários
     CarregaComboUsuarios();
-
-    // Carrega dados da aba de modelos
-    CarregaComboModelos();
     }
 
 // Carrega dados da aba de Banco de Dados
   CarregaDadosBanco();
-}
-
-void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
-{
-  gboolean estado;
-
-  if(gtk_combo_box_get_active(combobox)) {
-    estado = TRUE;
-  } else {
-    estado = FALSE;
-  }
-
-  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnClienteRemover")), estado);
-}
-
-void cbRemoverCliente(GtkButton *button, gpointer user_data)
-{
-  int id;
-  char sql[100];
-  GtkWidget *dialog;
-  GtkComboBox *obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbClientes"));
-
-  if(!gtk_combo_box_get_active(obj)) // O primeiro item não pode ser excluído.
-    return;
-
-  sprintf(sql, "select ID from clientes where nome='%s'", LerComboAtivo(obj));
-  DB_Execute(&mainDB, 0, sql);
-  DB_GetNextRow(&mainDB, 0);
-  id = atoi(DB_GetData(&mainDB, 0, 0));
-
-  dialog = gtk_message_dialog_new (NULL,
-           GTK_DIALOG_DESTROY_WITH_PARENT,
-           GTK_MESSAGE_QUESTION,
-           GTK_BUTTONS_YES_NO,
-           "Tem certeza que deseja excluir o cliente '%s'?",
-           LerComboAtivo(obj));
-
-  if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-    {
-    // Substitui o cliente sendo excluído das tarefas pelo cliente "Nenhum".
-    sprintf(sql, "update tarefas set ID_Cliente='1' where ID_Cliente='%d'", id);
-    DB_Execute(&mainDB, 0, sql);
-
-    sprintf(sql, "delete from clientes where nome='%s'", LerComboAtivo(obj));
-    DB_Execute(&mainDB, 0, sql);
-
-    ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
-    gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-
-    sprintf(sql, "Removendo cliente '%s'", LerComboAtivo(obj));
-    Log(sql, LOG_TIPO_CONFIG);
-
-    MessageBox("Cliente removido com sucesso!");
-    }
-
-  gtk_widget_destroy (dialog);
 }
 
 void cbLoginUserSelected(GtkComboBox *combobox, gpointer user_data)
@@ -1403,5 +1174,3 @@ void AbrirData(GtkEntry *entry, GCallback cb)
 // Exibe a janela.
   WorkAreaGoTo(NTB_ABA_DATA);
 }
-
-#endif

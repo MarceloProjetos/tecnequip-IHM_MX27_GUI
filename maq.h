@@ -58,10 +58,10 @@
 #define MESA_RECUA  2
 
 // Mascara para sincronizacao com CLPs
-#define MAQ_SYNC_PERFIL  0x01
+#define MAQ_SYNC_PRENSA  0x01
 #define MAQ_SYNC_ENCODER 0x02
-#define MAQ_SYNC_MESA    0x04
-#define MAQ_SYNC_TODOS   (MAQ_SYNC_PERFIL | MAQ_SYNC_ENCODER | MAQ_SYNC_MESA)
+#define MAQ_SYNC_APLAN   0x04
+#define MAQ_SYNC_TODOS   (MAQ_SYNC_PRENSA | MAQ_SYNC_ENCODER | MAQ_SYNC_APLAN)
 
 // Registradores do CLP
 #define MAQ_REG_ERROS              0
@@ -89,6 +89,7 @@
 #define MAQ_REG_MESA_AUTO_VEL     25
 #define MAQ_REG_ENC_FATOR_NOVO    27
 #define MAQ_REG_ENC_REL_NOVO      28
+#define MAQ_REG_PRS_CICLOS        29
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -101,8 +102,8 @@ struct strMaqParam
     unsigned int perimetro, precisao;
   } encoder;
 
-// Parametros relacionados com a perfiladeira
-  struct strMaqParamPerfil {
+// Parametros relacionados com a prensa
+  struct strMaqParamPrensa {
     // Parâmetros do inversor
     unsigned int auto_vel; // % da velocidade maxima usada na velocidade automatica
     float auto_acel; // Tempo em segundos
@@ -110,17 +111,17 @@ struct strMaqParam
     unsigned int manual_vel; // % da velocidade maxima usada na velocidade manual
     float manual_acel; // Tempo em segundos
     float manual_desacel; // Tempo em segundos
-    } perfil;
+    } prensa;
 
   // Parametros relacionados com a mesa
-    struct strMaqParamMesa {
+    struct strMaqParamAplan {
       // Parâmetros da mesa
       float        auto_vel;   // Velocidade maxima usada na velocidade automatica em mm/min
       float        manual_vel; // Velocidade maxima usada na velocidade manual em mm/min
       unsigned int curso;      // Curso da mesa em mm
       float        offset;     // Offset usado para compensar perdas ao sincronizar
       unsigned int tam_min;    // Tamanho minimo da peca para modo dinamico
-      } mesa;
+      } aplanadora;
 } maq_param;
 
 /*** Fim das estruturas de informacoes da maquina ***/
@@ -155,12 +156,12 @@ void                      MaqCalcFatorPerfil(void);
 void                      MaqCalcRelEnc     (void);
 void                      MaqCalcTamMin     (void);
 
-void                      MaqConfigPerfil (struct strMaqParamPerfil pf);
-struct strMaqParamPerfil  MaqLerPerfil    (void);
+void                      MaqConfigPrensa (struct strMaqParamPrensa pr);
+struct strMaqParamPrensa  MaqLerPrensa    (void);
 void                      MaqConfigEncoder(struct strMaqParamEncoder enc);
 struct strMaqParamEncoder MaqLerEncoder   (void);
-void                      MaqConfigMesa   (struct strMaqParamMesa mesa);
-struct strMaqParamMesa    MaqLerMesa      (void);
+void                      MaqConfigAplan  (struct strMaqParamAplan aplan);
+struct strMaqParamAplan   MaqLerAplan     (void);
 
 uint16_t  MaqLerFlags    (void);
 uint16_t  MaqLerEstado   (void);
