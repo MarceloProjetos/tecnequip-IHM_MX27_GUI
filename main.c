@@ -292,24 +292,17 @@ void IPC_Update(void)
 }
 
 char *lista_botoes[] = {
-    "btnCalcRelEnc",
-    "btnFatorMesa",
-    "btnCalcTamMin",
-    "btnOperarProduzir",
-    "btnManualPerfAvanca",
-    "btnManualPerfRecua",
-    "btnManualMesaAvanca",
-    "btnManualMesaCortar",
-    "btnManualMesaPosic",
-    "btnManualMesaRecua",
+    "btnExecIniciarParar",
     "",
 };
+
+gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data);
 
 gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
   char tmp[40], *msg_error;
-  uint32_t val, i;
+  uint32_t val, i, ciclos_prensa, estado, last_flags = -1, current_flags = 0;
   GtkWidget *wdg;
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
@@ -334,7 +327,7 @@ gboolean tmrGtkUpdate(gpointer data)
         gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
         WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
         // Se o erro não for apenas um alerta, desativa a máquina.
-        if(!((current_status & MAQ_ERRO_ALERTAS) & current_status))
+        if(current_status & ~MAQ_ERRO_ALERTAS)
           MaqLiberar(0);
       } else if (last_status != current_status) {
         gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), "Sem Erros");
@@ -381,14 +374,48 @@ gboolean tmrGtkUpdate(gpointer data)
           gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
         }
       }
+
+      if(idUser) { // Apenas realiza leitura de ciclos depois do login
+        ciclos_prensa = MaqLerPrsCiclos();
+        if(maq_param.prensa.ciclos != ciclos_prensa) {
+          maq_param.prensa.ciclos = ciclos_prensa;
+
+          sprintf(tmp, "%d", maq_param.prensa.ciclos);
+          gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblConfigPrsCiclos")), tmp);
+
+          if(!(maq_param.prensa.ciclos%maq_param.prensa.ciclos_lub)) {
+            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 1);
+          } else if(maq_param.prensa.ciclos == (maq_param.prensa.ciclos/maq_param.prensa.ciclos_lub)*maq_param.prensa.ciclos_lub + (maq_param.prensa.ciclos_lub/10)) {
+            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 0);
+          }
+
+          if(maq_param.prensa.ciclos >= maq_param.prensa.ciclos_ferram) {
+            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 1);
+          } else {
+            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
+          }
+
+          if(!(maq_param.prensa.ciclos%50))
+            MaqGravarConfig();
+        }
+      }
     } else if(ciclos == 1) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
+      estado = MaqLerEstado();
+      val = estado & MAQ_STATUS_PRONTA ? TRUE : FALSE;
       if(val != estado_init) {
         estado_init = val;
         for(i=0; lista_botoes[i][0] != 0; i++) {
           wdg = GTK_WIDGET(gtk_builder_get_object(builder, lista_botoes[i]));
           gtk_widget_set_sensitive(wdg, estado_init);
         }
+      }
+
+      // Leitura das flags de estado da máquina para atualização da imagem na tela principal
+      current_flags = (estado >> 10) & 0x7;
+      if(last_flags != current_flags) {
+        last_flags = current_flags;
+        printf("current_flags = %d\n", current_flags);
+        cbDesenharMaquina(NULL, NULL, (gpointer)(&current_flags));
       }
     }
   }
@@ -577,6 +604,8 @@ void * ihm_update(void *args)
         } else {
           OnPowerDown = 1;
           printf("Sistema sem energia");
+
+          MaqGravarConfig();
 
           gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
               "30 segundos");

@@ -29,53 +29,50 @@ gboolean tmrExec(gpointer data)
 {
   static int ciclos_inicial, iniciando = 1;
   char tmp[30];
-  int ciclos;
-  static GtkLabel *lblSaldo = NULL, *lblProd = NULL;
+  int erro_posic;
+  GtkWidget *wdg;
+  static GtkLabel *lblSaldo = NULL, *lblProd = NULL, *lblCiclos = NULL, *lblErroPos = NULL;
 
   if(iniciando) {
     iniciando = 0;
-    ciclos_inicial = atoi(gtk_label_get_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal" ))));
-    lblProd  = GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd" ));
-    lblSaldo = GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo"));
+    ciclos_inicial = maq_param.prensa.ciclos;
+    lblProd    = GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd" ));
+    lblSaldo   = GTK_LABEL(gtk_builder_get_object(builder, "lblExecCiclos"));
+    lblCiclos  = GTK_LABEL(gtk_builder_get_object(builder, "lblExecCiclosTotal"));
+    lblErroPos = GTK_LABEL(gtk_builder_get_object(builder, "lblExecErroPos"));
   }
 
-  ciclos = MaqLerPrsCiclos();
+  erro_posic = MaqLerAplanErroPosic();
+
+  sprintf(tmp, "%d", maq_param.prensa.ciclos - ciclos_inicial);
+  gtk_label_set_text(lblSaldo, tmp);
+
+  sprintf(tmp, "%d", maq_param.prensa.ciclos);
+  gtk_label_set_text(lblCiclos, tmp);
+
+  sprintf(tmp, "%.02f",
+      (float)((maq_param.prensa.ciclos - ciclos_inicial) * maq_param.aplanadora.passo) / 1000);
+  gtk_label_set_text(lblProd, tmp);
+
+  sprintf(tmp, "%.01f", (float)(erro_posic)/10);
+  gtk_label_set_text(lblErroPos, tmp);
 
   if((MaqLerEstado() & MAQ_MODO_MASK) == MAQ_MODO_MANUAL) {
     iniciando = 1;
     MaqConfigModo(MAQ_MODO_MANUAL);
 
-    WorkAreaGoTo(NTB_ABA_HOME);
-    return FALSE;
-  } else {
-    sprintf(tmp, "%d", qtd - qtdprod);
-    gtk_label_set_text(lblProd, tmp);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Parado");
 
-    sprintf(tmp, "%d", qtdprod);
-    gtk_label_set_text(lblSaldo, tmp);
+    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
+    gtk_button_set_label(GTK_BUTTON(wdg), "Iniciar");
+    gtk_widget_set_sensitive(wdg, TRUE);
+
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), TRUE);
+
+    return FALSE;
   }
 
   return TRUE;
-}
-
-gboolean tmrAguardaFimOperacao(gpointer data)
-{
-  if(MaqOperando()) {
-    return TRUE;
-  } else {
-    if(data != NULL)
-      (*((void (*)(void))(data)))();
-
-    gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndOperando")));
-
-    return FALSE;
-  }
-}
-
-void AguardarFimOperacao(void (*fnc)(void))
-{
-  gtk_widget_show_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndOperando")));
-  g_timeout_add(500, tmrAguardaFimOperacao, (gpointer)fnc);
 }
 
 void AbrirOper()
@@ -86,69 +83,110 @@ void AbrirOper()
     MessageBox("Sem permissão para operar a máquina!");
     return;
     }
+
+  // Configura visibilidade de avisos da prensa
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub"   )), 0);
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
 }
 
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
-  GtkWidget *wdg;
+  char *modo_botao[] = { "Iniciar", "Parar" }, msg[40];
+  GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
 
-  if(!(MaqLerEstado() & MAQ_STATUS_INITOK))
-    return;
+  if(!strcmp(gtk_button_get_label(GTK_BUTTON(wdg)), modo_botao[0])) {
+    if(!(MaqLerEstado() & MAQ_STATUS_PRONTA))
+      return;
 
-  Log("Iniciando producao", LOG_TIPO_TAREFA);
+    Log("Iniciando producao", LOG_TIPO_TAREFA);
 
-  MaqConfigModo(MAQ_MODO_AUTO);
-  g_timeout_add(1000, tmrExec, NULL);
+    MaqConfigModo(MAQ_MODO_AUTO);
+    g_timeout_add(1000, tmrExec, NULL);
 
-  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
-  gtk_widget_set_sensitive(wdg, TRUE);
+    sprintf(msg, "Produzindo com passo de %d mm", maq_param.aplanadora.passo);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), msg);
+
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), FALSE);
+
+    gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[1]);
+  } else {
+    Log("Encerrando producao", LOG_TIPO_TAREFA);
+
+    MaqConfigModo(MAQ_MODO_MANUAL);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Terminando...");
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+
+    gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[0]);
+
+    gtk_widget_set_sensitive(wdg, FALSE);
+  }
 }
 
-void cbExecParar(GtkButton *button, gpointer user_data)
+void cbPrsZerarCiclos(GtkButton *button, gpointer user_data)
 {
-  MaqConfigModo(MAQ_MODO_MANUAL);
-  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Terminando...");
-  gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+  maq_param.prensa.ciclos = 0;
+  MaqConfigPrsCiclos(0);
+
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblConfigPrsCiclos")), "0");
+}
+
+void cbExecLimparErro(GtkButton *button, gpointer user_data)
+{
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub"   )), 0);
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
 }
 
 void cbManAplanAvancar()
 {
-  printf("Aplanadora: Avançar\n");
+  MaqAplanManual(MAQ_APLAN_AVANCAR);
 }
 
 void cbManAplanRecuar()
 {
-  printf("Aplanadora: Recuar\n");
+  MaqAplanManual(MAQ_APLAN_RECUAR);
 }
 
 void cbManAplanAbrir()
 {
-  printf("Aplanadora: Abrir\n");
+  MaqAplanManual(MAQ_APLAN_ABRIR);
 }
 
 void cbManAplanFechar()
 {
-  printf("Aplanadora: Fechar\n");
+  MaqAplanManual(MAQ_APLAN_FECHAR);
 }
 
 void cbManAplanSubir()
 {
-  printf("Aplanadora: Subir\n");
+  MaqAplanManual(MAQ_APLAN_EXT_SUBIR);
 }
 
 void cbManAplanDescer()
 {
-  printf("Aplanadora: Descer\n");
+  MaqAplanManual(MAQ_APLAN_EXT_DESCER);
 }
 
 void cbManAplanExpandir()
 {
-  printf("Aplanadora: Expandir\n");
+  MaqAplanManual(MAQ_APLAN_EXT_EXPANDIR);
 }
 
 void cbManAplanRetrair()
 {
-  printf("Aplanadora: Retrair\n");
+  MaqAplanManual(MAQ_APLAN_EXT_RETRAIR);
+}
+
+void cbManAplanParar()
+{
+  MaqAplanManual(MAQ_APLAN_PARAR);
+}
+
+void cbManPrsLigar()
+{
+  if(MaqLerEstado() & MAQ_STATUS_PRS_LIGADA)
+    MaqPrsManual(MAQ_PRS_DESLIGAR);
+  else
+    MaqPrsManual(MAQ_PRS_LIGAR);
 }
 
 struct {
@@ -164,6 +202,8 @@ struct {
     { 100, 100, 200, 200, cbManAplanDescer  , "images/seta.png" },
     { 200, 100, 300, 200, cbManAplanExpandir, "images/seta.png" },
     { 300, 100, 400, 200, cbManAplanRetrair , "images/seta.png" },
+    { 400,  50, 500, 150, cbManAplanParar   , "images/seta.png" },
+    {  50,  70, 315, 310, cbManPrsLigar     , "images/maq-aplan-corpo.png" },
     { 0, 0, 0, 0, NULL },
 };
 
@@ -171,10 +211,8 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 {
   unsigned int i;
 
-  if(event->type == GDK_BUTTON_PRESS) {
-    printf("Clicado em %d:%d\n", (int)event->x, (int)event->y);
+  if(event->type == GDK_BUTTON_PRESS && MaqPronta()) {
     for(i=0; lst_coord[i].fnc != NULL; i++) {
-      printf("Comparando com %d =  %d:%d / %d:%d\n", i, lst_coord[i].xmin, lst_coord[i].ymin, lst_coord[i].xmax, lst_coord[i].ymax);
       if(event->x >= lst_coord[i].xmin &&
          event->y >= lst_coord[i].ymin &&
          event->x <= lst_coord[i].xmax &&
@@ -183,53 +221,9 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
         break;
       }
     }
-
-//    WorkAreaGoTo(NTB_ABA_MANUT);
   }
 
   return TRUE;
-}
-
-void cbManualPerfAvanca(GtkButton *button, gpointer user_data)
-{
-  MaqPerfManual(PERF_AVANCA);
-}
-
-void cbManualPerfRecua(GtkButton *button, gpointer user_data)
-{
-  MaqPerfManual(PERF_RECUA);
-}
-
-void cbManualPerfParar(GtkButton *button, gpointer user_data)
-{
-  MaqPerfManual(PERF_PARAR);
-}
-
-void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
-{
-  MaqMesaManual(MESA_AVANCA);
-}
-
-void cbManualMesaRecua(GtkButton *button, gpointer user_data)
-{
-  MaqMesaManual(MESA_RECUA);
-}
-
-void cbManualMesaParar(GtkButton *button, gpointer user_data)
-{
-  MaqMesaManual(MESA_PARAR);
-}
-
-void cbManualMesaCortar(GtkButton *button, gpointer user_data)
-{
-  MaqCortar();
-  AguardarFimOperacao(NULL);
-}
-
-void cbManualMesaPosic(GtkButton *button, gpointer user_data)
-{
-  MaqMesaPosic(0);
-  AguardarFimOperacao(NULL);
 }
 
 // defines que permitem selecionar o ponto de referencia para insercao da imagem
@@ -244,6 +238,10 @@ void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, 
   GdkPixbuf *pbtmp;
   gint width, height;
   static gint last_x = 0, last_y = 0;
+
+  if(pb == NULL) {
+    return;
+  }
 
 // Verifica se devemos usar a ultima coordenada ou a passada como parametro
   if(x<0)
@@ -275,38 +273,144 @@ void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, 
   last_y = y + height;
 }
 
-#define PERF_ALTURA_MESA 98
+void LoadCoordListIntoPixbuf(GdkPixbuf *pb)
+{
+  unsigned int i;
+
+  for(i=0; lst_coord[i].fnc != NULL; i++) {
+    LoadIntoPixbuf(pb, lst_coord[i].img, lst_coord[i].xmin, lst_coord[i].ymin, 1   , 1, LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT);
+  }
+}
 
 gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
-  unsigned int i;
-  static GdkPixbuf *pb = NULL;
-  if(pb == NULL) {
+  unsigned int tampa, ext, prol;
+  static int first = 1, flags = 0;
+  static GdkPixbuf *maq[2][2][2]; // 3 movimentos, 2 estados para cada um
+  GdkPixbuf *pb; // 3 movimentos, 2 estados para cada um
+
+  if(widget == NULL) {
+    widget = GTK_WIDGET(gtk_builder_get_object(builder, "dwaMaquina"));
+  }
+
+  if(first) {
+    first = 0;
+
+    // Imagem 000 - Tampa fechada, extensão abaixada, prolongamento recuado.
     pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
         widget->allocation.width, widget->allocation.height,
         FALSE, NULL);
+    maq[0][0][0] = pb;
 
-    LoadIntoPixbuf(pb, "images/maq-desbob.png"      ,  0,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   , 128, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
 
-    LoadIntoPixbuf(pb, "images/maq-perf-ini.png"    , 10,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-mesa.png"   , -1,                0, 1.25, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-fim.png"    , -1,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    LoadCoordListIntoPixbuf(pb);
 
-    LoadIntoPixbuf(pb, "images/maq-perf-prensa.png" , 20, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-guia.png"   , -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-castelo.png", -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-castelo.png", -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-castelo.png", -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
-    LoadIntoPixbuf(pb, "images/maq-perf-guia.png"   , -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
+    // Imagem 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[0][0][1] = pb;
 
-    for(i=0; lst_coord[i].fnc != NULL; i++) {
-      LoadIntoPixbuf(pb, lst_coord[i].img, lst_coord[i].xmin, lst_coord[i].ymin, 1   , 1, LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT);
-    }
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   ,  88,  87, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
+
+    // Imagem 010 - Tampa fechada, extensão levantada, prolongamento recuado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[0][1][0] = pb;
+
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  93, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
+
+    // Imagem 011 - Tampa fechada, extensão levantada, prolongamento avançado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[0][1][1] = pb;
+
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  53, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
+
+    // Imagem 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[1][0][0] = pb;
+
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   , 128, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
+
+    // Imagem 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[1][0][1] = pb;
+
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   ,  88,  87, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
+
+    // Imagem 110 - Tampa aberta, extensão levantada, prolongamento recuado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[1][1][0] = pb;
+
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  93, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
+
+    // Imagem 111 - Tampa aberta, extensão levantada, prolongamento avançado.
+    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
+        widget->allocation.width, widget->allocation.height,
+        FALSE, NULL);
+    maq[1][1][1] = pb;
+
+    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  53, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
+
+    LoadCoordListIntoPixbuf(pb);
   }
+
+  if(data != NULL)
+    flags = *(unsigned int *)(data);
+
+  tampa = (flags >> 2) & 1;
+  ext   = (flags >> 1) & 1;
+  prol  = (flags >> 0) & 1;
 
   gdk_draw_pixbuf(widget->window,
                   widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-                  pb,
+                  maq[tampa][ext][prol],
                   0, 0, 0, 0, -1, -1,
                   GDK_RGB_DITHER_NONE, 0, 0);
 

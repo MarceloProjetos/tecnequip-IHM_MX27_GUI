@@ -118,17 +118,13 @@ char *lista_ent[] = {
     "entEncoderPerim",
     "entEncoderFator",
     "entEncoderResol",
-    "spbConfigPerfVelMaxAuto",
-    "spbConfigPerfAcelAuto",
-    "spbConfigPerfDesacelAuto",
-    "spbConfigPerfVelMaxManual",
-    "spbConfigPerfAcelManual",
-    "spbConfigPerfDesacelManual",
-    "entConfigMesaCurso",
-    "spbConfigMesaVelMaxAuto",
-    "spbConfigMesaVelMaxManual",
-    "spbConfigMesaOffset",
-    "entConfigTamMin",
+    "entConfigAplanPasso",
+    "spbConfigAplanVelMaxManual",
+    "spbConfigAplanVelMaxAuto",
+    "spbConfigAplanRampa",
+    "lblConfigPrsCiclos",
+    "entConfigPrsCiclosFerram",
+    "entConfigPrsCiclosLub",
     ""
 };
 
@@ -142,17 +138,22 @@ int GravarDadosConfig()
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
   for(i=0; lista_ent[i][0]; i++)
-    printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
+    printf("%d: %s = %s\n" , i, lista_ent[i], valor_ent[i]);
 
-//  mp.perfil.auto_vel       = atol(valor_ent[ 3]);
+  mp.prensa.ciclos         = atol(valor_ent[7]);
+  mp.prensa.ciclos_ferram  = atol(valor_ent[8]);
+  mp.prensa.ciclos_lub     = atol(valor_ent[9]);
   MaqConfigPrensa(mp.prensa);
 
-  mp.encoder.fator     = atof(valor_ent[1]);
-  mp.encoder.precisao  = atol(valor_ent[2]);
-  mp.encoder.perimetro = atof(valor_ent[0]);
+  mp.encoder.fator         = atof(valor_ent[1]);
+  mp.encoder.precisao      = atol(valor_ent[2]);
+  mp.encoder.perimetro     = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-//  mp.mesa.curso      = atol(valor_ent[ 9]);
+  mp.aplanadora.passo      = atol(valor_ent[3]);
+  mp.aplanadora.manual_vel = atol(valor_ent[4]);
+  mp.aplanadora.auto_vel   = atol(valor_ent[5]);
+  mp.aplanadora.rampa      = atof(valor_ent[6]);
   MaqConfigAplan(mp.aplanadora);
 
   GravaDadosBanco();
@@ -190,6 +191,34 @@ void LerDadosConfig()
   sprintf(tmp, "%d", mp.encoder.perimetro);
   valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[0], tmp);
+
+  sprintf(tmp, "%d", mp.aplanadora.passo);
+  valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[3], tmp);
+
+  sprintf(tmp, "%d", mp.aplanadora.manual_vel);
+  valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[4], tmp);
+
+  sprintf(tmp, "%d", mp.aplanadora.auto_vel);
+  valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[5], tmp);
+
+  sprintf(tmp, "%f", mp.aplanadora.rampa);
+  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[6], tmp);
+
+  sprintf(tmp, "%d", mp.prensa.ciclos);
+  valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[7], tmp);
+
+  sprintf(tmp, "%d", mp.prensa.ciclos_ferram);
+  valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[8], tmp);
+
+  sprintf(tmp, "%d", mp.prensa.ciclos_lub);
+  valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[9], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -767,7 +796,7 @@ void cbConfigVoltar(GtkButton *button, gpointer user_data)
 
 void cbLoginOk(GtkButton *button, gpointer user_data)
 {
-  int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
+  int pos = 3; // Posição da aba de configuração do banco, iniciando de zero.
   char sql[100], *lembrete = "";
   static int first_time = 1;
 
