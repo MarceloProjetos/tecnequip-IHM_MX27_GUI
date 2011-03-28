@@ -125,6 +125,7 @@ char *lista_ent[] = {
     "lblConfigPrsCiclos",
     "entConfigPrsCiclosFerram",
     "entConfigPrsCiclosLub",
+    "rdbConfigPrsSentidoAntiHor",
     ""
 };
 
@@ -133,27 +134,28 @@ int GravarDadosConfig()
   unsigned int i;
   char **valor_ent;
   struct strMaqParam mp;
-  valor_ent = (char **)(malloc(10*sizeof(char[10])));
+  valor_ent = (char **)(malloc(11*sizeof(char[10])));
 
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
   for(i=0; lista_ent[i][0]; i++)
     printf("%d: %s = %s\n" , i, lista_ent[i], valor_ent[i]);
 
-  mp.prensa.ciclos         = atol(valor_ent[7]);
-  mp.prensa.ciclos_ferram  = atol(valor_ent[8]);
-  mp.prensa.ciclos_lub     = atol(valor_ent[9]);
+  mp.prensa.ciclos         = atol(valor_ent[ 7]);
+  mp.prensa.ciclos_ferram  = atol(valor_ent[ 8]);
+  mp.prensa.ciclos_lub     = atol(valor_ent[ 9]);
+  mp.prensa.sentido        = atol(valor_ent[10]);
   MaqConfigPrensa(mp.prensa);
 
-  mp.encoder.fator         = atof(valor_ent[1]);
-  mp.encoder.precisao      = atol(valor_ent[2]);
-  mp.encoder.perimetro     = atof(valor_ent[0]);
+  mp.encoder.fator         = atof(valor_ent[ 1]);
+  mp.encoder.precisao      = atol(valor_ent[ 2]);
+  mp.encoder.perimetro     = atof(valor_ent[ 0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.aplanadora.passo      = atol(valor_ent[3]);
-  mp.aplanadora.manual_vel = atol(valor_ent[4]);
-  mp.aplanadora.auto_vel   = atol(valor_ent[5]);
-  mp.aplanadora.rampa      = atof(valor_ent[6]);
+  mp.aplanadora.passo      = atol(valor_ent[ 3]);
+  mp.aplanadora.manual_vel = atol(valor_ent[ 4]);
+  mp.aplanadora.auto_vel   = atol(valor_ent[ 5]);
+  mp.aplanadora.rampa      = atof(valor_ent[ 6]);
   MaqConfigAplan(mp.aplanadora);
 
   GravaDadosBanco();
@@ -219,6 +221,10 @@ void LerDadosConfig()
   sprintf(tmp, "%d", mp.prensa.ciclos_lub);
   valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[9], tmp);
+
+  sprintf(tmp, "%d", mp.prensa.sentido);
+  valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[10], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -918,6 +924,15 @@ void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint ar
 {
   PreviousWorkArea = CurrentWorkArea;
   CurrentWorkArea  = arg1;
+}
+
+void cbManutAbaAlterada(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
+{
+  if(arg1 == 0) { // Primeira aba é a de entradas, devemos ocultar o botão de voltar
+    gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "btnManutVoltar")), 0);
+  } else {
+    gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "btnManutVoltar")), 1);
+  }
 }
 
 void WorkAreaGoTo(int NewWorkArea)

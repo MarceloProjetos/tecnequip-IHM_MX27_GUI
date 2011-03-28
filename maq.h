@@ -31,7 +31,9 @@
 #define MAQ_MODO_LIBERA       0x0002
 #define MAQ_MODO_LIMPAR       0x0004
 #define MAQ_MODO_SYNC_SERVO   0x0008
+#define MAQ_MODO_PRS_SENTIDO  0x0010
 #define MAQ_MODO_PRS_CICLOS   0x0020
+#define MAQ_MODO_MASK_LIBERA  (~(MAQ_MODO_LIBERA | MAQ_MODO_LIMPAR | MAQ_MODO_SYNC_SERVO | MAQ_MODO_MASK))
 
 // Flags para controle manual da aplanadora
 #define MAQ_FM_APLAN_AVANCAR      0x0001
@@ -104,6 +106,7 @@ struct strMaqParam
 // Parametros relacionados com a prensa
   struct strMaqParamPrensa {
     // Parâmetros da Prensa
+    unsigned int sentido; // % da velocidade maxima usada na velocidade automatica
     unsigned int ciclos; // % da velocidade maxima usada na velocidade automatica
     unsigned int ciclos_ferram; // % da velocidade maxima usada na velocidade manual
     unsigned int ciclos_lub; // % da velocidade maxima usada na velocidade automatica
@@ -129,16 +132,16 @@ uint16_t MaqPronta     (void);
 void     MaqLimparErro (void);
 
 uint16_t MaqLerModo          (void);
-uint16_t MaqLerProdQtd       (void);
 uint32_t MaqLerEntradas      (void);
 uint32_t MaqLerSaidas        (void);
 uint16_t MaqLerPrsCiclos     (void);
 int16_t  MaqLerAplanErroPosic(void);
 
-void                      MaqConfigFlags    (uint16_t flags);
-void                      MaqConfigModo     (uint16_t modo);
-void                      MaqLiberar        (uint16_t liberar);
-void                      MaqConfigPrsCiclos(uint32_t val);
+void                      MaqConfigFlags        (uint16_t flags);
+void                      MaqConfigModo         (uint16_t modo);
+void                      MaqLiberar            (uint16_t liberar);
+void                      MaqConfigPrsCiclos    (uint32_t val);
+void                      MaqConfigPrsSentidoInv(uint16_t val);
 
 void                      MaqAplanManual    (uint16_t comando);
 void                      MaqPrsManual      (uint16_t comando);

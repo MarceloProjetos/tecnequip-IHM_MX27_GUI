@@ -927,7 +927,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <child>
                       <object class="GtkTable" id="table13">
                         <property name="visible">True</property>
-                        <property name="n_rows">3</property>
+                        <property name="n_rows">4</property>
                         <property name="n_columns">3</property>
                         <property name="column_spacing">5</property>
                         <property name="row_spacing">5</property>
@@ -1040,6 +1040,58 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="top_attach">2</property>
                             <property name="bottom_attach">3</property>
                           </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label85">
+                            <property name="visible">True</property>
+                            <property name="xalign">0</property>
+                            <property name="label" translatable="yes">Sentido de Rotação do Motor</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkVBox" id="vbox7">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkRadioButton" id="rdbConfigPrsSentidoHor">
+                                <property name="label" translatable="yes">Horário (Modo Normal)</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rdbConfigPrsSentidoAntiHor">
+                                <property name="label" translatable="yes">Anti-Horário</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">rdbConfigPrsSentidoHor</property>
+                              </object>
+                              <packing>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <placeholder/>
                         </child>
                       </object>
                     </child>
@@ -1839,10 +1891,11 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
               <object class="GtkNotebook" id="ntbManut">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <signal name="switch_page" handler="cbManutAbaAlterada"/>
                 <child>
                   <object class="GtkTable" id="table30">
                     <property name="visible">True</property>
-                    <property name="n_rows">6</property>
+                    <property name="n_rows">8</property>
                     <property name="n_columns">5</property>
                     <property name="column_spacing">5</property>
                     <child>
@@ -1928,7 +1981,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <child>
                       <object class="GtkLabel" id="label65">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Erro no inversor</property>
+                        <property name="label" translatable="yes">Térmico - Martelo</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -1944,8 +1997,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <child>
                       <object class="GtkLabel" id="label96">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Sensor de Corte
-Nível Superior</property>
+                        <property name="label" translatable="yes">Erro no Inversor</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -1961,8 +2013,7 @@ Nível Superior</property>
                     <child>
                       <object class="GtkLabel" id="label98">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Sensor de Piloto
-Nível Superior</property>
+                        <property name="label" translatable="yes">Extensão Recuada</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -1978,8 +2029,7 @@ Nível Superior</property>
                     <child>
                       <object class="GtkLabel" id="label99">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Sensor de Piloto
-Nível Inferior</property>
+                        <property name="label" translatable="yes">Desbob. OK</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -1995,8 +2045,7 @@ Nível Inferior</property>
                     <child>
                       <object class="GtkLabel" id="label100">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Posicionamento
-Finalizado</property>
+                        <property name="label" translatable="yes">Avanço Manual</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2012,7 +2061,7 @@ Finalizado</property>
                     <child>
                       <object class="GtkLabel" id="label101">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Falta de Fase</property>
+                        <property name="label" translatable="yes">Recuo Manual</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2253,8 +2302,7 @@ Finalizado</property>
                       <object class="GtkLabel" id="label97">
                         <property name="visible">True</property>
                         <property name="ypad">3</property>
-                        <property name="label" translatable="yes">Sensor de Corte
-Nível Inferior</property>
+                        <property name="label" translatable="yes">Falta de Fase</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2270,7 +2318,7 @@ Nível Inferior</property>
                     <child>
                       <object class="GtkLabel" id="label87">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Fim de Material</property>
+                        <property name="label" translatable="yes">Aplanadora Fechada</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2313,7 +2361,7 @@ Nível Inferior</property>
                     <child>
                       <object class="GtkLabel" id="label102">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Avanço Manual</property>
+                        <property name="label" translatable="yes">Prensa - Ajuste</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2329,7 +2377,7 @@ Nível Inferior</property>
                     <child>
                       <object class="GtkLabel" id="label103">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Corte Manual</property>
+                        <property name="label" translatable="yes">Hidr. Ligada</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2345,7 +2393,7 @@ Nível Inferior</property>
                     <child>
                       <object class="GtkLabel" id="label62">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Recuo Manual</property>
+                        <property name="label" translatable="yes">Prensa Cima</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2446,7 +2494,7 @@ Nível Inferior</property>
                     <child>
                       <object class="GtkLabel" id="label89">
                         <property name="visible">True</property>
-                        <property name="label" translatable="yes">Desbob. OK</property>
+                        <property name="label" translatable="yes">Avanço OK</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                           <attribute name="size" value="12000"/>
@@ -2458,10 +2506,244 @@ Nível Inferior</property>
                       </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkHBox" id="hbox9">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt2">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-avancar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt1">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                        <property name="top_attach">4</property>
+                        <property name="bottom_attach">5</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label86">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Bi-Manual 1</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                        <property name="top_attach">5</property>
+                        <property name="bottom_attach">6</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label90">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Bi-Manual 2</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="top_attach">7</property>
+                        <property name="bottom_attach">8</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label91">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Desl. Contínuo</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">7</property>
+                        <property name="bottom_attach">8</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label92">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Pressão de Ar - OK</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">7</property>
+                        <property name="bottom_attach">8</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="label107">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Servo Posic.</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="12000"/>
+                        </attributes>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">7</property>
+                        <property name="bottom_attach">8</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox12">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt11">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-avancar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt2">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="top_attach">6</property>
+                        <property name="bottom_attach">7</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox18">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt12">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-avancar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt3">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">6</property>
+                        <property name="bottom_attach">7</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox19">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt13">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-avancar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt4">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">6</property>
+                        <property name="bottom_attach">7</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox20">
+                        <property name="visible">True</property>
+                        <child>
+                          <object class="GtkImage" id="imgManutEnt14">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-ent-perfil-avancar.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkImage" id="imgStatusEnt5">
+                            <property name="visible">True</property>
+                            <property name="pixbuf">images/ihm-status-off.png</property>
+                          </object>
+                          <packing>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">3</property>
+                        <property name="right_attach">4</property>
+                        <property name="top_attach">6</property>
+                        <property name="bottom_attach">7</property>
+                      </packing>
                     </child>
                     <child>
                       <placeholder/>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button35">
+                        <property name="label">gtk-go-back</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="cbGoHome"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">4</property>
+                        <property name="right_attach">5</property>
+                        <property name="top_attach">7</property>
+                        <property name="bottom_attach">8</property>
+                      </packing>
                     </child>
                   </object>
                 </child>
@@ -3764,10 +4046,9 @@ Nível Inferior</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="button35">
+              <object class="GtkButton" id="btnManutVoltar">
                 <property name="label">gtk-go-back</property>
                 <property name="height_request">50</property>
-                <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_stock">True</property>

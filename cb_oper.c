@@ -87,6 +87,13 @@ void AbrirOper()
   // Configura visibilidade de avisos da prensa
   gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub"   )), 0);
   gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
+
+  // Se em reversão, avisa o operador
+  if(MaqLerFlags() & MAQ_MODO_PRS_SENTIDO) {
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Parado - Em Reversão");
+  } else {
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Parado");
+  }
 }
 
 void cbExecTarefa(GtkButton *button, gpointer user_data)
@@ -194,8 +201,8 @@ struct {
   void (*fnc)();
   char *img;
 } lst_coord[] = {
-    {   0,   0, 100, 100, cbManAplanAvancar , "images/seta.png" },
-    { 100,   0, 200, 100, cbManAplanRecuar  , "images/seta.png" },
+    {   0,   0,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 100,   0, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png" },
     { 200,   0, 300, 100, cbManAplanAbrir   , "images/seta.png" },
     { 300,   0, 400, 100, cbManAplanFechar  , "images/seta.png" },
     {   0, 100, 100, 200, cbManAplanSubir   , "images/seta.png" },
@@ -221,6 +228,8 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
         break;
       }
     }
+  } else if (event->type == GDK_BUTTON_RELEASE) {
+    MaqAplanManual(MAQ_APLAN_PARAR);
   }
 
   return TRUE;

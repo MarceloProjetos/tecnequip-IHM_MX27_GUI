@@ -114,11 +114,13 @@ int MaqSync(unsigned int mask)
   }
 
   if(mask & MAQ_SYNC_PRENSA) {
+    printf("maq_param.prensa.sentido.........: %d\n", maq_param.prensa.sentido);
     printf("maq_param.prensa.ciclos..........: %d\n", maq_param.prensa.ciclos);
     printf("maq_param.prensa.ciclos_ferram...: %d\n", maq_param.prensa.ciclos_ferram);
     printf("maq_param.prensa.ciclos_lub......: %d\n", maq_param.prensa.ciclos_lub);
 
-    MaqConfigPrsCiclos(maq_param.prensa.ciclos);
+    MaqConfigPrsCiclos    (maq_param.prensa.ciclos);
+    MaqConfigPrsSentidoInv(maq_param.prensa.sentido);
   }
 
   return 1;
@@ -391,8 +393,10 @@ void MaqConfigModo(uint16_t modo)
 
 void MaqLiberar(uint16_t liberar)
 {
-  // Se bloqueou a máquina, desliga todas as outras flags.
-  MaqConfigFlags(liberar ? MaqLerFlags() | MAQ_MODO_LIBERA : 0);
+  uint16_t flags = MaqLerFlags();
+
+  // Se bloqueou a máquina, desliga todas as flags indicadas pela máscara.
+  MaqConfigFlags(liberar ? flags | MAQ_MODO_LIBERA : flags & MAQ_MODO_MASK_LIBERA);
 
   printf("maquina liberada ? %d\n", liberar);
 }
@@ -412,6 +416,18 @@ void MaqConfigPrsCiclos(uint32_t val)
   MaqGravarRegistrador(MAQ_REG_PRS_CICLOS_NOVO_UNID, maq_param.prensa.ciclos - (uint32_t)(ciclos_mil)*1000);
 
   modo |= MAQ_MODO_PRS_CICLOS;
+  MaqConfigFlags(modo);
+}
+
+void MaqConfigPrsSentidoInv(uint16_t val)
+{
+  uint16_t modo = MaqLerFlags();
+
+  if(val)
+    modo |=  MAQ_MODO_PRS_SENTIDO;
+  else
+    modo &= ~MAQ_MODO_PRS_SENTIDO;
+
   MaqConfigFlags(modo);
 }
 

@@ -134,8 +134,8 @@ MB_HANDLER_TX(IHM_MB_TX)
     wait += 1000000;
   wait += wait_usec;
 
-  if(wait < 250000 && wait > 0)
-    usleep(250000 - wait);
+//  if(wait < 250000 && wait > 0)
+//    usleep(250000 - wait);
 
   gettimeofday(&tv, NULL);
   printf("\n%3d.%04ld - MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
@@ -464,6 +464,11 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
 
   case NTB_ABA_OPERAR:
     AbrirOper();
+    break;
+
+  case NTB_ABA_MANUT:
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbManut")), 0);
+    gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "btnManutVoltar")), 0);
     break;
 
   case NTB_ABA_LOGS:
