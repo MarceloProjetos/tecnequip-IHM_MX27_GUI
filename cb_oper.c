@@ -196,44 +196,95 @@ void cbManPrsLigar()
     MaqPrsManual(MAQ_PRS_LIGAR);
 }
 
-struct {
+struct strCoordIHM {
   unsigned int xmin, ymin, xmax, ymax;
   void (*fnc)();
   char *img;
-} lst_coord[] = {
-    {   0,   0,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 100,   0, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png" },
-    { 200,   0, 300, 100, cbManAplanAbrir   , "images/seta.png" },
-    { 300,   0, 400, 100, cbManAplanFechar  , "images/seta.png" },
-    {   0, 100, 100, 200, cbManAplanSubir   , "images/seta.png" },
-    { 100, 100, 200, 200, cbManAplanDescer  , "images/seta.png" },
-    { 200, 100, 300, 200, cbManAplanExpandir, "images/seta.png" },
-    { 300, 100, 400, 200, cbManAplanRetrair , "images/seta.png" },
-    { 400,  50, 500, 150, cbManAplanParar   , "images/seta.png" },
-    {  50,  70, 315, 310, cbManPrsLigar     , "images/maq-aplan-corpo.png" },
-    { 0, 0, 0, 0, NULL },
+} *CurrentLstCoord, lst_coord[2][2][2][10] = {
+    // Posição 000 - Tampa fechada, extensão abaixada, prolongamento recuado.
+    [0][0][0] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  85, 235, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
+    [0][0][1] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  45, 235, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 010 - Tampa fechada, extensão levantada, prolongamento recuado.
+    [0][1][0] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {  45, 175, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 011 - Tampa fechada, extensão levantada, prolongamento avançado.
+    [0][1][1] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {   5, 175, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
+    [1][0][0] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  85, 235, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
+    [1][0][1] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  45, 235, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 110 - Tampa aberta, extensão levantada, prolongamento recuado.
+    [1][1][0] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {  45, 175, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
+
+    // Posição 111 - Tampa aberta, extensão levantada, prolongamento avançado.
+    [1][1][1] = {
+    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
+    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
+    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {   5, 175, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+//    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
+    { 0, 0, 0, 0, NULL } },
 };
-
-gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
-{
-  unsigned int i;
-
-  if(event->type == GDK_BUTTON_PRESS && MaqPronta()) {
-    for(i=0; lst_coord[i].fnc != NULL; i++) {
-      if(event->x >= lst_coord[i].xmin &&
-         event->y >= lst_coord[i].ymin &&
-         event->x <= lst_coord[i].xmax &&
-         event->y <= lst_coord[i].ymax) {
-        (lst_coord[i].fnc)();
-        break;
-      }
-    }
-  } else if (event->type == GDK_BUTTON_RELEASE) {
-    MaqAplanManual(MAQ_APLAN_PARAR);
-  }
-
-  return TRUE;
-}
 
 // defines que permitem selecionar o ponto de referencia para insercao da imagem
 #define LOADPB_REFPOS_UP      0x00
@@ -282,21 +333,76 @@ void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, 
   last_y = y + height;
 }
 
-void LoadCoordListIntoPixbuf(GdkPixbuf *pb)
+struct strImgIHM {
+  char *arq;
+  int posx, posy;
+  unsigned int scalex, scaley;
+};
+
+struct strTelaIHM {
+  GdkPixbuf *pb;
+  unsigned int offset;
+  struct strCoordIHM *coord;
+};
+
+void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM *lst_img, struct strCoordIHM *lst_coord)
+{
+  unsigned int i = 0;
+
+  tela->offset = offset;
+  tela->coord  = lst_coord;
+
+  tela->pb = gdk_pixbuf_new_from_file_at_scale(lst_img[0].arq,
+      lst_img[0].posx + 2*tela->offset, lst_img[0].posy + 2*tela->offset,
+      FALSE, NULL);
+
+  while(lst_img[++i].arq != NULL) {
+    LoadIntoPixbuf(tela->pb, lst_img[i].arq, lst_img[i].posx + tela->offset, lst_img[i].posy + tela->offset, lst_img[i].scalex, lst_img[i].scaley, LOADPB_REFPOS_DEFAULT);
+  }
+
+  for(i=0; tela->coord[i].img != NULL; i++) {
+    LoadIntoPixbuf(tela->pb, tela->coord[i].img, tela->coord[i].xmin + tela->offset, tela->coord[i].ymin + tela->offset, 1, 1, LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT);
+  }
+}
+
+void DesenharTelaIHM(GtkWidget *widget, struct strTelaIHM *tela)
+{
+  CurrentLstCoord = tela->coord;
+
+  gdk_draw_pixbuf(widget->window,
+                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                  tela->pb,
+                  tela->offset, tela->offset,
+                  0, 0, widget->allocation.width, widget->allocation.height,
+                  GDK_RGB_DITHER_NONE, 0, 0);
+}
+
+gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
   unsigned int i;
 
-  for(i=0; lst_coord[i].fnc != NULL; i++) {
-    LoadIntoPixbuf(pb, lst_coord[i].img, lst_coord[i].xmin, lst_coord[i].ymin, 1   , 1, LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT);
+  if(event->type == GDK_BUTTON_PRESS && MaqPronta()) {
+    for(i=0; CurrentLstCoord[i].fnc != NULL; i++) {
+      if(event->x >= CurrentLstCoord[i].xmin &&
+         event->y >= CurrentLstCoord[i].ymin &&
+         event->x <= CurrentLstCoord[i].xmax &&
+         event->y <= CurrentLstCoord[i].ymax) {
+        (CurrentLstCoord[i].fnc)();
+        break;
+      }
+    }
+  } else if (event->type == GDK_BUTTON_RELEASE) {
+    MaqAplanManual(MAQ_APLAN_PARAR);
   }
+
+  return TRUE;
 }
 
 gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
-  unsigned int tampa, ext, prol;
+  unsigned int tampa, ext, prol, offset = 200;
   static int first = 1, flags = 0;
-  static GdkPixbuf *maq[2][2][2]; // 3 movimentos, 2 estados para cada um
-  GdkPixbuf *pb; // 3 movimentos, 2 estados para cada um
+  static struct strTelaIHM maq[2][2][2]; // 3 movimentos, 2 estados para cada um
 
   if(widget == NULL) {
     widget = GTK_WIDGET(gtk_builder_get_object(builder, "dwaMaquina"));
@@ -306,108 +412,116 @@ gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer da
     first = 0;
 
     // Imagem 000 - Tampa fechada, extensão abaixada, prolongamento recuado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[0][0][0] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   , 128, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[0][0][0], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-baixo.png"   , 148, 209, 1, 1 },
+                              { "images/maq-aplan-ext-baixo.png"    , 156, 184, 1, 1 },
+                              { "images/maq-aplan-tampa-fechada.png", 205, 136, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[0][0][0]
+        );
 
     // Imagem 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[0][0][1] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   ,  88,  87, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[0][0][1], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-baixo.png"   , 108, 249, 1, 1 },
+                              { "images/maq-aplan-ext-baixo.png"    , 156, 184, 1, 1 },
+                              { "images/maq-aplan-tampa-fechada.png", 205, 136, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[0][0][1]
+        );
 
     // Imagem 010 - Tampa fechada, extensão levantada, prolongamento recuado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[0][1][0] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  93, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[0][1][0], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-cima.png"    , 113, 196, 1, 1 },
+                              { "images/maq-aplan-ext-cima.png"     , 129, 186, 1, 1 },
+                              { "images/maq-aplan-tampa-fechada.png", 205, 136, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[0][1][0]
+        );
 
     // Imagem 011 - Tampa fechada, extensão levantada, prolongamento avançado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[0][1][1] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  53, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-fechada.png", 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[0][1][1], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-cima.png"    ,  73, 196, 1, 1 },
+                              { "images/maq-aplan-ext-cima.png"     , 129, 186, 1, 1 },
+                              { "images/maq-aplan-tampa-fechada.png", 205, 136, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[0][1][1]
+        );
 
     // Imagem 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[1][0][0] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   , 128, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[1][0][0], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-baixo.png"   , 148, 209, 1, 1 },
+                              { "images/maq-aplan-ext-baixo.png"    , 156, 184, 1, 1 },
+                              { "images/maq-aplan-tampa-aberta.png" , 205, 106, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[1][0][0]
+        );
 
     // Imagem 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[1][0][1] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-baixo.png"   ,  88,  87, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-baixo.png"    , 136, 134, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[1][0][1], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-baixo.png"   , 108, 249, 1, 1 },
+                              { "images/maq-aplan-ext-baixo.png"    , 156, 184, 1, 1 },
+                              { "images/maq-aplan-tampa-aberta.png" , 205, 106, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[1][0][1]
+        );
 
     // Imagem 110 - Tampa aberta, extensão levantada, prolongamento recuado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[1][1][0] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  93, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[1][1][0], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-cima.png"    , 113, 196, 1, 1 },
+                              { "images/maq-aplan-ext-cima.png"     , 129, 186, 1, 1 },
+                              { "images/maq-aplan-tampa-aberta.png" , 205, 106, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[1][1][0]
+        );
 
     // Imagem 111 - Tampa aberta, extensão levantada, prolongamento avançado.
-    pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
-        FALSE, NULL);
-    maq[1][1][1] = pb;
-
-    LoadIntoPixbuf(pb, "images/maq-aplan-corpo.png"        , 150,   0, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-prol-cima.png"    ,  53, 200, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-ext-cima.png"     , 109, 197, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-    LoadIntoPixbuf(pb, "images/maq-aplan-tampa-aberta.png" , 185, 127, 1, 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
-
-    LoadCoordListIntoPixbuf(pb);
+    CriarTelaIHM(&maq[1][1][1], offset,
+        (struct strImgIHM[]){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+                              { "images/maq-aplan-corpo.png"        , 170, 153, 1, 1 },
+                              { "images/maq-aplan-prol-cima.png"    ,  73, 196, 1, 1 },
+                              { "images/maq-aplan-ext-cima.png"     , 129, 186, 1, 1 },
+                              { "images/maq-aplan-tampa-aberta.png" , 205, 106, 1, 1 },
+                              { "images/maq-prs-corpo.png"          , 520, -42, 1, 1 },
+                              { "images/maq-prs-martelo.png"        , 563, -42, 1, 1 },
+                              { "images/maq-prs-cobertura.png"      , 554, -52, 1, 1 },
+                              { NULL, 0, 0, 0, 0 } },
+        lst_coord[1][1][1]
+        );
   }
 
   if(data != NULL)
@@ -417,11 +531,7 @@ gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer da
   ext   = (flags >> 1) & 1;
   prol  = (flags >> 0) & 1;
 
-  gdk_draw_pixbuf(widget->window,
-                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-                  maq[tampa][ext][prol],
-                  0, 0, 0, 0, -1, -1,
-                  GDK_RGB_DITHER_NONE, 0, 0);
+  DesenharTelaIHM(widget, &maq[tampa][ext][prol]);
 
   return TRUE;
 }
