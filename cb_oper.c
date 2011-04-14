@@ -197,91 +197,91 @@ void cbManPrsLigar()
 }
 
 struct strCoordIHM {
-  unsigned int xmin, ymin, xmax, ymax;
+  unsigned int xpos, ypos, xsize, ysize;
   void (*fnc)();
   char *img;
 } *CurrentLstCoord, lst_coord[2][2][2][10] = {
     // Posição 000 - Tampa fechada, extensão abaixada, prolongamento recuado.
     [0][0][0] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
-    {  85, 235, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  45, 245, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
     [0][0][1] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
-    {  45, 235, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  45, 245, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 010 - Tampa fechada, extensão levantada, prolongamento recuado.
     [0][1][0] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
-    {  45, 175, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {   0, 175, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 011 - Tampa fechada, extensão levantada, prolongamento avançado.
     [0][1][1] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  70, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
-    {   5, 175, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {   0, 175, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
     [1][0][0] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
-    {  85, 235, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  45, 245, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
     [1][0][1] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 185, 100, 200, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
-    {  45, 235, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+    {  45, 245, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 110 - Tampa aberta, extensão levantada, prolongamento recuado.
     [1][1][0] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
-    {  45, 175, 300, 200, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {   0, 175, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 111 - Tampa aberta, extensão levantada, prolongamento avançado.
     [1][1][1] = {
-    { 135,  85,  50,  50, cbManAplanAvancar , "images/ihm-ent-perfil-avancar.png" },
-    { 415,  85, 200, 100, cbManAplanRecuar  , "images/ihm-ent-perfil-recuar.png"  },
-    { 250,  40, 300, 100, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-    { 315,  40, 400, 100, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
-    { 150, 215, 200, 200, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
-    {   5, 175, 400, 200, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
+    { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+    { 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+    { 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+    { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
+    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+    {   0, 175, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
 //    {  50,  70, 315, 310, cbManPrsLigar     , "images/seta.png" },
     { 0, 0, 0, 0, NULL } },
 };
@@ -361,7 +361,7 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
   }
 
   for(i=0; tela->coord[i].img != NULL; i++) {
-    LoadIntoPixbuf(tela->pb, tela->coord[i].img, tela->coord[i].xmin + tela->offset, tela->coord[i].ymin + tela->offset, 1, 1, LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT);
+    LoadIntoPixbuf(tela->pb, tela->coord[i].img, tela->coord[i].xpos + tela->offset, tela->coord[i].ypos + tela->offset, 1, 1, LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT);
   }
 }
 
@@ -381,12 +381,12 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 {
   unsigned int i;
 
-  if(event->type == GDK_BUTTON_PRESS && MaqPronta()) {
+  if(event->type == GDK_BUTTON_PRESS){// && MaqPronta()) {
     for(i=0; CurrentLstCoord[i].fnc != NULL; i++) {
-      if(event->x >= CurrentLstCoord[i].xmin &&
-         event->y >= CurrentLstCoord[i].ymin &&
-         event->x <= CurrentLstCoord[i].xmax &&
-         event->y <= CurrentLstCoord[i].ymax) {
+      if(event->x >= CurrentLstCoord[i].xpos &&
+         event->y >= CurrentLstCoord[i].ypos &&
+         event->x <= CurrentLstCoord[i].xpos + CurrentLstCoord[i].xsize &&
+         event->y <= CurrentLstCoord[i].ypos + CurrentLstCoord[i].ysize) {
         (CurrentLstCoord[i].fnc)();
         break;
       }
