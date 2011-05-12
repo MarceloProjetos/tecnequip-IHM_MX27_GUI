@@ -160,7 +160,7 @@ void CarregaComboClientes()
   GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbClientes"));
 
 // Carregamento dos clientes cadastrados no MySQL no ComboBox.
-  DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
+  DB_Execute(&mainDB, 0, "select nome from clientes order by nome");
   CarregaCombo(GTK_COMBO_BOX(obj),0, NULL);
 }
 
@@ -232,7 +232,8 @@ char *lista_ent[] = {
     "entEncoderPerim",
     "entEncoderFator",
     "entEncoderResol",
-    "spbConfigPerfVelMaxAuto",
+    "spbConfigPerfVelMaxAutoDinam",
+    "spbConfigPerfVelMaxAutoEstat",
     "spbConfigPerfAcelAuto",
     "spbConfigPerfDesacelAuto",
     "spbConfigPerfVelMaxManual",
@@ -251,19 +252,23 @@ int GravarDadosConfig()
   unsigned int i;
   char **valor_ent;
   struct strMaqParam mp;
-  valor_ent = (char **)(malloc(10*sizeof(char[10])));
+
+  // Diminui em 1 o número de campos devido ao elemento vazio no final.
+  i = sizeof(lista_ent)/sizeof(lista_ent[0])-1;
+  valor_ent = (char **)(malloc(i * sizeof(char [10])));
 
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
   for(i=0; lista_ent[i][0]; i++)
     printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
 
-  mp.perfil.auto_vel       = atol(valor_ent[ 3]);
-  mp.perfil.auto_acel      = atof(valor_ent[ 4]);
-  mp.perfil.auto_desacel   = atof(valor_ent[ 5]);
-  mp.perfil.manual_vel     = atol(valor_ent[ 6]);
-  mp.perfil.manual_acel    = atof(valor_ent[ 7]);
-  mp.perfil.manual_desacel = atof(valor_ent[ 8]);
+  mp.perfil.dinam_vel      = atol(valor_ent[ 3]);
+  mp.perfil.estat_vel      = atol(valor_ent[ 4]);
+  mp.perfil.auto_acel      = atof(valor_ent[ 5]);
+  mp.perfil.auto_desacel   = atof(valor_ent[ 6]);
+  mp.perfil.manual_vel     = atol(valor_ent[ 7]);
+  mp.perfil.manual_acel    = atof(valor_ent[ 8]);
+  mp.perfil.manual_desacel = atof(valor_ent[ 9]);
   MaqConfigPerfil(mp.perfil);
 
   mp.encoder.fator     = atof(valor_ent[1]);
@@ -271,11 +276,11 @@ int GravarDadosConfig()
   mp.encoder.perimetro = atof(valor_ent[0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.mesa.curso      = atol(valor_ent[ 9]);
-  mp.mesa.auto_vel   = atol(valor_ent[10]);
-  mp.mesa.manual_vel = atol(valor_ent[11]);
-  mp.mesa.offset     = atol(valor_ent[12]);
-  mp.mesa.tam_min    = atol(valor_ent[13]);
+  mp.mesa.curso      = atol(valor_ent[10]);
+  mp.mesa.auto_vel   = atol(valor_ent[11]);
+  mp.mesa.manual_vel = atol(valor_ent[12]);
+  mp.mesa.offset     = atol(valor_ent[13]);
+  mp.mesa.tam_min    = atol(valor_ent[14]);
   MaqConfigMesa(mp.mesa);
 
   GravaDadosBanco();
@@ -314,49 +319,53 @@ void LerDadosConfig()
   valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[0], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.auto_vel);
+  sprintf(tmp, "%d", mp.perfil.dinam_vel);
   valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[3], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.auto_acel);
+  sprintf(tmp, "%d", mp.perfil.estat_vel);
   valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[4], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.auto_desacel);
+  sprintf(tmp, "%f", mp.perfil.auto_acel);
   valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[5], tmp);
 
-  sprintf(tmp, "%d", mp.perfil.manual_vel);
+  sprintf(tmp, "%f", mp.perfil.auto_desacel);
   valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[6], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.manual_acel);
+  sprintf(tmp, "%d", mp.perfil.manual_vel);
   valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[7], tmp);
 
-  sprintf(tmp, "%f", mp.perfil.manual_desacel);
+  sprintf(tmp, "%f", mp.perfil.manual_acel);
   valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[8], tmp);
 
-  sprintf(tmp, "%d", mp.mesa.curso);
+  sprintf(tmp, "%f", mp.perfil.manual_desacel);
   valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[9], tmp);
 
-  sprintf(tmp, "%f", mp.mesa.auto_vel);
+  sprintf(tmp, "%d", mp.mesa.curso);
   valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[10], tmp);
 
-  sprintf(tmp, "%f", mp.mesa.manual_vel);
+  sprintf(tmp, "%f", mp.mesa.auto_vel);
   valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[11], tmp);
 
-  sprintf(tmp, "%f", mp.mesa.offset);
+  sprintf(tmp, "%f", mp.mesa.manual_vel);
   valor_ent[12] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[12], tmp);
 
-  sprintf(tmp, "%d", mp.mesa.tam_min);
+  sprintf(tmp, "%f", mp.mesa.offset);
   valor_ent[13] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[13], tmp);
+
+  sprintf(tmp, "%d", mp.mesa.tam_min);
+  valor_ent[14] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[14], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -384,9 +393,15 @@ void LerDadosConfig()
 
 void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
 {
-  gboolean estado;
+  int id, estado;
+  char sql[100];
 
-  if(gtk_combo_box_get_active(combobox)) {
+  sprintf(sql, "select ID from clientes where nome='%s'", LerComboAtivo(combobox));
+  DB_Execute(&mainDB, 0, sql);
+  DB_GetNextRow(&mainDB, 0);
+  id = atoi(DB_GetData(&mainDB, 0, 0));
+
+  if(id != 1) {
     estado = TRUE;
   } else {
     estado = FALSE;
@@ -402,13 +417,13 @@ void cbRemoverCliente(GtkButton *button, gpointer user_data)
   GtkWidget *dialog;
   GtkComboBox *obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbClientes"));
 
-  if(!gtk_combo_box_get_active(obj)) // O primeiro item não pode ser excluído.
-    return;
-
   sprintf(sql, "select ID from clientes where nome='%s'", LerComboAtivo(obj));
   DB_Execute(&mainDB, 0, sql);
   DB_GetNextRow(&mainDB, 0);
   id = atoi(DB_GetData(&mainDB, 0, 0));
+
+  if(id == 1) // O primeiro item não pode ser excluído.
+    return;
 
   dialog = gtk_message_dialog_new (NULL,
            GTK_DIALOG_DESTROY_WITH_PARENT,

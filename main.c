@@ -114,13 +114,13 @@ MB_HANDLER_TX(IHM_MB_TX)
   static struct timeval tv_last;
   static uint32_t primeiro = 1;
 
-  uint32_t i, tent = 50;
+  uint32_t i, tent = 300;
   int32_t resp, wait_usec, wait;
 
 #ifdef DEBUG_PC_NOETH
   return 0;
 #endif
-
+/*
   if(primeiro) {
     primeiro = 0;
     gettimeofday(&tv_last, NULL);
@@ -136,7 +136,7 @@ MB_HANDLER_TX(IHM_MB_TX)
 
   if(wait < 250000 && wait > 0)
     usleep(250000 - wait);
-
+*/
   gettimeofday(&tv, NULL);
   printf("\n%3d.%04ld - MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
   for(i=0; i<size; i++)

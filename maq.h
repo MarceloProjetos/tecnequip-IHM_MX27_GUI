@@ -24,6 +24,7 @@
 #define MAQ_ERRO_COMM_SERVO 0x0080
 #define MAQ_ERRO_POSIC      0x0100
 #define MAQ_ERRO_CORTE      0x0200
+#define MAQ_ERRO_DESATIVADA 0x0400
 #define MAQ_ERRO_ALERTAS    (MAQ_ERRO_POSIC | MAQ_ERRO_CORTE)
 
 // Flags que controlam a operação da máquina
@@ -75,7 +76,7 @@
 #define MAQ_REG_MESA_OFFSET       11
 #define MAQ_REG_PERF_AUTO_ACEL    12
 #define MAQ_REG_PERF_AUTO_DESACEL 13
-#define MAQ_REG_PERF_AUTO_VEL     14
+#define MAQ_REG_PERF_DINAM_VEL    14
 #define MAQ_REG_PERF_MAN_ACEL     15
 #define MAQ_REG_PERF_MAN_DESACEL  16
 #define MAQ_REG_PERF_MAN_VEL      17
@@ -87,6 +88,7 @@
 #define MAQ_REG_NOVO_TAM_MIN      23
 #define MAQ_REG_MESA_MAN_VEL      24
 #define MAQ_REG_MESA_AUTO_VEL     25
+#define MAQ_REG_PERF_ESTAT_VEL    26
 #define MAQ_REG_ENC_FATOR_NOVO    27
 #define MAQ_REG_ENC_REL_NOVO      28
 
@@ -104,7 +106,8 @@ struct strMaqParam
 // Parametros relacionados com a perfiladeira
   struct strMaqParamPerfil {
     // Parâmetros do inversor
-    unsigned int auto_vel; // % da velocidade maxima usada na velocidade automatica
+    unsigned int dinam_vel; // % da velocidade maxima usada na velocidade automatica (Dinâmico)
+    unsigned int estat_vel; // % da velocidade maxima usada na velocidade automatica (Estático)
     float auto_acel; // Tempo em segundos
     float auto_desacel; // Tempo em segundos
     unsigned int manual_vel; // % da velocidade maxima usada na velocidade manual

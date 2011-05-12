@@ -26,7 +26,8 @@ int MaqSync(unsigned int mask)
   printf("Sincronizando parametros da maquina:\n");
 
   if(mask & MAQ_SYNC_PERFIL) {
-    printf("maq_param.perfil.auto_vel......: %d\n" , maq_param.perfil.auto_vel);
+    printf("maq_param.perfil.dinam_vel.....: %d\n" , maq_param.perfil.dinam_vel);
+    printf("maq_param.perfil.estat_vel.....: %d\n" , maq_param.perfil.estat_vel);
     printf("maq_param.perfil.auto_acel.....: %f\n" , maq_param.perfil.auto_acel);
     printf("maq_param.perfil.auto_desacel..: %f\n" , maq_param.perfil.auto_desacel);
     printf("maq_param.perfil.manual_vel....: %d\n" , maq_param.perfil.manual_vel);
@@ -37,8 +38,16 @@ int MaqSync(unsigned int mask)
     ipc_msg.fnc   = NULL;
     ipc_msg.res   = NULL;
     ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_VEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.auto_vel;
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_DINAM_VEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.dinam_vel;
+    IPCMQ_Main_Enviar(&ipc_msg);
+
+    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+    ipc_msg.fnc   = NULL;
+    ipc_msg.res   = NULL;
+    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_ESTAT_VEL;
+    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.estat_vel;
     IPCMQ_Main_Enviar(&ipc_msg);
 
     ipc_msg.mtype = IPCMQ_FNC_MODBUS;
@@ -242,7 +251,7 @@ char *MaqStrErro(uint16_t erro)
       "Erro de comunicação - Servomotor",
       "Erro no Posicionamento",
       "Erro no Corte do Perfil",
-//      "Baixa pressão de ar",
+      "Máquina Desativada",
   };
 
   if(!erro) // Sem erro, retorna string nula
@@ -491,9 +500,13 @@ void MaqLiberar(uint16_t liberar)
 
 void MaqLimparErro()
 {
-  uint16_t modo = MaqLerFlags();
+  uint16_t modo = MaqLerFlags(), erro = MaqLerErros();
+
   modo |= MAQ_MODO_LIMPAR;
   MaqConfigFlags(modo);
+
+  if(erro == MAQ_ERRO_DESATIVADA)
+    MaqLiberar(1);
 }
 
 void MaqCortar()

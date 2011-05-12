@@ -3289,7 +3289,7 @@ Resultado será carregado no campo correspondente.</property>
                               <object class="GtkTable" id="table14">
                                 <property name="visible">True</property>
                                 <property name="border_width">3</property>
-                                <property name="n_rows">3</property>
+                                <property name="n_rows">4</property>
                                 <property name="n_columns">2</property>
                                 <property name="column_spacing">3</property>
                                 <property name="row_spacing">3</property>
@@ -3321,7 +3321,7 @@ Resultado será carregado no campo correspondente.</property>
                                   <object class="GtkLabel" id="label107">
                                     <property name="visible">True</property>
                                     <property name="xalign">0</property>
-                                    <property name="label" translatable="yes">% da velocidade máxima para operação</property>
+                                    <property name="label" translatable="yes">% da velocidade máxima para operação (Corte Voador)</property>
                                   </object>
                                   <packing>
                                     <property name="top_attach">2</property>
@@ -3331,11 +3331,11 @@ Resultado será carregado no campo correspondente.</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkSpinButton" id="spbConfigPerfVelMaxAuto">
+                                  <object class="GtkSpinButton" id="spbConfigPerfVelMaxAutoDinam">
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">●</property>
-                                    <property name="adjustment">adjConfigPerfVelMaxAuto</property>
+                                    <property name="adjustment">adjConfigPerfVelMaxAutoDinam</property>
                                     <property name="climb_rate">1</property>
                                     <property name="snap_to_ticks">True</property>
                                     <property name="numeric">True</property>
@@ -3383,6 +3383,38 @@ Resultado será carregado no campo correspondente.</property>
                                   <packing>
                                     <property name="left_attach">1</property>
                                     <property name="right_attach">2</property>
+                                    <property name="x_options">GTK_EXPAND</property>
+                                    <property name="y_options"></property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="label130">
+                                    <property name="visible">True</property>
+                                    <property name="xalign">0</property>
+                                    <property name="label" translatable="yes">% da velocidade máxima para operação (Corte Estático)</property>
+                                  </object>
+                                  <packing>
+                                    <property name="top_attach">3</property>
+                                    <property name="bottom_attach">4</property>
+                                    <property name="x_options">GTK_FILL</property>
+                                    <property name="y_options"></property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkSpinButton" id="spbConfigPerfVelMaxAutoEstat">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="invisible_char">•</property>
+                                    <property name="adjustment">adjConfigPerfVelMaxAutoEstat</property>
+                                    <property name="climb_rate">1</property>
+                                    <property name="snap_to_ticks">True</property>
+                                    <property name="numeric">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">3</property>
+                                    <property name="bottom_attach">4</property>
                                     <property name="x_options">GTK_EXPAND</property>
                                     <property name="y_options"></property>
                                   </packing>
@@ -7772,7 +7804,7 @@ Resultado será carregado no campo correspondente.</property>
     <property name="step_increment">0.10000000000000001</property>
     <property name="page_increment">10</property>
   </object>
-  <object class="GtkAdjustment" id="adjConfigPerfVelMaxAuto">
+  <object class="GtkAdjustment" id="adjConfigPerfVelMaxAutoDinam">
     <property name="upper">100</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
@@ -7961,5 +7993,10 @@ Ao clicar em OK o programa será finalizado!</property>
         </child>
       </object>
     </child>
+  </object>
+  <object class="GtkAdjustment" id="adjConfigPerfVelMaxAutoEstat">
+    <property name="upper">100</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
   </object>
 </interface>

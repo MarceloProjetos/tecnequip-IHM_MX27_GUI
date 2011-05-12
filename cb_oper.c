@@ -47,16 +47,14 @@ gboolean tmrExec(gpointer data)
     iniciando = 1;
     MaqConfigModo(MAQ_MODO_MANUAL);
 
-    // Carrega a quantidade de peças da tarefa
+    sprintf(tmp, "Produzidas %d peças", qtd - qtdprod);
+    Log(tmp, LOG_TIPO_TAREFA);
+
+    // Carrega a quantidade total de peças da tarefa, incluindo as produzidas anteriormente.
     qtd = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd")));
 
     // Subtrai o total do numero de pecas restantes para encontrar quantas foram produzidas
     qtdprod = qtd - qtdprod;
-
-//      if(status == CV_ST_ESPERA)
-//    MessageBox("Tarefa executada sem erros!");
-//      else
-//        MessageBox("Erro encontrado enquanto produzindo!");
 
     if(qtdprod >= qtd) // Quantidade produzida maior ou igual ao total
       status = TRF_ESTADO_FINAL;
