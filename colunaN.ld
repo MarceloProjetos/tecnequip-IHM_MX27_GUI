@@ -1099,6 +1099,7 @@ RUNG
     CONTACTS RErroCortePerf 0 0
     CONTACTS RCortarPerf 1 0
     CONTACTS RMaqProduzindo 1 0
+    CONTACTS RMaqStartProd 1 0
     CONTACTS RCortePerfAtivo 1 0
     PARALLEL
         COIL RErroCortePerf 0 0 1 0
