@@ -78,6 +78,7 @@
 #define MAQ_REG_STATUS                1
 #define MAQ_REG_FLAGS                 2
 #define MAQ_REG_FLAGS_MANUAL          4
+#define MAQ_REG_POS_ATUAL             5
 
 #define MAQ_REG_APL_PASSO            10
 #define MAQ_REG_APL_ACELMS           11
@@ -132,6 +133,9 @@ uint16_t MaqPronta     (void);
 void     MaqLimparErro (void);
 
 uint16_t MaqLerModo          (void);
+uint16_t MaqLerFlags         (void);
+uint16_t MaqLerEstado        (void);
+int16_t  MaqLerPosAtual      (void);
 uint32_t MaqLerEntradas      (void);
 uint32_t MaqLerSaidas        (void);
 uint16_t MaqLerPrsCiclos     (void);
@@ -153,9 +157,7 @@ struct strMaqParamEncoder MaqLerEncoder   (void);
 void                      MaqConfigAplan  (struct strMaqParamAplan aplan);
 struct strMaqParamAplan   MaqLerAplan     (void);
 
-uint16_t  MaqLerFlags    (void);
-uint16_t  MaqLerEstado   (void);
-int       MaqLerConfig   (void);
-void      MaqGravarConfig(void);
+int  MaqLerConfig   (void);
+void MaqGravarConfig(void);
 
 #endif

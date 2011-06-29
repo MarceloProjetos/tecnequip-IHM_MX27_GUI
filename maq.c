@@ -325,6 +325,15 @@ uint16_t MaqLerPrsCiclos(void)
   return ciclos;
 }
 
+int16_t MaqLerPosAtual(void)
+{
+  int16_t pos;
+
+  pos = MaqLerRegistrador(MAQ_REG_POS_ATUAL);
+
+  return pos;
+}
+
 int16_t MaqLerAplanErroPosic(void)
 {
   int16_t erro;

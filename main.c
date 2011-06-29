@@ -64,7 +64,7 @@ int32_t ihm_connect(char *host, int16_t port)
 
         /* Map TCP transport protocol name to protocol number. */
 
-        if ( ((int32_t)(ptrp = getprotobyname("tcp"))) == 0) {
+        if ( ((ptrp = getprotobyname("tcp"))) == NULL) {
                 fprintf(stderr, "Cannot map \"tcp\" to protocol number");
                 return -1;
         }
@@ -302,7 +302,8 @@ gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
   char tmp[40], *msg_error;
-  uint32_t val, i, ciclos_prensa, estado, last_flags = -1, current_flags = 0;
+  static uint32_t last_flags = -1;
+  uint32_t val, i, ciclos_prensa, estado, current_flags = 0, ult_aviso_lub = 0;
   GtkWidget *wdg;
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
@@ -379,13 +380,21 @@ gboolean tmrGtkUpdate(gpointer data)
         ciclos_prensa = MaqLerPrsCiclos();
         if(maq_param.prensa.ciclos != ciclos_prensa) {
           maq_param.prensa.ciclos = ciclos_prensa;
+          if(!ult_aviso_lub || ult_aviso_lub > maq_param.prensa.ciclos) {
+            ult_aviso_lub = maq_param.prensa.ciclos - (maq_param.prensa.ciclos % maq_param.prensa.ciclos_lub);
+          }
+
+          printf("Último aviso de lubrificação: %d\n", ult_aviso_lub);
+          printf("Ciclos atual: %d\n", maq_param.prensa.ciclos);
+          printf("Próximo aviso de lubrificação: %d\n", ult_aviso_lub+maq_param.prensa.ciclos_lub);
 
           sprintf(tmp, "%d", maq_param.prensa.ciclos);
           gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblConfigPrsCiclos")), tmp);
 
-          if(!(maq_param.prensa.ciclos%maq_param.prensa.ciclos_lub)) {
+          if(maq_param.prensa.ciclos >= ult_aviso_lub+maq_param.prensa.ciclos_lub) {
+            ult_aviso_lub = maq_param.prensa.ciclos;
             gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 1);
-          } else if(maq_param.prensa.ciclos == (maq_param.prensa.ciclos/maq_param.prensa.ciclos_lub)*maq_param.prensa.ciclos_lub + (maq_param.prensa.ciclos_lub/10)) {
+          } else if(maq_param.prensa.ciclos >= ult_aviso_lub + (maq_param.prensa.ciclos_lub/10)) {
             gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 0);
           }
 

@@ -123,6 +123,10 @@ struct strIPCMQ_Message {
   } data;
 };
 
+#ifndef gtk_widget_set_visible
+#define gtk_widget_set_visible(widget, visible) ((visible?gtk_widget_show:gtk_widget_hide)(widget))
+#endif
+
 int  GetUserPerm          (char *permissao);
 void AbrirData            (GtkEntry *entry, GCallback cb);
 void WorkAreaGoPrevious   (void);
