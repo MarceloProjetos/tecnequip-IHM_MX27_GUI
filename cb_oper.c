@@ -356,7 +356,7 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
   tela->offset = 0;
   tela->coord  = lst_coord;
 
-  sprintf(arq, "/mnt/IHM_MX27_GUI/images/maq.%d.png", n++);
+  sprintf(arq, "images/maq.%d.png", n++);
   tela->pb = gdk_pixbuf_new_from_file(arq, NULL);
 /*
   GdkPixbuf *pb, *copy_pb;
