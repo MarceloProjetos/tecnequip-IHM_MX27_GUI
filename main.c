@@ -302,8 +302,8 @@ gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
   char tmp[40], *msg_error;
-  static uint32_t last_flags = -1;
-  uint32_t val, i, ciclos_prensa, estado, current_flags = 0, ult_aviso_lub = 0;
+  static uint32_t last_flags = -1, ult_aviso_lub = -1;
+  uint32_t val, i, ciclos_prensa, estado, current_flags = 0;
   GtkWidget *wdg;
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
@@ -380,8 +380,8 @@ gboolean tmrGtkUpdate(gpointer data)
         ciclos_prensa = MaqLerPrsCiclos();
         if(maq_param.prensa.ciclos != ciclos_prensa) {
           maq_param.prensa.ciclos = ciclos_prensa;
-          if(!ult_aviso_lub || ult_aviso_lub > maq_param.prensa.ciclos) {
-            ult_aviso_lub = maq_param.prensa.ciclos - (maq_param.prensa.ciclos % maq_param.prensa.ciclos_lub);
+          if(ult_aviso_lub > maq_param.prensa.ciclos) {
+            ult_aviso_lub = maq_param.prensa.ciclos;// - (maq_param.prensa.ciclos % maq_param.prensa.ciclos_lub);
           }
 
           printf("Último aviso de lubrificação: %d\n", ult_aviso_lub);
@@ -829,13 +829,18 @@ uint32_t IHM_Init(int argc, char *argv[])
 #ifndef DEBUG_PC
   // Carrega configuracoes do arquivo de configuracao e conecta ao banco
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
+  {
+  mainDB.server  = "127.0.0.1";
+  mainDB.user    = "root";
+  mainDB.passwd  = "y1cGH3WK20";
+  mainDB.nome_db = "cv";
+  }
+#else
+  mainDB.server  = "192.168.0.5";
+  mainDB.user    = "root";
+  mainDB.passwd  = "y1cGH3WK20";
+  mainDB.nome_db = "cv";
 #endif
-    {
-    mainDB.server  = "192.168.0.5";
-    mainDB.user    = "root";
-    mainDB.passwd  = "y1cGH3WK20";
-    mainDB.nome_db = "cv";
-    }
 
   WorkAreaGoTo(NTB_ABA_LOGIN);
   gtk_widget_show_all(wnd);
