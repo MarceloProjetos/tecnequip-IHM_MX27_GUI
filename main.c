@@ -381,7 +381,11 @@ gboolean tmrGtkUpdate(gpointer data)
         if(maq_param.prensa.ciclos != ciclos_prensa) {
           maq_param.prensa.ciclos = ciclos_prensa;
           if(ult_aviso_lub > maq_param.prensa.ciclos) {
-            ult_aviso_lub = maq_param.prensa.ciclos;// - (maq_param.prensa.ciclos % maq_param.prensa.ciclos_lub);
+            if(maq_param.prensa.ciclos_lub > 0) {
+              ult_aviso_lub = maq_param.prensa.ciclos - (maq_param.prensa.ciclos % maq_param.prensa.ciclos_lub);
+            } else {
+              ult_aviso_lub = 0;
+            }
           }
 
           printf("Último aviso de lubrificação: %d\n", ult_aviso_lub);

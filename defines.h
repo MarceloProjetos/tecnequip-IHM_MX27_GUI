@@ -29,7 +29,7 @@
 #define DEBUG_PC
 
 // Ativar a linha abaixo para não conectar à POP
-//#define DEBUG_PC_NOETH
+#define DEBUG_PC_NOETH
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"

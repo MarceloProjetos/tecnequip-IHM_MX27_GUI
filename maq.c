@@ -48,8 +48,8 @@ void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
   pthread_mutex_unlock(&mutex_gui_lock);
 }
 
-// Funcao que sincroniza a estrutura de parametros com o clp
-uint16_t MaqLerRegistrador(uint16_t reg)
+// Funcao que sincroniza a estrutura de parametros com o clp. Retorna default_value se erro
+uint16_t MaqLerRegistrador(uint16_t reg, uint16_t default_value)
 {
   struct strMaqReply rp;
   struct strIPCMQ_Message ipc_msg;
@@ -65,8 +65,9 @@ uint16_t MaqLerRegistrador(uint16_t reg)
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
+  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE) {
+    return default_value; // Erro de comunicacao
+  }
 
   return CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
 }
@@ -94,7 +95,7 @@ int MaqSync(unsigned int mask)
     printf("maq_param.encoder.perimetro: %d\n", maq_param.encoder.perimetro);
     printf("maq_param.encoder.precisao.: %d\n", maq_param.encoder.precisao);
 
-    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator*1000));
+    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator*10000));
     MaqGravarRegistrador(MAQ_REG_ENC_RESOL, maq_param.encoder.precisao);
     MaqGravarRegistrador(MAQ_REG_ENC_PERIM, maq_param.encoder.perimetro);
   }
@@ -239,19 +240,23 @@ uint16_t MaqLerErros(void)
 
 uint16_t MaqLerFlags(void)
 {
-  return MaqLerRegistrador(MAQ_REG_FLAGS);
+  static uint16_t flags = 0;
+  flags = MaqLerRegistrador(MAQ_REG_FLAGS, flags);
+  return flags;
 }
 
 uint16_t MaqLerFlagsManual(void)
 {
-  return MaqLerRegistrador(MAQ_REG_FLAGS_MANUAL);
+  static uint16_t flags = 0;
+  flags = MaqLerRegistrador(MAQ_REG_FLAGS_MANUAL, flags);
+  return flags;
 }
 
 uint16_t MaqLerEstado(void)
 {
-  uint16_t status;
+  static uint16_t status;
 
-  status = MaqLerRegistrador(MAQ_REG_STATUS);
+  status = MaqLerRegistrador(MAQ_REG_STATUS, status);
   printf("status: %d\n", status);
 
   return status;
@@ -318,8 +323,9 @@ uint16_t MaqLerPrsCiclos(void)
 {
   uint16_t ciclos;
 
-  ciclos  = MaqLerRegistrador(MAQ_REG_PRS_CICLOS_MIL)*1000;
-  ciclos += MaqLerRegistrador(MAQ_REG_PRS_CICLOS_UNID);
+  ciclos  = MaqLerRegistrador(MAQ_REG_PRS_CICLOS_MIL , maq_param.prensa.ciclos/1000)*1000;
+  ciclos += MaqLerRegistrador(MAQ_REG_PRS_CICLOS_UNID, maq_param.prensa.ciclos%1000);
+
   printf("Executados %d ciclos\n", ciclos);
 
   return ciclos;
@@ -327,18 +333,18 @@ uint16_t MaqLerPrsCiclos(void)
 
 int16_t MaqLerPosAtual(void)
 {
-  int16_t pos;
+  static int16_t pos;
 
-  pos = MaqLerRegistrador(MAQ_REG_POS_ATUAL);
+  pos = MaqLerRegistrador(MAQ_REG_POS_ATUAL, pos);
 
   return pos;
 }
 
 int16_t MaqLerAplanErroPosic(void)
 {
-  int16_t erro;
+  static int16_t erro;
 
-  erro = MaqLerRegistrador(MAQ_REG_APL_ERRO_POSIC);
+  erro = MaqLerRegistrador(MAQ_REG_APL_ERRO_POSIC, erro);
   printf("Ultimo erro: %d\n", erro);
 
   return erro;
@@ -414,6 +420,9 @@ void MaqLimparErro()
 {
   uint16_t modo = MaqLerFlags();
   modo |= MAQ_MODO_LIMPAR;
+  if(MaqLerErros() & MAQ_ERRO_APLAN_SERVO) {
+    modo |= MAQ_MODO_SYNC_SERVO;
+  }
   MaqConfigFlags(modo);
 }
 
