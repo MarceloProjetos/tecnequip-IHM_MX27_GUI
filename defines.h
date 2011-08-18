@@ -31,6 +31,9 @@
 // Ativar a linha abaixo para não conectar à POP
 #define DEBUG_PC_NOETH
 
+// Ativar a linha abaixo para carregar a tela de um arquivo ao invés de as criar
+#define DEBUG_CARREGAR_TELA
+
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"
 #define LEMBRETE_SENHA_MASTER "Senha default"

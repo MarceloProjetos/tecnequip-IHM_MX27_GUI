@@ -840,7 +840,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   mainDB.nome_db = "cv";
   }
 #else
-  mainDB.server  = "192.168.0.5";
+  mainDB.server  = "interno.tecnequip.com.br";
   mainDB.user    = "root";
   mainDB.passwd  = "y1cGH3WK20";
   mainDB.nome_db = "cv";

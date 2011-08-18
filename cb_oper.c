@@ -63,6 +63,9 @@ gboolean tmrExec(gpointer data)
     iniciando = 1;
     MaqConfigModo(MAQ_MODO_MANUAL);
 
+    sprintf(tmp, "Encerrando producao apos %d ciclos", maq_param.prensa.ciclos - ciclos_inicial);
+    Log(tmp, LOG_TIPO_TAREFA);
+
     gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Parado");
 
     wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
@@ -119,8 +122,6 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
 
     gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[1]);
   } else {
-    Log("Encerrando producao", LOG_TIPO_TAREFA);
-
     MaqConfigModo(MAQ_MODO_MANUAL);
     gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Terminando...");
     gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
@@ -210,7 +211,7 @@ struct strCoordIHM {
     { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
     {  45, 245, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
-    { 579,   0, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
@@ -220,7 +221,7 @@ struct strCoordIHM {
     { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
     {  45, 245, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
-//    { 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 010 - Tampa fechada, extensão levantada, prolongamento recuado.
@@ -230,7 +231,7 @@ struct strCoordIHM {
     { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
     {   0, 175, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
-//    { 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 011 - Tampa fechada, extensão levantada, prolongamento avançado.
@@ -240,7 +241,7 @@ struct strCoordIHM {
     { 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
     {   0, 175, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
-//    { 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
@@ -251,7 +252,7 @@ struct strCoordIHM {
     { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
     {  45, 245, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
-//    { 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
@@ -262,7 +263,7 @@ struct strCoordIHM {
     { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
     {  45, 245, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
-//    { 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 110 - Tampa aberta, extensão levantada, prolongamento recuado.
@@ -273,7 +274,7 @@ struct strCoordIHM {
     { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
     {   0, 175, 70, 55, cbManAplanExpandir, "images/cmd-aplan-ext-expandir.png" },
-//    { 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 
     // Posição 111 - Tampa aberta, extensão levantada, prolongamento avançado.
@@ -284,7 +285,7 @@ struct strCoordIHM {
     { 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-abrir.png"  },
     { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
     {   0, 175, 70, 55, cbManAplanRetrair , "images/cmd-aplan-ext-expandir.png" },
-    //{ 579, -30, 80, 80, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+    { 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
     { 0, 0, 0, 0, NULL } },
 };
 
@@ -353,13 +354,14 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
   char arq[50];
   static unsigned int n = 0;
 
+#ifdef DEBUG_CARREGAR_TELA
   tela->offset = 0;
   tela->coord  = lst_coord;
 
   sprintf(arq, "images/maq.%d.png", n++);
   tela->pb = gdk_pixbuf_new_from_file(arq, NULL);
-
-/*  GdkPixbuf *pb, *copy_pb;
+#else
+  GdkPixbuf *pb, *copy_pb;
   unsigned int i = 0;
 
   tela->offset = offset;
@@ -368,6 +370,17 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
   tela->pb = gdk_pixbuf_new_from_file_at_scale(lst_img[0].arq,
       lst_img[0].posx + 2*tela->offset, lst_img[0].posy + 2*tela->offset,
       FALSE, NULL);
+
+// Carrega a nova imagem
+  pb = gdk_pixbuf_new_from_file_at_scale(lst_img[0].arq,
+      lst_img[0].posx, lst_img[0].posy,
+      FALSE, NULL);
+
+// Agrega as duas imagens e remove a referencia a nova imagem
+  gdk_pixbuf_composite(pb, tela->pb, tela->offset, tela->offset,
+      lst_img[0].posx, lst_img[0].posy, tela->offset, tela->offset, 1, 1,
+      GDK_INTERP_BILINEAR, 255);
+  gdk_pixbuf_unref(pb);
 
   while(lst_img[++i].arq != NULL) {
     LoadIntoPixbuf(tela->pb, lst_img[i].arq, lst_img[i].posx + tela->offset, lst_img[i].posy + tela->offset, lst_img[i].scalex, lst_img[i].scaley, LOADPB_REFPOS_DEFAULT);
@@ -387,7 +400,8 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
 //  tela->pb = copy_pb;
 
   sprintf(arq, "maq.%d.png", n++);
-  gdk_pixbuf_save(pb, arq, "png", NULL, NULL);*/
+  gdk_pixbuf_save(pb, arq, "png", NULL, NULL);
+#endif
 }
 
 void DesenharTelaIHM(GtkWidget *widget, struct strTelaIHM *tela)

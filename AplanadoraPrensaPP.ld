@@ -1,4 +1,4 @@
-LDmicro0.2
+POPTools:1.2
 MICRO=NXP LPC1768 LQFP100
 CYCLE=10000
 CRYSTAL=4000000
@@ -8,9 +8,10 @@ COM=4
 IP=192.168.0.235
 MASK=255.255.255.0
 GW=192.168.0.10
-COMPILED=N:\windows\Maquinas\ColunaN\ColunaN.hex
+COMPILED=N:\windows\Maquinas\PrensaPP\AplanadoraPrensaPP.hex
 
 IO LIST
+    EMaqPosAtual at 1 0
     XAplanExtRecuada at 7 0
     XAplanFechada at 6 0
     XAplanManAvanca at 9 0
@@ -22,6 +23,7 @@ IO LIST
     XDbgParamSync at 23 6
     XDbgPrsLigaMotor at 23 3
     XDbgSimulaEnc at 23 2
+    XDbgSimulaEncNeg at 23 8
     XDbgValErro0 at 23 4
     XDbgValErro48 at 23 5
     XDesbobOK at 8 0
@@ -94,21 +96,23 @@ IO LIST
     YMbNovoCiclosMil at 38 0
     YMbNovoCiclosUnd at 37 0
     YMbParamSync at 22 3
+    YMbPosAtual at 25 0
+    YMbPosicOK at 21 14
     YMbPrsCiclosMil at 36 0
     YMbPrsCiclosNovo at 22 5
     YMbPrsCiclosUnid at 35 0
     YMbPrsIniciar at 24 9
-    YMbPrsLigaMotor at 24 8
     YMbPrsLigado at 21 6
+    YMbPrsLigaMotor at 24 8
     YMbPrsParado at 21 5
     YMbPrsParar at 24 10
     YMbPrsSentidoInv at 22 4
+    YMbSrvInPos at 21 13
     YPrsAjMartelo at 12 0
     YPrsEmbreagem at 11 0
-    YPrsLigaInv at 14 0
-    YPrsLigaNormal at 13 0
+    YPrsLigaInv at 13 0
+    YPrsLigaNormal at 14 0
     YSrvHabilita at 16 0
-    EMaqPosAtual at 1 0
     ZEncPerfil at 1 0
 END
 
@@ -301,15 +305,20 @@ RUNG
     MOVE PrsValErro 0
 END
 RUNG
-    CONTACTS RPrsChecarSrvOK 1 0
+    CONTACTS RPrsPausaSrvOK 1 0
     CONTACTS RMaqCfgSrvErro 1 0
+    CONTACTS RMaqProduzindo 1 0
+    COIL RPrsChecarSrvOK 0 0 0 0
+END
+RUNG
+    CONTACTS RPrsChecarSrvOK 0 0
     PARALLEL
         SERIES
             CONTACTS RMaqSerialBusy 1 0
             TON TEspChecarON 1000000
             TOF TEspChecarOFF 1000000
             PARALLEL
-                COIL RPrsChecarSrvOK 0 0 0 0
+                COIL RPrsPausaSrvOK 0 0 0 0
                 COIL RSerialReservada 0 0 1 0
             END
         END
@@ -361,14 +370,16 @@ RUNG
     END
 END
 RUNG
+    CONTACTS XPressaoArOK 0 0
+    TOF TEspPressaoAr 500000
+    COIL RPressaoArOK 0 0 0 0
+END
+RUNG
     CONTACTS RErroGeral 1 0
     CONTACTS XInversorOK 0 0
     CONTACTS RErroBombaHidr 1 0
     CONTACTS XTermMartelo 0 0
-    PARALLEL
-        CONTACTS XPressaoArOK 0 0
-        SHORT
-    END
+    CONTACTS RPressaoArOK 0 0
     PARALLEL
         CONTACTS XDesbobOK 0 0
         SHORT
@@ -382,9 +393,10 @@ RUNG
     OSF
     PARALLEL
         COIL YMbMaqLib 0 0 1 1
-        COIL YSrvHabilita 0 0 1 0
+        COIL RAplanLigarMotor 0 0 1 0
         COIL RMaqDesabSrv 0 1 0 0
         COIL RMaqCfgSrvOK 0 0 1 0
+        COIL YPrsEmbreagem 0 0 1 0
     END
 END
 RUNG
@@ -431,13 +443,17 @@ RUNG
     ADD EMaqPosAtual EMaqPosAtual 25
 END
 RUNG
-    COMMENT Converte valor lido do encoder para décimos de mm.\r\nFórmula: ( ValEnc * EncPerim * 10 / 4 ) / EncResol
+    CONTACTS XDbgSimulaEncNeg 0 0
+    SUB EMaqPosAtual EMaqPosAtual 20
+END
+RUNG
+    COMMENT Converte valor lido do encoder para centésimos de mm.\r\nFórmula: ( ValEnc * EncPerim * 100 / 4 ) / EncResol
 END
 RUNG
     COMMENT Sendo:\r\nValEnc = Valor lido do encoder
 END
 RUNG
-    COMMENT EncPerim = Perímetro da roda do encoder em mm\r\n10 = Converte mm para décimos de mm
+    COMMENT EncPerim = Perímetro da roda do encoder em mm\r\n100 = Converte mm para centésimos de mm
 END
 RUNG
     COMMENT 4 = Fator de multiplicação do encoder na leitura, assumindo x4\r\nEncResol = Resolução do encoder em pulsos por rotação
@@ -446,7 +462,7 @@ RUNG
     MUL MaqPosAtual EMaqPosAtual YMbEncPerim
 END
 RUNG
-    MUL MaqPosAtual MaqPosAtual 10
+    MUL MaqPosAtual MaqPosAtual 100
 END
 RUNG
     DIV MaqPosAtual MaqPosAtual 4
@@ -459,28 +475,10 @@ RUNG
     MUL MaqPosAtual MaqPosAtual YMbEncFator
 END
 RUNG
-    DIV MaqPosAtual MaqPosAtual 1000
+    DIV MaqPosAtual MaqPosAtual 10000
 END
 RUNG
-    CONTACTS XSrvInPos 0 0
-    OSR
-    PARALLEL
-        SERIES
-            EQU DbgPosAtual 31900
-            MOVE DbgPosAtual 32000
-        END
-        SERIES
-            EQU DbgPosAtual 31500
-            MOVE DbgPosAtual 31900
-        END
-        SERIES
-            EQU DbgPosAtual 0
-            MOVE DbgPosAtual 31500
-        END
-    END
-END
-RUNG
-    MOVE MaqPosAtual DbgPosAtual
+    MOVE YMbPosAtual MaqPosAtual
 END
 RUNG
     COMMENT Lógica de controle da Aplanadora - Lógicas Gerais
@@ -501,7 +499,7 @@ RUNG
 END
 RUNG
     CONTACTS RAplanFechada 0 0
-    CONTACTS XPrsAvancoOK 0 0
+    CONTACTS RPrsAvancoOK 0 0
     COIL RAplanAvancoOK 0 0 0 0
 END
 RUNG
@@ -582,8 +580,14 @@ RUNG
     END
 END
 RUNG
+    MUL MaqPosAtualCorr MaqPosAtual FatorCorrServo
+END
+RUNG
+    DIV MaqPosAtualCorr MaqPosAtualCorr 10000
+END
+RUNG
     CONTACTS RStartCorrigeEnc 0 0
-    WRITE_SERVO_YASKAWA 0 MaqPosAtual ZSET%d
+    WRITE_SERVO_YASKAWA 0 MaqPosAtualCorr ZSET%d
     PARALLEL
         SERIES
             OSR
@@ -666,12 +670,20 @@ RUNG
     PARALLEL
         COIL RStartZerarEnc 0 1 0 0
         COIL RMaqSerialBusy 0 1 0 0
-        MOVE DbgPosAtual 0
+        MOVE EncPosZero 0
     END
 END
 RUNG
     CONTACTS RStartZerarEnc 0 0
-    WRITE_SERVO_YASKAWA 0 (empty) ZSET0
+    OSR
+    CONTACTS RMaqProduzindo 0 0
+    CONTACTS RMaqForaPosic 1 0
+    MOVE EncPosZero DifPosic
+END
+RUNG
+    CONTACTS RStartZerarEnc 0 0
+    TON TEspZerarEnc 100000
+    WRITE_SERVO_YASKAWA 0 EncPosZero ZSET%d
     PARALLEL
         SERIES
             OSR
@@ -1019,7 +1031,7 @@ RUNG
                     CONTACTS RMaqLerOKSerial 1 0
                     PARALLEL
                         SERIES
-                            TON TEspEntreJogs 200000
+                            TON TEspEntreJogs 500000
                             COIL RStartCfgSrvJog 0 0 1 0
                         END
                         COIL RMaqCfgSrvOK 0 1 0 0
@@ -1045,6 +1057,21 @@ RUNG
     COMMENT *** Lógica de Controle - Prensa ***
 END
 RUNG
+    COMMENT Tratamento de entradas do Came Eletrônico
+END
+RUNG
+    CONTACTS XPrsCameParar 0 0
+    TON TEspCameON 50000
+    TOF TEspCameOFF 50000
+    COIL RPrsCameParar 0 0 0 0
+END
+RUNG
+    CONTACTS XPrsAvancoOK 0 0
+    TON TEspAvancoON 50000
+    TOF TEspAvancoOFF 50000
+    COIL RPrsAvancoOK 0 0 0 0
+END
+RUNG
     COMMENT Lógica que controla o motor da prensa
 END
 RUNG
@@ -1061,7 +1088,7 @@ RUNG
 END
 RUNG
     CONTACTS RPrsMotorLigado 1 0
-    TON TEspMotorParar 20000000
+    TON TEspMotorParar 120000000
     COIL RPrsMotorParado 0 0 0 0
 END
 RUNG
@@ -1112,7 +1139,7 @@ RUNG
 END
 RUNG
     CONTACTS RPrsMotorLigado 0 0
-    TON TEspPrsMotorOK 5000000
+    TON TEspPrsMotorOK 15000000
     COIL RPrsMotorOK 0 0 0 0
 END
 RUNG
@@ -1135,7 +1162,8 @@ RUNG
         COIL YMbPrsParar 0 0 1 10
         COIL RPrsIniciarCiclo 0 0 1 0
         SERIES
-            CONTACTS XPrsDeslContinuo 1 0
+            CONTACTS XPrsDeslContinuo 0 0
+            CONTACTS RBloquearPrensa 1 0
             PARALLEL
                 SERIES
                     CONTACTS RMaqProduzindo 1 0
@@ -1149,9 +1177,15 @@ END
 RUNG
     PARALLEL
         SERIES
-            CONTACTS XPrsCameParar 0 0
+            CONTACTS RPrsCameParar 0 0
             OSR
-            CONTACTS RPrsPararMartelo 0 0
+            PARALLEL
+                CONTACTS RPrsPararMartelo 0 0
+                SERIES
+                    CONTACTS RAplanLigarMotor 0 0
+                    CONTACTS YSrvHabilita 1 0
+                END
+            END
             PARALLEL
                 CONTACTS XPrsCmdAjuste 1 0
                 CONTACTS RMaqProduzindo 0 0
@@ -1170,6 +1204,11 @@ RUNG
     END
 END
 RUNG
+    CONTACTS RPrsMotorLigado 0 0
+    OSF
+    COIL YPrsEmbreagem 0 0 1 0
+END
+RUNG
     COMMENT Controle de número de ciclos da prensa
 END
 RUNG
@@ -1181,7 +1220,7 @@ RUNG
     END
 END
 RUNG
-    CONTACTS XPrsCameParar 0 0
+    CONTACTS RPrsCameParar 0 0
     OSR
     ADD PrsCiclos PrsCiclos 1
 END
@@ -1245,6 +1284,7 @@ RUNG
     PARALLEL
         COIL RPrsIniciarCiclo 0 1 0 0
         COIL YMbPrsIniciar 0 0 1 9
+        COIL RBloquearPrensa 0 0 1 0
     END
 END
 RUNG
@@ -1261,6 +1301,11 @@ RUNG
         COIL RPrsPararMartelo 0 1 0 0
         COIL YMbPrsParar 0 0 1 10
     END
+END
+RUNG
+    CONTACTS XPrsDeslContinuo 0 0
+    OSF
+    COIL RBloquearPrensa 0 1 0 0
 END
 RUNG
     COMMENT Lógica que libera o ajuste de martelo
@@ -1405,7 +1450,7 @@ RUNG
         END
         SERIES
             CONTACTS RCfgSrvParP5OK 0 0
-            WRITE_SERVO_YASKAWA 0 AplanPasso POST000=%d
+            WRITE_SERVO_YASKAWA 0 AplanPassoCorr POST000=%d
             TON TEspCfgSrvPar5 200000
             PARALLEL
                 SERIES
@@ -1467,6 +1512,11 @@ RUNG
         CONTACTS RMaqOK 1 0
         CONTACTS RMaqCfgSrvErro 0 0
         SERIES
+            CONTACTS YSrvHabilita 0 0
+            CONTACTS XSrvInPos 0 0
+            TON TEspDeslSrvInPos 3000000
+        END
+        SERIES
             CONTACTS XAplanFechada 1 0
             CONTACTS RMaqProduzindo 0 0
         END
@@ -1478,8 +1528,12 @@ RUNG
     PARALLEL
         COIL RMaqProduzindo 0 0 1 0
         COIL RMaqStartProd 0 0 1 0
-        COIL RMaqFimProd 0 0 1 0
         COIL YMbModoAutoAtivo 0 0 1 0
+        SERIES
+            CONTACTS YSrvHabilita 0 0
+            CONTACTS XSrvInPos 0 0
+            COIL RMaqErroPosic 0 1 0 0
+        END
     END
 END
 RUNG
@@ -1495,6 +1549,8 @@ RUNG
     PARALLEL
         COIL YMbModoAutoAtivo 0 0 1 0
         COIL RPrsPararMartelo 0 1 0 0
+        COIL RAplanLigarMotor 0 0 1 0
+        COIL RMaqInicioAuto 0 0 1 0
     END
 END
 RUNG
@@ -1505,13 +1561,14 @@ RUNG
     OSR
     CONTACTS RMaqStartProd 1 0
     CONTACTS RMaqProduzindo 1 0
-    CONTACTS RMaqFimProd 1 0
     CONTACTS RMaqErroPosic 1 0
     CONTACTS RMaqConfigOK 0 0
+    CONTACTS YMbPrsSentidoInv 1 4
     PARALLEL
         COIL RMaqStartProd 0 1 0 0
         COIL YMbAplanExtSubir 0 0 1 6
         COIL YMbAplanExpandir 0 0 1 7
+        COIL RAplanZerarEnc 0 1 0 0
     END
 END
 RUNG
@@ -1541,6 +1598,8 @@ RUNG
             PARALLEL
                 COIL RMaqProduzindo 0 1 0 0
                 COIL RPrsIniciarCiclo 0 1 0 0
+                COIL RMaqInicioAuto 0 1 0 0
+                COIL RBloquearPrensa 0 0 1 0
             END
         END
         SERIES
@@ -1557,8 +1616,8 @@ RUNG
 END
 RUNG
     PARALLEL
-        LES DifPosic -50
-        GRT DifPosic 50
+        LES DifPosic -75
+        GRT DifPosic 75
     END
     COIL RMaqForaPosic 0 0 0 0
 END
@@ -1568,15 +1627,16 @@ RUNG
     COIL RMaqPosicOK 0 0 0 0
 END
 RUNG
-    CONTACTS XPrsAvancoOK 0 0
-    TON TDbgEspAvancoON 50000
-    TOF TDbgEspAvancoOFF 50000
+    CONTACTS RPrsAvancoOK 0 0
     PARALLEL
         SERIES
             OSR
             CONTACTS RMaqProduzindo 0 0
             CONTACTS RMaqErroPosic 1 0
-            COIL YSrvHabilita 0 1 0 0
+            PARALLEL
+                COIL RAplanLigarMotor 0 1 0 0
+                COIL RMaqInicioAuto 0 0 1 0
+            END
         END
         SERIES
             OSF
@@ -1584,7 +1644,7 @@ RUNG
             PARALLEL
                 SERIES
                     CONTACTS RMaqForaPosic 0 0
-                    CONTACTS YSrvHabilita 0 0
+                    CONTACTS RMaqInicioAuto 1 0
                     PARALLEL
                         COIL RMaqErroPosic 0 1 0 0
                         COIL RPrsPararMartelo 0 1 0 0
@@ -1595,7 +1655,7 @@ RUNG
                     CONTACTS RMaqErroPosic 1 0
                     COIL RAplanZerarEnc 0 1 0 0
                 END
-                COIL YSrvHabilita 0 0 1 0
+                COIL RAplanLigarMotor 0 0 1 0
             END
         END
     END
@@ -1605,14 +1665,23 @@ RUNG
     OSF
     CONTACTS RMaqProduzindo 0 0
     CONTACTS RAplanAvancoOK 0 0
-    COIL YSrvHabilita 0 1 0 0
+    COIL RAplanLigarMotor 0 1 0 0
 END
 RUNG
-    CONTACTS XSrvInPos 0 0
-    OSR
+    PARALLEL
+        SERIES
+            CONTACTS XSrvInPos 0 0
+            OSR
+        END
+        SERIES
+            CONTACTS RMaqPosicOK 0 0
+            OSF
+            CONTACTS XSrvInPos 0 0
+        END
+    END
     CONTACTS RMaqProduzindo 0 0
     PARALLEL
-        COIL YSrvHabilita 0 0 1 0
+        COIL RAplanLigarMotor 0 0 1 0
         SERIES
             CONTACTS RMaqPosicOK 0 0
             CONTACTS YPrsEmbreagem 1 0
@@ -1630,14 +1699,29 @@ RUNG
     OSF
     CONTACTS RMaqProduzindo 0 0
     CONTACTS RAplanAvancoOK 0 0
-    COIL YSrvHabilita 0 1 0 0
+    COIL RAplanLigarMotor 0 1 0 0
+END
+RUNG
+    CONTACTS RAplanLigarMotor 0 0
+    CONTACTS RAplanCorrigeEnc 1 0
+    CONTACTS RAplanZerarEnc 1 0
+    COIL YSrvHabilita 0 0 0 0
 END
 RUNG
     COMMENT Peça produzida. Se terminou, interrompe produção
 END
 RUNG
-    CONTACTS XPrsAvancoOK 0 0
-    OSR
+    PARALLEL
+        SERIES
+            CONTACTS RPrsAvancoOK 0 0
+            OSR
+        END
+        SERIES
+            CONTACTS RModoAuto 0 0
+            OSF
+            CONTACTS YPrsEmbreagem 1 0
+        END
+    END
     CONTACTS RMaqProduzindo 0 0
     CONTACTS RModoAuto 1 0
     COIL RMaqProduzindo 0 0 1 0
@@ -1692,8 +1776,7 @@ RUNG
     COIL YMbErrMartelo 0 0 0 3
 END
 RUNG
-    CONTACTS XPressaoArOK 1 0
-    CONTACTS RDbgDesabPressao 0 0
+    CONTACTS RPressaoArOK 1 0
     COIL YMbErrPressaoAr 0 0 0 4
 END
 RUNG
@@ -1706,7 +1789,7 @@ RUNG
 END
 RUNG
     CONTACTS XDesbobOK 1 0
-    CONTACTS RDbgDesabDesbob 0 0
+    OPEN
     COIL YMbErrDesbob 0 0 0 7
 END
 RUNG
@@ -1769,6 +1852,14 @@ RUNG
     COIL YMbAplanExtAvanc 0 0 0 10
 END
 RUNG
+    CONTACTS XSrvInPos 0 0
+    COIL YMbSrvInPos 0 0 0 13
+END
+RUNG
+    CONTACTS RMaqPosicOK 0 0
+    COIL YMbPosicOK 0 0 0 14
+END
+RUNG
     COMMENT Declaração de variáveis do ModBUS
 END
 RUNG
@@ -1787,17 +1878,19 @@ RUNG
         COIL YMbPrsCiclosMil 0 0 1 0
         COIL YMbPrsCiclosUnid 0 0 1 0
         COIL YMbMaqErroPos 0 0 1 0
+        COIL YMbPosAtual 0 0 1 0
     END
 END
 RUNG
     OSR
     PARALLEL
         MOVE AplanVelMax 5934
+        MOVE FatorCorrServo 10875
         MOVE YMbAplanVelAuto 100
         MOVE YMbAplanVelMan 30
         MOVE YMbAplanAcelMS 100
         MOVE YMbAplanPasso 320
-        MOVE YMbEncFator 1000
+        MOVE YMbEncFator 10000
         MOVE YMbEncResol 2500
         MOVE YMbEncPerim 400
         MOVE PrsCiclos 0
@@ -1833,4 +1926,10 @@ RUNG
 END
 RUNG
     MUL AplanPasso YMbAplanPasso 100
+END
+RUNG
+    MUL AplanPassoCorr AplanPasso FatorCorrServo
+END
+RUNG
+    DIV AplanPassoCorr AplanPassoCorr 10000
 END
