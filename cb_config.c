@@ -1005,7 +1005,7 @@ void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
     str = "\n";
   } else if (!strcmp(str, "Espaço")) {
     str = " ";
-  } else if (!strcmp(str, "gtk-go-back")) {
+  } else if (!strcmp(str, "gtk-clear")) {
     str = NULL;
   }
 
@@ -1020,6 +1020,37 @@ void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
       gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
       gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
     }
+  }
+}
+
+void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data)
+{
+  char tmp[10], *label;
+  unsigned int i;
+  GtkButton *wdg;
+  gboolean toggled = gtk_toggle_button_get_active(button);
+
+  for(i=1;;i++) { // Loop eterno, finaliza quando acabarem os botoes
+    sprintf(tmp, "btnVK%02d", i);
+    wdg = GTK_BUTTON(gtk_builder_get_object(builder, tmp));
+    if(wdg == NULL) // Acabaram os botoes
+      break; // Sai do loop
+
+    // Se não for uma letra, altera para o que deve ser
+    label = (char *)gtk_button_get_label(wdg);
+    if(!strcmp(label, "Ç")) {
+      strcpy(tmp, "ç");
+    } else if(!strcmp(label, "ç")) {
+      strcpy(tmp, "Ç");
+    } else if(!strcmp(label, ".")) {
+      strcpy(tmp, ",");
+    } else if(!strcmp(label, ",")) {
+      strcpy(tmp, ".");
+    } else { // Letra, inverte case.
+      sprintf(tmp, "%c", (toggled ? toupper : tolower)(*label));
+    }
+
+    gtk_button_set_label(wdg, tmp);
   }
 }
 
@@ -1089,13 +1120,17 @@ void AbrirVirtualKeyboard(GtkWidget *widget)
   WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
 }
 
-gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-  if(event->keyval == GDK_F2) {
-    AbrirVirtualKeyboard(gtk_window_get_focus(GTK_WINDOW(widget)));
+  static int ignorar = 0;
+
+  if(!ignorar) {
+    ignorar = 1;
+    AbrirVirtualKeyboard(widget);
     return TRUE;
   }
 
+  ignorar = 0;
   return FALSE;
 }
 

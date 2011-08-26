@@ -830,21 +830,20 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Limpa a estrutura do banco, zerando ponteiros, etc...
   DB_Clear(&mainDB);
 
-#ifndef DEBUG_PC
   // Carrega configuracoes do arquivo de configuracao e conecta ao banco
-  if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
-  {
-  mainDB.server  = "127.0.0.1";
-  mainDB.user    = "root";
-  mainDB.passwd  = "y1cGH3WK20";
-  mainDB.nome_db = "cv";
-  }
+  if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) { // Se ocorrer erro abrindo o arquivo, carrega defaults
+#ifndef DEBUG_PC
+    mainDB.server  = "localhost";
+    mainDB.user    = "root";
+    mainDB.passwd  = "y1cGH3WK20";
+    mainDB.nome_db = "cv";
 #else
-  mainDB.server  = "interno.tecnequip.com.br";
-  mainDB.user    = "root";
-  mainDB.passwd  = "y1cGH3WK20";
-  mainDB.nome_db = "cv";
+    mainDB.server  = "interno.tecnequip.com.br";
+    mainDB.user    = "root";
+    mainDB.passwd  = "y1cGH3WK20";
+    mainDB.nome_db = "cv";
 #endif
+  }
 
   WorkAreaGoTo(NTB_ABA_LOGIN);
   gtk_widget_show_all(wnd);

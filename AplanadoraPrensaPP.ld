@@ -665,6 +665,7 @@ RUNG
 END
 RUNG
     CONTACTS RAplanZerarEnc 0 0
+    CONTACTS RSrvMotorParado 0 0
     CONTACTS RMaqCfgSrvErro 1 0
     CONTACTS RMaqSerialBusy 1 0
     PARALLEL
@@ -682,7 +683,6 @@ RUNG
 END
 RUNG
     CONTACTS RStartZerarEnc 0 0
-    TON TEspZerarEnc 100000
     WRITE_SERVO_YASKAWA 0 EncPosZero ZSET%d
     PARALLEL
         SERIES
@@ -697,7 +697,13 @@ RUNG
                 COIL RMaqSerialBusy 0 0 1 0
                 SERIES
                     CONTACTS RMaqCfgSrvErro 1 0
-                    RESET_ENC ZEncPerfil
+                    PARALLEL
+                        RESET_ENC ZEncPerfil
+                        SERIES
+                            CONTACTS XDbgDeslReadEnc 0 1
+                            MOVE EMaqPosAtual 0
+                        END
+                    END
                 END
             END
         END
@@ -1551,6 +1557,7 @@ RUNG
         COIL RPrsPararMartelo 0 1 0 0
         COIL RAplanLigarMotor 0 0 1 0
         COIL RMaqInicioAuto 0 0 1 0
+        COIL RMaqPosicionando 0 0 1 0
     END
 END
 RUNG
@@ -1656,6 +1663,7 @@ RUNG
                     COIL RAplanZerarEnc 0 1 0 0
                 END
                 COIL RAplanLigarMotor 0 0 1 0
+                COIL RMaqPosicionando 0 0 1 0
             END
         END
     END
@@ -1677,6 +1685,7 @@ RUNG
             CONTACTS RMaqPosicOK 0 0
             OSF
             CONTACTS XSrvInPos 0 0
+            CONTACTS RMaqPosicionando 0 0
         END
     END
     CONTACTS RMaqProduzindo 0 0
@@ -1705,7 +1714,17 @@ RUNG
     CONTACTS RAplanLigarMotor 0 0
     CONTACTS RAplanCorrigeEnc 1 0
     CONTACTS RAplanZerarEnc 1 0
-    COIL YSrvHabilita 0 0 0 0
+    PARALLEL
+        COIL YSrvHabilita 0 0 0 0
+        SERIES
+            OSR
+            COIL RMaqPosicionando 0 1 0 0
+        END
+        SERIES
+            TOF TEspSrvParar 300000
+            COIL RSrvMotorParado 1 0 0 0
+        END
+    END
 END
 RUNG
     COMMENT Peça produzida. Se terminou, interrompe produção
