@@ -102,6 +102,8 @@ int MaqSync(unsigned int mask)
     ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_FATOR_HIGH;
     ipc_msg.data.modbus_query.data.write_single_register.val     = (rel_motor_perfil>>16) & 0XFFFF;
     IPCMQ_Main_Enviar(&ipc_msg);
+
+    MaqInvParamSync();
   }
 
   if(mask & MAQ_SYNC_ENCODER) {
@@ -440,6 +442,50 @@ void MaqConfigModo(uint16_t modo)
   ipc_msg.data.modbus_query.data.write_single_register.val = modo;
 
   IPCMQ_Main_Enviar(&ipc_msg);
+}
+
+void MaqConfigCMD(uint16_t cmd)
+{
+  struct strIPCMQ_Message ipc_msg;
+
+  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+  ipc_msg.fnc   = NULL;
+  ipc_msg.res   = NULL;
+  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+  ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CMD;
+  ipc_msg.data.modbus_query.data.write_single_register.val = cmd;
+
+  IPCMQ_Main_Enviar(&ipc_msg);
+}
+
+void MaqPerfCortar()
+{
+  MaqConfigCMD(MAQ_CMD_CORTAR);
+}
+
+void MaqPerfAvancar()
+{
+  MaqConfigCMD(MAQ_CMD_AVANCA);
+}
+
+void MaqPerfRecuar()
+{
+  MaqConfigCMD(MAQ_CMD_RECUA);
+}
+
+void MaqPerfParar()
+{
+  MaqConfigCMD(0);
+}
+
+void MaqLimparErro()
+{
+  MaqConfigCMD(MAQ_CMD_LIMPAR);
+}
+
+void MaqInvParamSync()
+{
+  MaqConfigCMD(MAQ_CMD_SYNC);
 }
 
 void MaqConfigProdQtd(uint16_t qtd)

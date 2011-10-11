@@ -703,35 +703,6 @@ cbOperacaoManual                       (GtkButton       *button,
   gtk_grab_add(wnd);
 }
 
-void
-cbManualPerfRecua                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PERF_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_REVERSO;
-  MQ_Transfer(&MQ);
-}
-
-
-void
-cbManualPerfParar                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PERF_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_DESLIGA;
-  MQ_Transfer(&MQ);
-}
-
-
-void
-cbManualPerfAvanca                     (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PERF_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_AVANTE;
-  MQ_Transfer(&MQ);
-}
-
 #else
 void CarregaComboClientes()
 {
@@ -1722,6 +1693,7 @@ void cbMessageBoxOk(GtkButton *button, gpointer user_data)
 {
   CurrentWorkArea = NTB_ABA_HOME;
   WorkAreaGoPrevious();
+  MaqLimparErro();
 }
 
 void cbGoPrevious(GtkButton *button, gpointer user_data)
@@ -1979,6 +1951,37 @@ void AbrirData(GtkEntry *entry, GCallback cb)
 
 // Exibe a janela.
   WorkAreaGoTo(NTB_ABA_DATA);
+}
+
+void
+cbManualPerfCortar                      (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  MaqPerfCortar();
+}
+
+
+void
+cbManualPerfRecua                      (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  MaqPerfRecuar();
+}
+
+
+void
+cbManualPerfParar                      (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  MaqPerfParar();
+}
+
+
+void
+cbManualPerfAvanca                     (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  MaqPerfAvancar();
 }
 
 #endif

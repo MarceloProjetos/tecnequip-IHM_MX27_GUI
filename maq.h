@@ -12,6 +12,13 @@
 #define MAQ_MASK_MODO   0xF000
 #define MAQ_MASK_STATUS 0x0FFF
 
+// Definicao dos bits de CMD
+#define MAQ_CMD_CORTAR 0x01
+#define MAQ_CMD_AVANCA 0x02
+#define MAQ_CMD_RECUA  0x04
+#define MAQ_CMD_LIMPAR 0x08
+#define MAQ_CMD_SYNC   0x10
+
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01
 #define MAQ_SYNC_ENCODER 0x02
@@ -20,22 +27,23 @@
 
 // Registradores do CLP
 #define MAQ_REG_STATUS          0
+#define MAQ_REG_CMD             2
 
-#define MAQ_REG_PROD_QTD          200
-#define MAQ_REG_PROD_TAM          201
+#define MAQ_REG_PROD_QTD          30
+#define MAQ_REG_PROD_TAM          31
 
-#define MAQ_REG_PERF_FATOR_LOW    400
-#define MAQ_REG_PERF_FATOR_HIGH   401
-#define MAQ_REG_PERF_AUTO_ACEL    402
-#define MAQ_REG_PERF_AUTO_DESACEL 403
-#define MAQ_REG_PERF_AUTO_VEL     404
-#define MAQ_REG_PERF_MAN_ACEL     405
-#define MAQ_REG_PERF_MAN_DESACEL  406
-#define MAQ_REG_PERF_MAN_VEL      407
-#define MAQ_REG_ENC_FATOR         410
-#define MAQ_REG_ENC_RESOL         411
-#define MAQ_REG_ENC_PERIM         412
-#define MAQ_REG_CRT_FACA          420
+#define MAQ_REG_PERF_FATOR_LOW    10
+#define MAQ_REG_PERF_FATOR_HIGH   11
+#define MAQ_REG_PERF_AUTO_ACEL    12
+#define MAQ_REG_PERF_AUTO_DESACEL 13
+#define MAQ_REG_PERF_AUTO_VEL     14
+#define MAQ_REG_PERF_MAN_ACEL     15
+#define MAQ_REG_PERF_MAN_DESACEL  16
+#define MAQ_REG_PERF_MAN_VEL      17
+#define MAQ_REG_CRT_FACA          19
+#define MAQ_REG_ENC_FATOR         20
+#define MAQ_REG_ENC_RESOL         21
+#define MAQ_REG_ENC_PERIM         22
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -80,6 +88,12 @@ uint32_t MaqLerSaidas  (void);
 void                      MaqConfigModo   (uint16_t  modo);
 void                      MaqConfigProdQtd(uint16_t quant);
 void                      MaqConfigProdTam(uint16_t   tam);
+void                      MaqPerfParar    ();
+void                      MaqPerfCortar   ();
+void                      MaqLimparErro   ();
+void                      MaqPerfRecuar   ();
+void                      MaqPerfAvancar  ();
+void                      MaqInvParamSync ();
 
 void                      MaqConfigPerfil (struct strMaqParamPerfil pf);
 struct strMaqParamPerfil  MaqLerPerfil    (void);
