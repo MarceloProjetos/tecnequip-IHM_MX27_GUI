@@ -11,67 +11,68 @@ GW=192.168.0.10
 COMPILED=C:\Documents and Settings\utikawa\Desktop\ColunaN\ColunaN.hex
 
 IO LIST
-    XEmergencia at 1 0
-    XTermBombaHidr at 2 0
-    XInversorOK at 3 0
-    XSnsSupHidr at 5 0
-    XSnsInfHidr at 6 0
-    XSnsSupPiloto at 7 0
-    XSnsInfPiloto at 8 0
-    XInvFimPosic at 9 0
-    XFaltaFase at 10 0
     XCortePerfManual at 11 0
+    XDbgModoAuto at 23 0
+    XDesbobOK at 14 0
+    XEmergencia at 1 0
+    XFaltaFase at 10 0
+    XInversorOK at 3 0
+    XInvFimPosic at 9 0
     XPerfManAvanca at 12 0
     XPerfManRecua at 13 0
-    XDesbobOK at 14 0
-    YLigarBombaHidr at 1 0
+    XSnsInfHidr at 6 0
+    XSnsInfPiloto at 8 0
+    XSnsSupHidr at 5 0
+    XSnsSupPiloto at 7 0
+    XTermBombaHidr at 2 0
+    YAvancarPerf at 9 0
+    YCorteTravaMesa at 4 0
     YHidrDesce at 2 0
     YHidrSobe at 3 0
-    YCorteTravaMesa at 4 0
-    YPilotoDescer at 5 0
+    YHidrVentagem at 13 0
     YInvFreioMotor at 7 0
-    YPerfOK at 8 0
-    YAvancarPerf at 9 0
-    YRecuarPerf at 10 0
     YInvPosicao at 11 0
     YInvResetPos at 12 0
-    YHidrVentagem at 13 0
-    YMbErrEmergencia at 20 0
-    YMbErrFaltaFase at 20 1
-    YMbErrBombaHidr at 20 2
-    YMbErrInversor at 20 3
-    YMbDesbobOK at 20 4
-    YMbErrInvComunic at 20 5
-    XMbModoAuto at 20 15
-    YMbModoAutoAtivo at 21 0
-    YMbMaqProduzindo at 21 2
-    YMbCorteAtivo at 21 3
-    YMbMaqIniciando at 21 5
-    YMbMaqInitOK at 21 6
-    YMbFerramCrtCima at 21 7
-    YMbMaqPronta at 21 8
-    YMbMaqOperando at 21 9
-    YMbMaqCfgInvOK at 21 10
-    YMbMaqCortePerf at 21 14
-    YMbCorteIHM at 22 0
-    YPerfManAvcIHM at 22 1
-    YPerfManRecuaIHM at 22 2
-    YMbLimpaErro at 22 3
-    YMbInvParamSync at 22 4
-    YMbPerfFatorL at 30 0
-    YMbPerfFatorH at 31 0
+    YLedErro at 17 0
+    YLedUser at 18 0
+    YLigarBombaHidr at 1 0
     YMbAutoAcel at 32 0
     YMbAutoDesac at 33 0
     YMbAutoVel at 34 0
+    YMbCorteAtivo at 21 3
+    YMbCorteIHM at 22 0
+    YMbDesbobOK at 20 4
+    YMbErrBombaHidr at 20 2
+    YMbErrEmergencia at 20 0
+    YMbErrFaltaFase at 20 1
+    YMbErrInvComunic at 20 5
+    YMbErrInversor at 20 3
+    YMbFator at 40 0
+    YMbFerramCrtCima at 21 7
+    YMbInvParamSync at 22 4
+    YMbLimpaErro at 22 3
     YMbManAcel at 35 0
     YMbManDesac at 36 0
     YMbManVel at 37 0
-    YMbTamFaca at 39 0
-    YMbFator at 40 0
+    YMbMaqCfgInvOK at 21 10
+    YMbMaqCortePerf at 21 14
+    YMbMaqIniciando at 21 5
+    YMbMaqInitOK at 21 6
+    YMbMaqOperando at 21 9
+    YMbMaqProduzindo at 21 2
+    YMbMaqPronta at 21 8
+    YMbModoAuto at 20 15
+    YMbModoAutoAtivo at 21 0
+    YMbPerfFatorH at 31 0
+    YMbPerfFatorL at 30 0
     YMbQtd at 50 0
     YMbTam at 51 0
-    YLedErro at 17 0
-    YLedUser at 18 0
+    YMbTamFaca at 39 0
+    YPerfManAvcIHM at 22 1
+    YPerfManRecuaIHM at 22 2
+    YPerfOK at 8 0
+    YPilotoDescer at 5 0
+    YRecuarPerf at 10 0
 END
 
 PROGRAM
@@ -398,6 +399,8 @@ RUNG
     CONTACTS RCortarPerf 0 0
     CONTACTS RMaqOperando 1 0
     CONTACTS RCortePerfAtivo 1 0
+    CONTACTS YAvancarPerf 1 0
+    CONTACTS YRecuarPerf 1 0
     PARALLEL
         COIL RCortePerfAtivo 0 1 0 0
         COIL YCorteTravaMesa 0 1 0 0
@@ -454,7 +457,7 @@ RUNG
     CONTACTS YCorteTravaMesa 0 0
     TON TEspTravaON 100000
     TOF TEspTravaOFF 100000
-    COIL RSnsSupTravaMesa 1 0 0 0
+    COIL RSnsSupTravaMesa 0 0 0 0
 END
 RUNG
     CONTACTS RCortePerfAtivo 0 0
@@ -672,7 +675,7 @@ RUNG
                     CONTACTS XCortePerfManual 0 0
                     OSR
                 END
-                CONTACTS YMbCorteIHM 0 1
+                CONTACTS YMbCorteIHM 0 0
                 CONTACTS RMaqCortePerf 0 0
                 SERIES
                     CONTACTS RCortePerfAtivo 1 0
@@ -712,6 +715,7 @@ RUNG
         END
     END
     CONTACTS RMaqPronta 0 0
+    CONTACTS RCortePerfAtivo 1 0
     COIL YInvFreioMotor 0 0 0 0
 END
 RUNG
@@ -751,19 +755,19 @@ RUNG
     CONTACTS RPerfManualOK 0 0
     PARALLEL
         CONTACTS XPerfManAvanca 0 0
-        CONTACTS YPerfManAvcIHM 0 7
+        CONTACTS YPerfManAvcIHM 0 1
     END
     CONTACTS XPerfManRecua 1 0
-    CONTACTS YPerfManRecuaIHM 1 8
+    CONTACTS YPerfManRecuaIHM 1 2
     COIL RAvancarPerfMan 0 0 0 0
 END
 RUNG
     CONTACTS RPerfManualOK 0 0
     CONTACTS XPerfManAvanca 1 0
-    CONTACTS YPerfManAvcIHM 1 7
+    CONTACTS YPerfManAvcIHM 1 1
     PARALLEL
         CONTACTS XPerfManRecua 0 0
-        CONTACTS YPerfManRecuaIHM 0 8
+        CONTACTS YPerfManRecuaIHM 0 2
     END
     PARALLEL
         SERIES
@@ -798,27 +802,18 @@ END
 RUNG
     CONTACTS RMaqInit 0 0
     CONTACTS RFerramCorteCima 0 0
-    COIL RMaqInit 0 0 1 0
-END
-RUNG
-    CONTACTS RMaqOK 0 0
-    CONTACTS RMaqInit 0 0
-    OSF
     PARALLEL
         COIL RMaqInit 0 0 1 0
-        SERIES
-            CONTACTS RMaqOK 0 0
-            COIL RMaqInitOK 0 1 0 0
-        END
+        COIL RMaqInitOK 0 1 0 0
     END
 END
 RUNG
     COMMENT Lógica de configuração do inversor em cada modo de operação
 END
 RUNG
-    CONTACTS YMbInvParamSync 0 5
+    CONTACTS YMbInvParamSync 0 4
     PARALLEL
-        COIL YMbInvParamSync 0 0 1 5
+        COIL YMbInvParamSync 0 0 1 4
         COIL RStartCfgInvMan 0 1 0 0
     END
 END
@@ -835,11 +830,12 @@ RUNG
             COIL RMaqCfgInvErro 0 1 0 0
         END
         SERIES
+            WRITE_USS WInvModoAuto 0 600 0 0
             WRITE_USS WInvAutoVel 0 105 0 0
             WRITE_USS WInvAutoVel 0 104 0 0
             WRITE_USS WInvAutoAcel 0 102 0 0
             WRITE_USS WInvAutoDesac 0 103 0 0
-            WRITE_USS InvTamPeca 0 0 0 0
+            WRITE_USS InvTamPeca 0 613 0 1
             PARALLEL
                 COIL RStartCfgInvAuto 0 0 1 0
                 COIL RMaqCfgInvOK 0 1 0 0
@@ -864,6 +860,7 @@ RUNG
             COIL RMaqCfgInvErro 0 1 0 0
         END
         SERIES
+            WRITE_USS WInvModoMan 0 600 0 0
             WRITE_USS WInvManVel 0 105 0 0
             WRITE_USS WInvManVel 0 104 0 0
             WRITE_USS WInvManAcel 0 102 0 0
@@ -907,6 +904,7 @@ RUNG
         COIL RStartCfgInvAuto 0 1 0 0
         COIL RStartCfgInvMan 0 0 1 0
         MOVE CQtdProd YMbQtd
+        COIL YInvResetPos 0 1 0 0
     END
 END
 RUNG
@@ -942,6 +940,7 @@ RUNG
         COIL RSubQtdProd 0 0 1 0
         COIL RStartCfgInvAuto 0 0 1 0
         COIL RStartCfgInvMan 0 1 0 0
+        COIL YInvResetPos 0 0 1 0
     END
 END
 RUNG
@@ -950,7 +949,10 @@ RUNG
     CONTACTS RMaqProduzindo 1 0
     CONTACTS RModoAutoOK 0 0
     GRT CQtdProd 0
-    COIL RMaqProduzindo 0 1 0 0
+    PARALLEL
+        COIL RMaqProduzindo 0 1 0 0
+        COIL YInvResetPos 0 0 1 0
+    END
 END
 RUNG
     PARALLEL
@@ -979,6 +981,13 @@ RUNG
 END
 RUNG
     CONTACTS RMaqProduzindo 0 0
+    CONTACTS YInvResetPos 0 0
+    TON TEspResetPos 100000
+    CONTACTS RMaqFimPosic 1 0
+    COIL YInvResetPos 0 0 1 0
+END
+RUNG
+    CONTACTS RMaqProduzindo 0 0
     CONTACTS RMaqFimPosic 1 0
     CONTACTS YInvResetPos 1 0
     CONTACTS RMaqConfigOK 0 0
@@ -990,6 +999,7 @@ RUNG
     CONTACTS RInvFreioLib 1 0
     OSR
     CONTACTS RCortePerfAtivo 1 0
+    CONTACTS RMaqModoCorrecao 1 0
     COIL RMaqCortePerf 0 1 0 0
 END
 RUNG
@@ -1006,7 +1016,10 @@ RUNG
         END
         SERIES
             CONTACTS RMaqModoCorrecao 1 0
-            COIL RSubQtdProd 0 1 0 0
+            PARALLEL
+                COIL RSubQtdProd 0 1 0 0
+                COIL YInvResetPos 0 1 0 0
+            END
         END
     END
 END
@@ -1092,10 +1105,20 @@ RUNG
     MOVE YMbQtd CQtdProd
 END
 RUNG
+    CONTACTS YMbModoAutoAtivo 0 0
+    OSF
+    COIL YMbModoAuto 0 0 1 15
+END
+RUNG
     COMMENT Mapeamento de variáveis do ModBUS
 END
 RUNG
-    CONTACTS XMbModoAuto 0 0
+    CONTACTS XDbgModoAuto 0 0
+    OSR
+    COIL YMbModoAuto 0 1 0 15
+END
+RUNG
+    CONTACTS YMbModoAuto 0 15
     PARALLEL
         COIL RModoAuto 0 0 0 0
         SERIES

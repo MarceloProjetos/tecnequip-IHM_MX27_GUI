@@ -1536,7 +1536,6 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 {
   int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
   char sql[100], *lembrete = "";
-  GtkWidget *wnd;
 
   if(mainDB.res==NULL) // Banco não conectado!
     {
@@ -1546,10 +1545,6 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
 // Exibe a janela de configuração na aba de configuração do banco de dados
       // Cria a janela principal
-      wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-      AbrirJanelaModal(wnd);
-      gtk_grab_add(wnd);
-
       AbrirConfig(pos);
 
       return;
@@ -1570,21 +1565,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
         Log("Entrada no sistema", LOG_TIPO_SISTEMA);
 
-        // Oculta a janela de login.
-        gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin")));
-
         // Cria a janela principal
-        wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-
-        // Configura o estado inicial dos botoes.
-        // Habilita os botões conforme estado atual da máquina.
-//        if(MaquinaEspera(CHECAR_MANUAL))
-//          EstadoBotoes(wnd, BTN_TODOS);
-//        else
-//          EstadoBotoes(wnd, BTN_CFG | BTN_INIT);
-
-        AbrirJanelaModal(wnd);
-        gtk_grab_add(wnd);
         WorkAreaGoTo(NTB_ABA_HOME);
 
 // Funcao para captura de mensagens do processo do Corte Voador

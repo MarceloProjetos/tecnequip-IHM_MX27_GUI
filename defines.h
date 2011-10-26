@@ -80,8 +80,12 @@
 #define NTB_ABA_EXECUTAR   10
 #define NTB_ABA_VIRTUAL_KB 11
 #define NTB_ABA_MESSAGEBOX 12
+#define NTB_ABA_LOGIN      13
 
 /*** Fim das definições gerais ***/
+
+// Definições para cast de variáveis, evitando problemas com alinhamento.
+#define CONV_PCHAR_UINT16(data) (((uint16_t)(*(data+1))<<8) | (uint16_t)(*data))
 
 int  WorkAreaGet (void);
 void WorkAreaGoTo(int NewWorkArea);

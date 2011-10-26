@@ -16,6 +16,7 @@ extern int idUser; // Indica usuário que logou se for diferente de zero.
 
 pthread_mutex_t mutex_ipcmq_rd = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_ipcmq_wr = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_gui_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
@@ -367,7 +368,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
 
 void cbLogoff(GtkButton *button, gpointer user_data)
 {
-  GtkWidget *wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
   struct strIPCMQ_Message ipc_msg;
 
   ipc_msg.mtype = IPCMQ_FNC_TEXT;
@@ -383,10 +383,7 @@ void cbLogoff(GtkButton *button, gpointer user_data)
   DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
   CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
 
-  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop")));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
+  WorkAreaGoTo(NTB_ABA_LOGIN);
 }
 
 /****************************************************************************
@@ -431,20 +428,23 @@ void * ihm_update(void *args)
       switch(msg.fnc) {
       case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
         if(WorkAreaGet() == NTB_ABA_HOME) {
-          gdk_threads_enter();
-          if(msg.data.ad.vin != ad_vin) {
-            ad_vin = msg.data.ad.vin;
-            gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(msg.data.ad.vin )/3150);
+          if(!pthread_mutex_trylock(&mutex_gui_lock)) {
+            gdk_threads_enter();
+            if(msg.data.ad.vin != ad_vin) {
+              ad_vin = msg.data.ad.vin;
+              gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(msg.data.ad.vin )/35000);
+            }
+            if(msg.data.ad.term != ad_term) {
+              ad_term = msg.data.ad.term;
+              gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(msg.data.ad.term)/3150);
+            }
+            if(msg.data.ad.vbat != ad_vbat) {
+              ad_vbat = msg.data.ad.vbat;
+              gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/4500);
+            }
+            gdk_threads_leave();
+            pthread_mutex_unlock(&mutex_gui_lock);
           }
-          if(msg.data.ad.term != ad_term) {
-            ad_term = msg.data.ad.term;
-            gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(msg.data.ad.term)/3150);
-          }
-          if(msg.data.ad.vbat != ad_vbat) {
-            ad_vbat = msg.data.ad.vbat;
-            gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(msg.data.ad.vbat)/3150);
-          }
-          gdk_threads_leave();
         }
         break;
 
@@ -520,7 +520,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   //Carrega a interface a partir do arquivo glade
   builder = gtk_builder_new();
   gtk_builder_add_from_file(builder, "IHM.glade", NULL);
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndLogin"));
+  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
   cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
 
   //Conecta Sinais aos Callbacks
@@ -623,6 +623,7 @@ uint32_t IHM_Init(int argc, char *argv[])
     mainDB.nome_db = "cv";
     }
 
+  WorkAreaGoTo(NTB_ABA_LOGIN);
   gtk_widget_show_all(wnd);
 
   // Iniciando os timers

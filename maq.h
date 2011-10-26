@@ -27,6 +27,7 @@
 
 // Registradores do CLP
 #define MAQ_REG_STATUS          0
+#define MAQ_REG_FLAGS           1
 #define MAQ_REG_CMD             2
 
 #define MAQ_REG_PROD_QTD          30
