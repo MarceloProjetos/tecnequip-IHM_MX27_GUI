@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <ctype.h>
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
@@ -17,13 +18,17 @@
 #include <comm.h>
 #include <net/modbus.h>
 #include <DB.h>
+#include <crypt.h>
 
 #include "maq.h"
 
 /*** Definições gerais ***/
 
 // Ativar a linha abaixo para rodar o programa em um PC
-//#define DEBUG_PC
+#define DEBUG_PC
+
+// Ativar a linha abaixo para desativar a comunicação pela Ethernet
+#define DEBUG_PC_NOETH
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"

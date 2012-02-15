@@ -64,8 +64,8 @@ int32_t ihm_connect(char *host, int16_t port)
 
         /* Map TCP transport protocol name to protocol number. */
 
-        if ( ((int32_t)(ptrp = getprotobyname("tcp"))) == 0) {
-                fprintf(stderr, "Cannot map \"tcp\" to protocol number");
+        if ( ((ptrp = getprotobyname("tcp"))) == NULL) {
+              fprintf(stderr, "Cannot map \"tcp\" to protocol number");
                 return -1;
         }
 
@@ -92,12 +92,20 @@ int32_t tcp_socket = -1;
 
 COMM_FNC(CommTX)
 {
+#ifndef DEBUG_PC
   return Transmitir(ps, (char *)data, size, 0);
+#else
+  return 0;
+#endif
 }
 
 COMM_FNC(CommRX)
 {
+#ifndef DEBUG_PC
   return Receber(ps, (char *)data, size);
+#else
+  return 0;
+#endif
 }
 
 MB_HANDLER_TX(IHM_MB_TX)
@@ -109,7 +117,7 @@ MB_HANDLER_TX(IHM_MB_TX)
   uint32_t i, tent = 50;
   int32_t resp, wait_usec, wait;
 
-#ifdef DEBUG_PC
+#ifdef DEBUG_PC_NOETH
   return 0;
 #endif
 
@@ -126,8 +134,8 @@ MB_HANDLER_TX(IHM_MB_TX)
     wait += 1000000;
   wait += wait_usec;
 
-  if(wait < 250000 && wait > 0)
-    usleep(250000 - wait);
+//  if(wait < 250000 && wait > 0)
+//    usleep(250000 - wait);
 
   gettimeofday(&tv, NULL);
   printf("\n%3d.%04ld - MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
@@ -256,7 +264,7 @@ void IPC_Update(void)
 {
   struct strIPCMQ_Message rcv;
 
-  while(IPCMQ_Main_Receber(&rcv, 0) >= 0)
+  while(IPCMQ_Main_Receber(&rcv, 0) >= 0) {
     switch(rcv.mtype) {
     case IPCMQ_FNC_TEXT:
       printf("Recebida mensagem de texto: %s\n", rcv.data.text);
@@ -280,6 +288,7 @@ void IPC_Update(void)
     default:
       printf("Mensagem de tipo desconhecido: %ld\n", rcv.mtype);
     }
+  }
 }
 
 gboolean tmrGtkUpdate(gpointer data)
@@ -440,15 +449,18 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
-  char tmp[25];
   int32_t  batt_level, curr_batt_level = -1;
-  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp, i, ChangedAD = 0, ciclos = 0;
+  uint32_t ad_vin=-1, ad_vbat=-1, ciclos = 0;
+#ifndef DEBUG_PC
+  char tmp[25];
+  uint32_t ad_term=-1, rp, ChangedAD = 0, i;
   struct comm_msg msg;
-  GtkDialog      *dlg;
-  GtkLabel       *lbl;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
   GtkImage       *imgBatt;
   GdkPixbuf      *pbBatt[4];
+  GtkDialog      *dlg;
+  GtkLabel       *lbl;
+#endif
 
   struct strIPCMQ_Message ipc_msg;
 
@@ -458,6 +470,7 @@ void * ihm_update(void *args)
   strcpy(ipc_msg.data.text, "mensagem");
   IPCMQ_Threads_Enviar(&ipc_msg);
 
+#ifndef DEBUG_PC
   gdk_threads_enter();
 
   pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"      ));
@@ -473,6 +486,7 @@ void * ihm_update(void *args)
   }
 
   gdk_threads_leave();
+#endif
 
   /****************************************************************************
    * Loop
@@ -480,6 +494,7 @@ void * ihm_update(void *args)
   while (1) {
     usleep(500);
     /*** Loop de checagem de mensagens vindas da CPU LPC2109 ***/
+#ifndef DEBUG_PC
     comm_update();
     if(comm_ready()) {
       comm_get(&msg);
@@ -543,6 +558,8 @@ void * ihm_update(void *args)
           OnPowerDown = 1;
           printf("Sistema sem energia");
 
+          MaqGravarConfig();
+
           gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
               "30 segundos");
           gtk_widget_show_all(GTK_WIDGET(dlg));
@@ -579,6 +596,7 @@ void * ihm_update(void *args)
         printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
       }
     }
+#endif
 
     /*** Loop para atualizacao da imagem da bateria ***/
 
@@ -603,7 +621,9 @@ void * ihm_update(void *args)
 
       if(curr_batt_level != batt_level) { // Alterado o nivel, atualiza imagem
         curr_batt_level = batt_level;
+#ifndef DEBUG_PC
         gtk_image_set_from_pixbuf(imgBatt, pbBatt[curr_batt_level]);
+#endif
       }
     }
 
@@ -634,8 +654,11 @@ void * ihm_update(void *args)
 uint32_t IHM_Init(int argc, char *argv[])
 {
   uint32_t ret = 0;
+#ifndef DEBUG_PC_NOETH
   int32_t opts;
+#endif
   pthread_t tid;
+  GSList *lst;
   GtkWidget *wnd;
   GtkComboBox *cmb;
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
@@ -658,6 +681,14 @@ uint32_t IHM_Init(int argc, char *argv[])
   //Conecta Sinais aos Callbacks
   gtk_builder_connect_signals(builder, NULL);
 
+  // Carrega os nomes dos widgets do gtkbuilder para poderem ser usados nos temas
+  lst = gtk_builder_get_objects(builder);
+  while(lst != NULL) {
+    if(GTK_IS_WIDGET(lst->data))
+      gtk_widget_set_name(GTK_WIDGET(lst->data), gtk_buildable_get_name(GTK_BUILDABLE(lst->data)));
+    lst = lst->next;
+ }
+
 //  g_object_unref (G_OBJECT (builder));
   gtk_rc_parse("gtk.rc");
 
@@ -670,9 +701,6 @@ uint32_t IHM_Init(int argc, char *argv[])
   TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")), campos_log,
       GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
-
-  // Configura o ComboBoxEntry para usar o modo de texto. Pelo Glade nao funciona!
-  gtk_combo_box_entry_set_text_column(GTK_COMBO_BOX_ENTRY(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0);
 
   // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
   fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
@@ -689,11 +717,8 @@ uint32_t IHM_Init(int argc, char *argv[])
     goto fim_fila_wr;
   }
 
-#ifdef DEBUG_PC
-  ps = SerialInit("/dev/ttyUSB0");
-#else
+#ifndef DEBUG_PC
   ps = SerialInit("/dev/ttymxc2");
-#endif
 
   if(ps == NULL) {
     printf("Erro abrindo porta serial!\n");
@@ -709,6 +734,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   comm_init(CommTX, CommRX);
   comm_put (&(struct comm_msg){ COMM_FNC_LED, { 0xA } });
   comm_put (&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+#endif
 
 // Inicializacao do ModBus
   mbdev.identification.Id = 0x02;
@@ -717,7 +743,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.mode              = MB_MODE_MASTER;
   mbdev.TX                = IHM_MB_TX;
 
-#ifndef DEBUG_PC
+#ifndef DEBUG_PC_NOETH
   tcp_socket = ihm_connect("192.168.0.235", 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
@@ -750,7 +776,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
 #endif
     {
-    mainDB.server  = "192.168.0.2";
+    mainDB.server  = "interno.tecnequip.com.br";
     mainDB.user    = "root";
     mainDB.passwd  = "y1cGH3WK20";
     mainDB.nome_db = "cv";
@@ -790,13 +816,17 @@ uint32_t IHM_Init(int argc, char *argv[])
 fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
 
+#ifndef DEBUG_PC_NOETH
 fim_opt: // Encerrando por erro na configuracao da conexao TCP
   close(tcp_socket);
 
 fim_tcp: // Encerrando por falha ao tentar estabelecer a conexao TCP
+#endif
+#ifndef DEBUG_PC
   SerialClose(ps);
 
 fim_serial: // Encerrando por erro ao abrir a porta serial
+#endif
   msgctl(fd_wr, IPC_RMID, NULL);
 
 fim_fila_wr: // Encerrando por falha ao criar fila de mensagens para escrita
@@ -809,12 +839,20 @@ fim_fila_rd: // Encerrando por falha ao criar fila de mensagens para leitura
   return ret;
 }
 
+void TrataSinal(int sinal)
+{
+  printf("Recebido sinal %d, saindo!\n", sinal);
+  gtk_main_quit();
+}
+
 //Inicia a aplicacao
 int main(int argc, char *argv[])
 {
   char tmp[10];
   GtkWidget *wdg;
   uint32_t ret;
+
+  signal(SIGINT, TrataSinal);
 
   // Se ocorrer erro abrindo o programa, cria janela para avisar o usuario.
   if((ret = IHM_Init(argc, argv)) != 0) {

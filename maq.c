@@ -240,6 +240,7 @@ char *MaqStrErro(uint16_t erro)
 
 void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
 {
+#ifndef DEBUG_PC_NOETH
   pthread_mutex_lock  (&mutex_gui_lock);
 
   IPCMQ_Main_Enviar(ipc_msg);
@@ -249,6 +250,9 @@ void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
   }
 
   pthread_mutex_unlock(&mutex_gui_lock);
+#else
+  rp->modbus_reply.ExceptionCode = MB_EXCEPTION_NONE;
+#endif
 }
 
 void retMaqMB(void *dt, void *res)
