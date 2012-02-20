@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
-  <requires lib="gtk+" version="2.16"/>
-  <!-- interface-naming-policy project-wide -->
+  <requires lib="gtk+" version="2.20"/>
   <object class="GtkAdjustment" id="adjConfigAplanRampa">
     <property name="upper">99.990000000223517</property>
     <property name="step_increment">0.10000000000000001</property>
@@ -164,12 +163,12 @@
     <property name="window_position">center</property>
     <property name="type_hint">normal</property>
     <child internal-child="vbox">
-      <object class="GtkVBox" id="dialog-vbox1">
+      <object class="GtkBox" id="dialog-vbox1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="spacing">2</property>
         <child internal-child="action_area">
-          <object class="GtkHButtonBox" id="dialog-action_area1">
+          <object class="GtkButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="layout_style">center</property>
@@ -536,7 +535,8 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                 <child>
                   <object class="GtkDrawingArea" id="dwaMaquina">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
+                    <property name="app_paintable">True</property>
+                    <property name="can_focus">True</property>
                     <signal name="expose-event" handler="cbDesenharMaquina" swapped="no"/>
                   </object>
                 </child>
@@ -876,8 +876,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                                   </object>
                                   <packing>
@@ -894,8 +892,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <property name="adjustment">adjConfigAplanVelMaxManual</property>
                                     <property name="climb_rate">1</property>
                                     <property name="snap_to_ticks">True</property>
@@ -918,8 +914,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <property name="adjustment">adjConfigAplanVelMaxAuto</property>
                                     <property name="climb_rate">1</property>
                                     <property name="snap_to_ticks">True</property>
@@ -956,8 +950,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <property name="adjustment">adjConfigAplanRampa</property>
                                     <property name="climb_rate">0.10000000000000001</property>
                                     <property name="digits">1</property>
@@ -1058,8 +1050,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                                   </object>
                                   <packing>
@@ -1075,8 +1065,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                                   </object>
                                   <packing>
@@ -1094,8 +1082,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                     <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                                   </object>
                                   <packing>
@@ -1133,228 +1119,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="label" translatable="yes">Aplanadora</property>
                   </object>
                   <packing>
-                    <property name="position">3</property>
-                    <property name="tab_fill">False</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkAlignment" id="alignment1">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="top_padding">5</property>
-                    <property name="bottom_padding">5</property>
-                    <property name="left_padding">6</property>
-                    <property name="right_padding">5</property>
-                    <child>
-                      <object class="GtkTable" id="table13">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="n_rows">4</property>
-                        <property name="n_columns">3</property>
-                        <property name="column_spacing">5</property>
-                        <property name="row_spacing">5</property>
-                        <child>
-                          <object class="GtkLabel" id="label4">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="xalign">0</property>
-                            <property name="label" translatable="yes">Número Atual de Ciclos</property>
-                          </object>
-                          <packing>
-                            <property name="y_options"></property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkButton" id="btnPrsZerarCiclos">
-                            <property name="label" translatable="yes">Zerar Ciclos</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">True</property>
-                            <property name="use_action_appearance">False</property>
-                            <signal name="clicked" handler="cbPrsZerarCiclos" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">2</property>
-                            <property name="right_attach">3</property>
-                            <property name="x_options">GTK_FILL</property>
-                            <property name="y_options"></property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="entConfigPrsCiclosFerram">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="invisible_char">•</property>
-                            <property name="primary_icon_activatable">False</property>
-                            <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                            <property name="top_attach">1</property>
-                            <property name="bottom_attach">2</property>
-                            <property name="y_options"></property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label79">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="xalign">0</property>
-                            <property name="label" translatable="yes">Vida Útil da Ferramenta</property>
-                          </object>
-                          <packing>
-                            <property name="top_attach">1</property>
-                            <property name="bottom_attach">2</property>
-                            <property name="y_options"></property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="lblConfigPrsCiclos">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">0</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label80">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">ciclos</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">2</property>
-                            <property name="right_attach">3</property>
-                            <property name="top_attach">1</property>
-                            <property name="bottom_attach">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label81">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="xalign">0</property>
-                            <property name="label" translatable="yes">Intervalo entre cada Lubrificação</property>
-                          </object>
-                          <packing>
-                            <property name="top_attach">2</property>
-                            <property name="bottom_attach">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkEntry" id="entConfigPrsCiclosLub">
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="invisible_char">•</property>
-                            <property name="primary_icon_activatable">False</property>
-                            <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                            <property name="top_attach">2</property>
-                            <property name="bottom_attach">3</property>
-                            <property name="y_options"></property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label83">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">ciclos</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">2</property>
-                            <property name="right_attach">3</property>
-                            <property name="top_attach">2</property>
-                            <property name="bottom_attach">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="label85">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="xalign">0</property>
-                            <property name="label" translatable="yes">Sentido de Rotação do Motor</property>
-                          </object>
-                          <packing>
-                            <property name="top_attach">3</property>
-                            <property name="bottom_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkVBox" id="vbox7">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <child>
-                              <object class="GtkRadioButton" id="rdbConfigPrsSentidoHor">
-                                <property name="label" translatable="yes">Horário (Modo Normal)</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="use_action_appearance">False</property>
-                                <property name="active">True</property>
-                                <property name="draw_indicator">True</property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkRadioButton" id="rdbConfigPrsSentidoAntiHor">
-                                <property name="label" translatable="yes">Anti-Horário</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">False</property>
-                                <property name="use_action_appearance">False</property>
-                                <property name="active">True</property>
-                                <property name="draw_indicator">True</property>
-                                <property name="group">rdbConfigPrsSentidoHor</property>
-                              </object>
-                              <packing>
-                                <property name="expand">True</property>
-                                <property name="fill">True</property>
-                                <property name="position">1</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left_attach">1</property>
-                            <property name="right_attach">2</property>
-                            <property name="top_attach">3</property>
-                            <property name="bottom_attach">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <placeholder/>
-                        </child>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-                <child type="tab">
-                  <object class="GtkLabel" id="lblPerfil">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">Prensa</property>
-                  </object>
-                  <packing>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -1453,8 +1218,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1474,8 +1237,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1494,8 +1255,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1577,7 +1336,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     </child>
                   </object>
                   <packing>
-                    <property name="position">2</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child type="tab">
@@ -1587,7 +1346,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="label" translatable="yes">Usuários</property>
                   </object>
                   <packing>
-                    <property name="position">2</property>
+                    <property name="position">1</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -1613,8 +1372,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1630,8 +1387,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1650,8 +1405,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1669,8 +1422,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                             <property name="invisible_char">●</property>
                             <property name="primary_icon_activatable">False</property>
                             <property name="secondary_icon_activatable">False</property>
-                            <property name="primary_icon_sensitive">True</property>
-                            <property name="secondary_icon_sensitive">True</property>
                             <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                           <packing>
@@ -1818,7 +1569,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     </child>
                   </object>
                   <packing>
-                    <property name="position">3</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
                 <child type="tab">
@@ -1828,7 +1579,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="label" translatable="yes">Banco de Dados</property>
                   </object>
                   <packing>
-                    <property name="position">3</property>
+                    <property name="position">2</property>
                     <property name="tab_fill">False</property>
                   </packing>
                 </child>
@@ -1926,57 +1677,14 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkVBox" id="vbox6">
+                      <object class="GtkLabel" id="lblExecMsg">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <child>
-                          <object class="GtkLabel" id="lblExecMsg">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Parado</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                              <attribute name="size" value="20000"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="lblExecAvisoLub">
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Lubrificar ferramenta</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                              <attribute name="size" value="20000"/>
-                              <attribute name="foreground" value="#ffff00000000"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkLabel" id="lblExecAvisoFerram">
-                            <property name="can_focus">False</property>
-                            <property name="label" translatable="yes">Ferramenta atingiu limite, programar manutenção</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                              <attribute name="size" value="20000"/>
-                              <attribute name="foreground" value="#ffff00000000"/>
-                            </attributes>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">2</property>
-                          </packing>
-                        </child>
+                        <property name="label" translatable="yes">Parado</property>
+                        <attributes>
+                          <attribute name="weight" value="bold"/>
+                          <attribute name="size" value="20000"/>
+                        </attributes>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -3873,8 +3581,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -3890,8 +3596,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -3969,8 +3673,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                     <property name="invisible_char">•</property>
                                     <property name="primary_icon_activatable">False</property>
                                     <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4878,8 +4580,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                 <property name="invisible_char">●</property>
                                 <property name="primary_icon_activatable">False</property>
                                 <property name="secondary_icon_activatable">False</property>
-                                <property name="primary_icon_sensitive">True</property>
-                                <property name="secondary_icon_sensitive">True</property>
                               </object>
                               <packing>
                                 <property name="expand">True</property>
@@ -4927,8 +4627,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                                 <property name="invisible_char">●</property>
                                 <property name="primary_icon_activatable">False</property>
                                 <property name="secondary_icon_activatable">False</property>
-                                <property name="primary_icon_sensitive">True</property>
-                                <property name="secondary_icon_sensitive">True</property>
                               </object>
                               <packing>
                                 <property name="expand">True</property>
@@ -4990,6 +4688,9 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   <object class="GtkTreeView" id="tvwLog">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+                    <child internal-child="selection">
+                      <object class="GtkTreeSelection" id="treeview-selection1"/>
+                    </child>
                   </object>
                 </child>
               </object>
@@ -5175,8 +4876,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadCoilsStart</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5192,8 +4891,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadCoilsQuant</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5247,8 +4944,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadDiscreteInputsStart</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5264,8 +4959,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadDiscreteInputsQuant</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5323,8 +5016,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadHoldingRegistersStart</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5340,8 +5031,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadHoldingRegistersQuant</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5399,8 +5088,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadInputRegistersStart</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5416,8 +5103,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjReadInputRegistersQuant</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5494,8 +5179,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjWriteSingleCoilOutput</property>
                       </object>
                       <packing>
@@ -5594,8 +5277,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjWriteSingleRegisterVal</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5613,8 +5294,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjWriteSingleRegisterAddress</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5893,8 +5572,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjWriteMultipleRegistersStart</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5910,8 +5587,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjWriteMultipleRegistersQuant</property>
                         <property name="numeric">True</property>
                       </object>
@@ -5987,8 +5662,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjMaskWriteRegisterAND</property>
                         <property name="numeric">True</property>
                       </object>
@@ -6006,8 +5679,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjMaskWriteRegisterAddress</property>
                         <property name="numeric">True</property>
                       </object>
@@ -6034,8 +5705,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjMaskWriteRegisterOR</property>
                         <property name="numeric">True</property>
                       </object>
@@ -6075,8 +5744,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjRWMultipleRegistersStart</property>
                         <property name="numeric">True</property>
                       </object>
@@ -6092,8 +5759,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                         <property name="invisible_char">●</property>
                         <property name="primary_icon_activatable">False</property>
                         <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
                         <property name="adjustment">adjRWMultipleRegistersQuant</property>
                         <property name="numeric">True</property>
                       </object>
@@ -6413,8 +6078,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="invisible_char">●</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
-                    <property name="primary_icon_sensitive">True</property>
-                    <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -6485,8 +6148,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="invisible_char">●</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
-                    <property name="primary_icon_sensitive">True</property>
-                    <property name="secondary_icon_sensitive">True</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -6638,8 +6299,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   <object class="GtkScrolledWindow" id="scrolledwindow5">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">automatic</property>
-                    <property name="vscrollbar_policy">automatic</property>
                     <child>
                       <object class="GtkTextView" id="txvVirtualKeyboard">
                         <property name="visible">True</property>
@@ -7524,8 +7183,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="invisible_char">●</property>
                     <property name="primary_icon_activatable">False</property>
                     <property name="secondary_icon_activatable">False</property>
-                    <property name="primary_icon_sensitive">True</property>
-                    <property name="secondary_icon_sensitive">True</property>
                     <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                   </object>
                   <packing>
@@ -7845,7 +7502,6 @@ Ao clicar em OK o programa será finalizado!</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="hscrollbar_policy">never</property>
-            <property name="vscrollbar_policy">automatic</property>
             <child>
               <object class="GtkViewport" id="viewport1">
                 <property name="visible">True</property>

@@ -302,8 +302,8 @@ gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
   char tmp[40], *msg_error;
-  static uint32_t last_flags = -1, ult_aviso_lub = -1;
-  uint32_t val, i, ciclos_prensa, estado, current_flags = 0;
+  static uint32_t last_flags = -1;
+  uint32_t val, i, estado, current_flags = 0;
   GtkWidget *wdg;
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
@@ -373,43 +373,6 @@ gboolean tmrGtkUpdate(gpointer data)
             break; // Sai do loop
 
           gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
-        }
-      }
-
-      if(idUser) { // Apenas realiza leitura de ciclos depois do login
-        ciclos_prensa = MaqLerPrsCiclos();
-        if(maq_param.prensa.ciclos != ciclos_prensa) {
-          maq_param.prensa.ciclos = ciclos_prensa;
-          if(ult_aviso_lub > maq_param.prensa.ciclos) {
-            if(maq_param.prensa.ciclos_lub > 0) {
-              ult_aviso_lub = maq_param.prensa.ciclos - (maq_param.prensa.ciclos % maq_param.prensa.ciclos_lub);
-            } else {
-              ult_aviso_lub = 0;
-            }
-          }
-
-          printf("Último aviso de lubrificação: %d\n", ult_aviso_lub);
-          printf("Ciclos atual: %d\n", maq_param.prensa.ciclos);
-          printf("Próximo aviso de lubrificação: %d\n", ult_aviso_lub+maq_param.prensa.ciclos_lub);
-
-          sprintf(tmp, "%d", maq_param.prensa.ciclos);
-          gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblConfigPrsCiclos")), tmp);
-
-          if(maq_param.prensa.ciclos >= ult_aviso_lub+maq_param.prensa.ciclos_lub) {
-            ult_aviso_lub = maq_param.prensa.ciclos;
-            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 1);
-          } else if(maq_param.prensa.ciclos >= ult_aviso_lub + (maq_param.prensa.ciclos_lub/10)) {
-            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 0);
-          }
-
-          if(maq_param.prensa.ciclos >= maq_param.prensa.ciclos_ferram) {
-            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 1);
-          } else {
-            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
-          }
-
-          if(!(maq_param.prensa.ciclos%50))
-            MaqGravarConfig();
         }
       }
     } else if(ciclos == 1) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
@@ -516,18 +479,18 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
-  char tmp[25];
   int32_t  batt_level, curr_batt_level = -1;
-  uint32_t ad_vin=-1, ad_vbat=-1, i, ciclos = 0;
+  uint32_t ad_vin=-1, ad_vbat=-1, ciclos = 0;
 #ifndef DEBUG_PC
-  uint32_t ad_term=-1, rp, ChangedAD = 0;
+  char tmp[25];
+  uint32_t ad_term=-1, rp, ChangedAD = 0, i;
   struct comm_msg msg;
-#endif
   GtkDialog      *dlg;
   GtkLabel       *lbl;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
   GtkImage       *imgBatt;
   GdkPixbuf      *pbBatt[4];
+#endif
 
   struct strIPCMQ_Message ipc_msg;
 
@@ -539,6 +502,7 @@ void * ihm_update(void *args)
 
   gdk_threads_enter();
 
+#ifndef DEBUG_PC
   pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"      ));
   pgbTERM = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbTERM"     ));
   pgbVBAT = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"     ));
@@ -550,6 +514,7 @@ void * ihm_update(void *args)
     sprintf(tmp, "images/ihm-battery-%d.png", i);
     pbBatt[i] = gdk_pixbuf_new_from_file(tmp, NULL);
   }
+#endif
 
   gdk_threads_leave();
 

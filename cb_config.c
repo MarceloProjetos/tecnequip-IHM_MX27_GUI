@@ -122,10 +122,6 @@ char *lista_ent[] = {
     "spbConfigAplanVelMaxManual",
     "spbConfigAplanVelMaxAuto",
     "spbConfigAplanRampa",
-    "lblConfigPrsCiclos",
-    "entConfigPrsCiclosFerram",
-    "entConfigPrsCiclosLub",
-    "rdbConfigPrsSentidoAntiHor",
     ""
 };
 
@@ -140,12 +136,6 @@ int GravarDadosConfig()
   LerValoresWidgets(lista_ent, valor_ent);
   for(i=0; lista_ent[i][0]; i++)
     printf("%d: %s = %s\n" , i, lista_ent[i], valor_ent[i]);
-
-  mp.prensa.ciclos         = atol(valor_ent[ 7]);
-  mp.prensa.ciclos_ferram  = atol(valor_ent[ 8]);
-  mp.prensa.ciclos_lub     = atol(valor_ent[ 9]);
-  mp.prensa.sentido        = atol(valor_ent[10]);
-  MaqConfigPrensa(mp.prensa);
 
   mp.encoder.fator         = atof(valor_ent[ 1]);
   mp.encoder.precisao      = atol(valor_ent[ 2]);
@@ -178,7 +168,6 @@ void LerDadosConfig()
   i = sizeof(lista_ent)/sizeof(lista_ent[0])-1;
   valor_ent = (char **)(malloc(i * sizeof(char *)));
 
-  mp.prensa     = MaqLerPrensa ();
   mp.encoder    = MaqLerEncoder();
   mp.aplanadora = MaqLerAplan  ();
 
@@ -209,22 +198,6 @@ void LerDadosConfig()
   sprintf(tmp, "%f", mp.aplanadora.rampa);
   valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[6], tmp);
-
-  sprintf(tmp, "%d", mp.prensa.ciclos);
-  valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[7], tmp);
-
-  sprintf(tmp, "%d", mp.prensa.ciclos_ferram);
-  valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[8], tmp);
-
-  sprintf(tmp, "%d", mp.prensa.ciclos_lub);
-  valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[9], tmp);
-
-  sprintf(tmp, "%d", mp.prensa.sentido);
-  valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[10], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 

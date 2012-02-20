@@ -114,16 +114,6 @@ int MaqSync(unsigned int mask)
     MaqConfigFlags(MaqLerFlags() | MAQ_MODO_SYNC_SERVO);
   }
 
-  if(mask & MAQ_SYNC_PRENSA) {
-    printf("maq_param.prensa.sentido.........: %d\n", maq_param.prensa.sentido);
-    printf("maq_param.prensa.ciclos..........: %d\n", maq_param.prensa.ciclos);
-    printf("maq_param.prensa.ciclos_ferram...: %d\n", maq_param.prensa.ciclos_ferram);
-    printf("maq_param.prensa.ciclos_lub......: %d\n", maq_param.prensa.ciclos_lub);
-
-    MaqConfigPrsCiclos    (maq_param.prensa.ciclos);
-    MaqConfigPrsSentidoInv(maq_param.prensa.sentido);
-  }
-
   return 1;
 }
 
@@ -319,18 +309,6 @@ uint32_t MaqLerSaidas(void)
   return val;
 }
 
-uint16_t MaqLerPrsCiclos(void)
-{
-  uint16_t ciclos;
-
-  ciclos  = MaqLerRegistrador(MAQ_REG_PRS_CICLOS_MIL , maq_param.prensa.ciclos/1000)*1000;
-  ciclos += MaqLerRegistrador(MAQ_REG_PRS_CICLOS_UNID, maq_param.prensa.ciclos%1000);
-
-  printf("Executados %d ciclos\n", ciclos);
-
-  return ciclos;
-}
-
 int16_t MaqLerPosAtual(void)
 {
   static int16_t pos;
@@ -426,54 +404,11 @@ void MaqLimparErro()
   MaqConfigFlags(modo);
 }
 
-void MaqConfigPrsCiclos(uint32_t val)
-{
-  uint16_t modo = MaqLerFlags(), ciclos_mil = maq_param.prensa.ciclos/1000;
-
-  MaqGravarRegistrador(MAQ_REG_PRS_CICLOS_NOVO_MIL , ciclos_mil);
-  MaqGravarRegistrador(MAQ_REG_PRS_CICLOS_NOVO_UNID, maq_param.prensa.ciclos - (uint32_t)(ciclos_mil)*1000);
-
-  modo |= MAQ_MODO_PRS_CICLOS;
-  MaqConfigFlags(modo);
-}
-
-void MaqConfigPrsSentidoInv(uint16_t val)
-{
-  uint16_t modo = MaqLerFlags();
-
-  if(val)
-    modo |=  MAQ_MODO_PRS_SENTIDO;
-  else
-    modo &= ~MAQ_MODO_PRS_SENTIDO;
-
-  MaqConfigFlags(modo);
-}
-
 void MaqAplanManual(uint16_t comando)
 {
   uint16_t flags = MaqLerFlagsManual();
 
   switch(comando) {
-    case MAQ_APLAN_ABRIR:
-        flags |=  MAQ_FM_APLAN_ABRIR;
-        flags &= ~MAQ_FM_APLAN_FECHAR;
-        break;
-
-    case MAQ_APLAN_FECHAR:
-        flags &= ~MAQ_FM_APLAN_ABRIR;
-        flags |=  MAQ_FM_APLAN_FECHAR;
-      break;
-
-    case MAQ_APLAN_SUBIR:
-        flags |=  MAQ_FM_APLAN_SUBIR;
-        flags &= ~MAQ_FM_APLAN_DESCER;
-        break;
-
-    case MAQ_APLAN_DESCER:
-        flags &= ~MAQ_FM_APLAN_SUBIR;
-        flags |=  MAQ_FM_APLAN_DESCER;
-      break;
-
     case MAQ_APLAN_AVANCAR:
         flags |=  MAQ_FM_APLAN_AVANCAR;
         flags &= ~MAQ_FM_APLAN_RECUAR;
@@ -485,73 +420,16 @@ void MaqAplanManual(uint16_t comando)
       break;
 
     case MAQ_APLAN_PARAR:
-        flags &= ~MAQ_FM_APLAN_ABRIR;
-        flags &= ~MAQ_FM_APLAN_FECHAR;
-        flags &= ~MAQ_FM_APLAN_SUBIR;
-        flags &= ~MAQ_FM_APLAN_DESCER;
         flags &= ~MAQ_FM_APLAN_AVANCAR;
         flags &= ~MAQ_FM_APLAN_RECUAR;
       break;
-
-    case MAQ_APLAN_EXT_SUBIR:
-        flags |=  MAQ_FM_APLAN_EXT_SUBIR;
-        break;
-
-    case MAQ_APLAN_EXT_DESCER:
-        flags &= ~MAQ_FM_APLAN_EXT_SUBIR;
-      break;
-
-    case MAQ_APLAN_EXT_EXPANDIR:
-        flags |=  MAQ_FM_APLAN_EXT_EXPANDIR;
-        break;
-
-    case MAQ_APLAN_EXT_RETRAIR:
-        flags &= ~MAQ_FM_APLAN_EXT_EXPANDIR;
-      break;
 }
-  MaqConfigFlagsManual(flags);
-}
-
-void MaqPrsManual(uint16_t comando)
-{
-  uint16_t flags = MaqLerFlagsManual();
-
-  switch(comando) {
-    case MAQ_PRS_LIGAR:
-        flags |=  MAQ_FM_PRS_LIGAR;
-        break;
-
-    case MAQ_PRS_DESLIGAR:
-        flags &= ~MAQ_FM_PRS_LIGAR;
-      break;
-
-    case MAQ_PRS_INICIAR:
-        flags |=  MAQ_FM_PRS_INICIAR;
-        break;
-
-    case MAQ_PRS_PARAR:
-        flags |=  MAQ_FM_PRS_PARAR;
-        break;
-  }
-
   MaqConfigFlagsManual(flags);
 }
 
 uint16_t MaqPronta()
 {
   return MaqLerEstado() & MAQ_STATUS_PRONTA ? TRUE : FALSE;
-}
-
-void MaqConfigPrensa(struct strMaqParamPrensa prensa)
-{
-  maq_param.prensa = prensa;
-
-  MaqSync(MAQ_SYNC_PRENSA);
-}
-
-struct strMaqParamPrensa MaqLerPrensa()
-{
-  return maq_param.prensa;
 }
 
 void MaqConfigEncoder(struct strMaqParamEncoder enc)

@@ -12,73 +12,36 @@ COMPILED=N:\windows\Maquinas\PrensaPP\AplanadoraPrensaPP.hex
 
 IO LIST
     EMaqPosAtual at 1 0
-    XAplanExtRecuada at 7 0
     XAplanFechada at 6 0
     XAplanManAvanca at 9 0
     XAplanManRecua at 10 0
-    XBombaHidrLigada at 13 0
     XDbgDeslReadEnc at 23 1
     XDbgLimpaErro at 23 7
     XDbgMaqLib at 23 0
     XDbgParamSync at 23 6
-    XDbgPrsLigaMotor at 23 3
     XDbgSimulaEnc at 23 2
     XDbgSimulaEncNeg at 23 8
     XDbgValErro0 at 23 4
     XDbgValErro48 at 23 5
-    XDesbobOK at 8 0
     XEmergencia at 1 0
     XFaltaFase at 4 0
-    XInversorOK at 5 0
     XMbModoAuto at 22 0
     XPressaoArOK at 18 0
-    XPrsAvancoOK at 11 0
-    XPrsCameParar at 12 0
-    XPrsCmdAjuste at 14 0
-    XPrsCmdBM1 at 15 0
-    XPrsCmdBM2 at 16 0
-    XPrsDeslContinuo at 17 0
     XSrvInPos at 19 0
     XTermBombaHidr at 2 0
-    XTermMartelo at 3 0
-    YAplanAvancaMesa at 6 0
-    YAplanExtDesce at 5 0
-    YAplanExtSobe at 4 0
     YAplanManAvcIHM at 24 0
     YAplanManRecIHM at 24 1
-    YAplanRecuaMesa at 7 0
-    YHidrAbre at 2 0
-    YHidrDesce at 9 0
-    YHidrFecha at 3 0
-    YHidrSobe at 8 0
-    YHidrVentagem at 10 0
-    YInvLimpaErro at 15 0
-    YLedErro at 17 0
-    YLedUser at 18 0
-    YLigarBombaHidr at 1 0
-    YMbAplanAberta at 21 12
-    YMbAplanAbre at 24 2
     YMbAplanAcelMS at 31 0
     YMbAplanAvancoOK at 21 4
-    YMbAplanDesce at 24 5
-    YMbAplanExpandir at 24 7
-    YMbAplanExtAvanc at 21 10
-    YMbAplanExtCima at 21 11
-    YMbAplanExtSubir at 24 6
-    YMbAplanFecha at 24 3
     YMbAplanPasso at 30 0
-    YMbAplanSobe at 24 4
     YMbAplanVelAuto at 32 0
     YMbAplanVelMan at 33 0
     YMbEncFator at 40 0
     YMbEncPerim at 42 0
     YMbEncResol at 41 0
     YMbErrBombaHidr at 20 2
-    YMbErrDesbob at 20 7
     YMbErrEmergencia at 20 0
     YMbErrFaltaFase at 20 1
-    YMbErrInversor at 20 5
-    YMbErrMartelo at 20 3
     YMbErrPosic at 20 9
     YMbErrPressaoAr at 20 4
     YMbErrServo at 20 6
@@ -93,25 +56,11 @@ IO LIST
     YMbMaqPronta at 21 2
     YMbMaqStartProd at 21 8
     YMbModoAutoAtivo at 21 0
-    YMbNovoCiclosMil at 38 0
-    YMbNovoCiclosUnd at 37 0
     YMbParamSync at 22 3
     YMbPosAtual at 25 0
     YMbPosicOK at 21 14
-    YMbPrsCiclosMil at 36 0
-    YMbPrsCiclosNovo at 22 5
-    YMbPrsCiclosUnid at 35 0
-    YMbPrsIniciar at 24 9
-    YMbPrsLigado at 21 6
-    YMbPrsLigaMotor at 24 8
-    YMbPrsParado at 21 5
-    YMbPrsParar at 24 10
-    YMbPrsSentidoInv at 22 4
     YMbSrvInPos at 21 13
-    YPrsAjMartelo at 12 0
     YPrsEmbreagem at 11 0
-    YPrsLigaInv at 13 0
-    YPrsLigaNormal at 14 0
     YSrvHabilita at 16 0
     ZEncPerfil at 1 0
 END
@@ -268,15 +217,6 @@ RUNG
     COMMENT QtdProd\r\n   Contagem de peças que restam produzir antes de finalizar o loop de produção
 END
 RUNG
-    COMMENT Lógica para piscar o led de status, permitindo ao usuário identificar se a POP está funcionando
-END
-RUNG
-    CONTACTS YLedUser 1 0
-    TON TEsperaLedON 1000000
-    TOF TEsperaLedOFF 1000000
-    COIL YLedUser 0 0 0 0
-END
-RUNG
     COMMENT Checagens gerais da Máquina
 END
 RUNG
@@ -308,50 +248,29 @@ RUNG
     CONTACTS RPrsPausaSrvOK 1 0
     CONTACTS RMaqCfgSrvErro 1 0
     CONTACTS RMaqProduzindo 1 0
-    COIL RPrsChecarSrvOK 0 0 0 0
+    CONTACTS RMaqSerialBusy 1 0
+    TON TEspChecarSrvOK 2000000
+    OSR
+    PARALLEL
+        COIL RPrsChecarSrvOK 0 1 0 0
+        COIL RMaqSerialBusy 0 1 0 0
+    END
+END
+RUNG
+    COMMENT Lógica para checar estado do servo
 END
 RUNG
     CONTACTS RPrsChecarSrvOK 0 0
+    WRITE_SERVO_YASKAWA 0 (empty) ERR
+    TON TEspRespChecar 50000
+    READ_SERVO_YASKAWA 0 PrsValErro ERR NONE
     PARALLEL
+        COIL RServoOK 0 0 1 0
+        COIL RMaqSerialBusy 0 0 1 0
+        COIL RPrsChecarSrvOK 0 0 1 0
         SERIES
-            CONTACTS RMaqSerialBusy 1 0
-            TON TEspChecarON 1000000
-            TOF TEspChecarOFF 1000000
-            PARALLEL
-                COIL RPrsPausaSrvOK 0 0 0 0
-                COIL RSerialReservada 0 0 1 0
-            END
-        END
-        SERIES
-            PARALLEL
-                CONTACTS RMaqSerialBusy 1 0
-                CONTACTS RSerialReservada 0 0
-            END
-            PARALLEL
-                SERIES
-                    OSR
-                    PARALLEL
-                        COIL RSerialReservada 0 1 0 0
-                        COIL RMaqSerialBusy 0 1 0 0
-                    END
-                END
-                SERIES
-                    WRITE_SERVO_YASKAWA 0 (empty) ERR
-                    TON TEspRespChecar 50000
-                    READ_SERVO_YASKAWA 0 PrsValErro ERR NONE
-                    PARALLEL
-                        COIL RServoOK 0 0 1 0
-                        SERIES
-                            OSR
-                            COIL RMaqSerialBusy 0 0 1 0
-                        END
-                        SERIES
-                            EQU PrsValErro 0
-                            COIL RServoOK 0 1 0 0
-                        END
-                    END
-                END
-            END
+            EQU PrsValErro 0
+            COIL RServoOK 0 1 0 0
         END
     END
 END
@@ -370,20 +289,17 @@ RUNG
     END
 END
 RUNG
+    COMMENT Lógica de checagem de erros da máquina
+END
+RUNG
     CONTACTS XPressaoArOK 0 0
     TOF TEspPressaoAr 500000
     COIL RPressaoArOK 0 0 0 0
 END
 RUNG
     CONTACTS RErroGeral 1 0
-    CONTACTS XInversorOK 0 0
     CONTACTS RErroBombaHidr 1 0
-    CONTACTS XTermMartelo 0 0
     CONTACTS RPressaoArOK 0 0
-    PARALLEL
-        CONTACTS XDesbobOK 0 0
-        SHORT
-    END
     CONTACTS RServoOK 0 0
     CONTACTS YMbMaqLib 0 1
     COIL RMaqOK 0 0 0 0
@@ -396,20 +312,12 @@ RUNG
         COIL RAplanLigarMotor 0 0 1 0
         COIL RMaqDesabSrv 0 1 0 0
         COIL RMaqCfgSrvOK 0 0 1 0
-        COIL YPrsEmbreagem 0 0 1 0
     END
 END
 RUNG
     CONTACTS RMaqCfgSrvErro 0 0
     OSR
     COIL RMaqDesabSrv 0 1 0 0
-END
-RUNG
-    PARALLEL
-        CONTACTS RMaqOK 1 0
-        CONTACTS RMaqCfgSrvErro 0 0
-    END
-    COIL YLedErro 0 0 0 0
 END
 RUNG
     CONTACTS RMaqCfgSrvOK 0 0
@@ -501,56 +409,6 @@ RUNG
     CONTACTS RAplanFechada 0 0
     CONTACTS RPrsAvancoOK 0 0
     COIL RAplanAvancoOK 0 0 0 0
-END
-RUNG
-    CONTACTS RMaqManualOK 0 0
-    CONTACTS YMbAplanAbre 0 2
-    COIL RAplanAbre 0 0 0 0
-END
-RUNG
-    CONTACTS RMaqManualOK 0 0
-    CONTACTS YMbAplanFecha 0 3
-    COIL RAplanFecha 0 0 0 0
-END
-RUNG
-    CONTACTS RMaqManualOK 0 0
-    CONTACTS YMbAplanSobe 0 4
-    COIL RAplanSobe 0 0 0 0
-END
-RUNG
-    CONTACTS RMaqManualOK 0 0
-    CONTACTS YMbAplanDesce 0 5
-    COIL RAplanDesce 0 0 0 0
-END
-RUNG
-    CONTACTS YMbAplanExtSubir 0 6
-    PARALLEL
-        SERIES
-            OSR
-            CONTACTS RMaqManualOK 0 0
-            COIL RAplanExtSubir 0 1 0 0
-        END
-        SERIES
-            OSF
-            CONTACTS RMaqManualOK 0 0
-            COIL RAplanExtSubir 0 0 1 0
-        END
-    END
-END
-RUNG
-    CONTACTS YMbAplanExpandir 0 7
-    PARALLEL
-        SERIES
-            OSR
-            CONTACTS RMaqManualOK 0 0
-            COIL RAplanExpandir 0 1 0 0
-        END
-        SERIES
-            OSF
-            CONTACTS RMaqManualOK 0 0
-            COIL RAplanExpandir 0 0 1 0
-        END
-    END
 END
 RUNG
     COMMENT Recebe retorno de um comando pela serial, carregando o retorno em AplanRetSerial
@@ -713,148 +571,8 @@ RUNG
     COMMENT Lógica de controle da Aplanadora - Controle da Bomba Hidráulica
 END
 RUNG
-    CONTACTS RMaqOK 0 0
-    CONTACTS YLigarBombaHidr 1 0
-    PARALLEL
-        CONTACTS RAplanAbre 0 0
-        CONTACTS RAplanFecha 0 0
-        CONTACTS RAplanSobe 0 0
-        CONTACTS RAplanDesce 0 0
-    END
-    COIL YLigarBombaHidr 0 1 0 0
-END
-RUNG
-    PARALLEL
-        SERIES
-            CONTACTS YLigarBombaHidr 0 0
-            CONTACTS XBombaHidrLigada 1 0
-            TON TBombaHidrTO 5000000
-        END
-        CONTACTS XTermBombaHidr 1 0
-    END
+    CONTACTS XTermBombaHidr 1 0
     COIL RErroBombaHidr 0 0 0 0
-END
-RUNG
-    CONTACTS YLigarBombaHidr 0 0
-    TON TBombaHidrEstab 3000000
-    COIL RBombaHidrOK 0 0 0 0
-END
-RUNG
-    PARALLEL
-        SERIES
-            CONTACTS RBombaHidrOK 0 0
-            CONTACTS RAplanSobe 1 0
-            CONTACTS RAplanDesce 1 0
-            CONTACTS RAplanAbre 1 0
-            CONTACTS RAplanFecha 1 0
-            TON TBombaHidrInat 300000000
-        END
-        CONTACTS RMaqOK 1 0
-    END
-    COIL YLigarBombaHidr 0 0 1 0
-END
-RUNG
-    COMMENT Lógica de controle do corte do perfil - Mapeamento entre relés internos para entradas e saídas
-END
-RUNG
-    CONTACTS RBombaHidrOK 0 0
-    CONTACTS RAplanAbre 0 0
-    CONTACTS YHidrFecha 1 0
-    COIL YHidrAbre 0 0 0 0
-END
-RUNG
-    CONTACTS RBombaHidrOK 0 0
-    CONTACTS RAplanFecha 0 0
-    PARALLEL
-        SERIES
-            CONTACTS RAplanFechada 1 0
-            COIL YHidrFecha 0 0 0 0
-        END
-        SERIES
-            CONTACTS RAplanFechada 0 0
-            COIL YMbAplanFecha 0 0 1 3
-        END
-    END
-END
-RUNG
-    CONTACTS RBombaHidrOK 0 0
-    CONTACTS RAplanSobe 0 0
-    CONTACTS YHidrDesce 1 0
-    COIL YHidrSobe 0 0 0 0
-END
-RUNG
-    CONTACTS RBombaHidrOK 0 0
-    CONTACTS RAplanDesce 0 0
-    COIL YHidrDesce 0 0 0 0
-END
-RUNG
-    PARALLEL
-        CONTACTS YHidrAbre 0 0
-        CONTACTS YHidrFecha 0 0
-        CONTACTS YHidrDesce 0 0
-        CONTACTS YHidrSobe 0 0
-    END
-    COIL YHidrVentagem 0 0 0 0
-END
-RUNG
-    CONTACTS RAplanExtSubir 0 0
-    PARALLEL
-        SERIES
-            OSR
-            PARALLEL
-                COIL YAplanExtSobe 0 1 0 0
-                COIL YAplanExtDesce 0 0 1 0
-            END
-        END
-        SERIES
-            OSF
-            PARALLEL
-                COIL YAplanExtSobe 0 0 1 0
-                COIL YAplanExtDesce 0 1 0 0
-            END
-        END
-    END
-END
-RUNG
-    PARALLEL
-        CONTACTS YAplanExtSobe 0 0
-        CONTACTS YAplanExtDesce 0 0
-    END
-    TON TEspAtuarExt 1000000
-    PARALLEL
-        COIL YAplanExtSobe 0 0 1 0
-        COIL YAplanExtDesce 0 0 1 0
-    END
-END
-RUNG
-    CONTACTS RAplanExpandir 0 0
-    PARALLEL
-        SERIES
-            OSR
-            PARALLEL
-                COIL YAplanAvancaMesa 0 1 0 0
-                COIL YAplanRecuaMesa 0 0 1 0
-            END
-        END
-        SERIES
-            OSF
-            PARALLEL
-                COIL YAplanAvancaMesa 0 0 1 0
-                COIL YAplanRecuaMesa 0 1 0 0
-            END
-        END
-    END
-END
-RUNG
-    CONTACTS XAplanExtRecuada 0 0
-    PARALLEL
-        OSR
-        OSF
-    END
-    PARALLEL
-        COIL YAplanAvancaMesa 0 0 1 0
-        COIL YAplanRecuaMesa 0 0 1 0
-    END
 END
 RUNG
     COMMENT Lógica de controle manual da mesa do corte voador (JOG)
@@ -1036,10 +754,7 @@ RUNG
                 SERIES
                     CONTACTS RMaqLerOKSerial 1 0
                     PARALLEL
-                        SERIES
-                            TON TEspEntreJogs 500000
-                            COIL RStartCfgSrvJog 0 0 1 0
-                        END
+                        COIL RStartCfgSrvJog 0 0 1 0
                         COIL RMaqCfgSrvOK 0 1 0 0
                     END
                 END
@@ -1058,272 +773,6 @@ RUNG
 END
 RUNG
     COMMENT *** Fim da Lógica - Aplanadora ***
-END
-RUNG
-    COMMENT *** Lógica de Controle - Prensa ***
-END
-RUNG
-    COMMENT Tratamento de entradas do Came Eletrônico
-END
-RUNG
-    CONTACTS XPrsCameParar 0 0
-    TON TEspCameON 50000
-    TOF TEspCameOFF 50000
-    COIL RPrsCameParar 0 0 0 0
-END
-RUNG
-    CONTACTS XPrsAvancoOK 0 0
-    TON TEspAvancoON 50000
-    TOF TEspAvancoOFF 50000
-    COIL RPrsAvancoOK 0 0 0 0
-END
-RUNG
-    COMMENT Lógica que controla o motor da prensa
-END
-RUNG
-    CONTACTS XDbgPrsLigaMotor 0 3
-    OSR
-    COIL YMbPrsLigaMotor 0 1 0 8
-END
-RUNG
-    PARALLEL
-        CONTACTS RErroGeral 0 0
-        CONTACTS XInversorOK 1 0
-    END
-    COIL YMbPrsLigaMotor 0 0 1 8
-END
-RUNG
-    CONTACTS RPrsMotorLigado 1 0
-    TON TEspMotorParar 120000000
-    COIL RPrsMotorParado 0 0 0 0
-END
-RUNG
-    CONTACTS YMbPrsSentidoInv 0 4
-    PARALLEL
-        OSR
-        OSF
-    END
-    COIL RPrsNovoSentido 0 1 0 0
-END
-RUNG
-    PARALLEL
-        CONTACTS RMaqPronta 0 0
-        CONTACTS RPrsMotorLigado 0 0
-    END
-    CONTACTS YMbPrsLigaMotor 0 8
-    PARALLEL
-        CONTACTS RPrsMotorParado 0 0
-        CONTACTS RPrsNovoSentido 1 0
-    END
-    PARALLEL
-        SERIES
-            CONTACTS YMbPrsSentidoInv 1 4
-            COIL YPrsLigaNormal 0 0 0 0
-        END
-        SERIES
-            CONTACTS YMbPrsSentidoInv 0 4
-            COIL YPrsLigaInv 0 0 0 0
-        END
-        COIL RPrsNovoSentido 0 0 1 0
-    END
-END
-RUNG
-    PARALLEL
-        CONTACTS YPrsLigaNormal 0 0
-        CONTACTS YPrsLigaInv 0 0
-    END
-    PARALLEL
-        COIL RPrsMotorLigado 0 0 0 0
-        SERIES
-            OSR
-            PARALLEL
-                COIL YMbPrsIniciar 0 0 1 9
-                COIL RPrsIniciarCiclo 0 0 1 0
-            END
-        END
-    END
-END
-RUNG
-    CONTACTS RPrsMotorLigado 0 0
-    TON TEspPrsMotorOK 15000000
-    COIL RPrsMotorOK 0 0 0 0
-END
-RUNG
-    COMMENT Controle da Embreagem
-END
-RUNG
-    CONTACTS RMaqPronta 0 0
-    CONTACTS RPrsMotorOK 0 0
-    PARALLEL
-        SERIES
-            CONTACTS YPrsLigaNormal 0 0
-            CONTACTS RPrsIniciarCiclo 0 0
-        END
-        SERIES
-            CONTACTS XPrsCmdAjuste 0 0
-            CONTACTS RMaqProduzindo 1 0
-        END
-    END
-    PARALLEL
-        COIL YMbPrsParar 0 0 1 10
-        COIL RPrsIniciarCiclo 0 0 1 0
-        SERIES
-            CONTACTS XPrsDeslContinuo 0 0
-            CONTACTS RBloquearPrensa 1 0
-            PARALLEL
-                SERIES
-                    CONTACTS RMaqProduzindo 1 0
-                    COIL RPrsPararMartelo 0 1 0 0
-                END
-                COIL YPrsEmbreagem 0 1 0 0
-            END
-        END
-    END
-END
-RUNG
-    PARALLEL
-        SERIES
-            CONTACTS RPrsCameParar 0 0
-            OSR
-            PARALLEL
-                CONTACTS RPrsPararMartelo 0 0
-                SERIES
-                    CONTACTS RAplanLigarMotor 0 0
-                    CONTACTS YSrvHabilita 1 0
-                END
-            END
-            PARALLEL
-                CONTACTS XPrsCmdAjuste 1 0
-                CONTACTS RMaqProduzindo 0 0
-            END
-        END
-        SERIES
-            CONTACTS XPrsCmdAjuste 0 0
-            OSF
-            CONTACTS RMaqProduzindo 1 0
-        END
-    END
-    PARALLEL
-        COIL YPrsEmbreagem 0 0 1 0
-        COIL RPrsPararMartelo 0 0 1 0
-        COIL RPrsIniciarCiclo 0 0 1 0
-    END
-END
-RUNG
-    CONTACTS RPrsMotorLigado 0 0
-    OSF
-    COIL YPrsEmbreagem 0 0 1 0
-END
-RUNG
-    COMMENT Controle de número de ciclos da prensa
-END
-RUNG
-    CONTACTS YMbPrsCiclosNovo 0 5
-    PARALLEL
-        COIL YMbPrsCiclosNovo 0 0 1 5
-        MUL PrsCiclos YMbNovoCiclosMil 1000
-        ADD PrsCiclos PrsCiclos YMbNovoCiclosUnd
-    END
-END
-RUNG
-    CONTACTS RPrsCameParar 0 0
-    OSR
-    ADD PrsCiclos PrsCiclos 1
-END
-RUNG
-    DIV YMbPrsCiclosMil PrsCiclos 1000
-END
-RUNG
-    MUL PrsCiclosMil YMbPrsCiclosMil 1000
-END
-RUNG
-    SUB YMbPrsCiclosUnid PrsCiclos PrsCiclosMil
-END
-RUNG
-    COMMENT Controle do Bi-Manual
-END
-RUNG
-    CONTACTS XPrsCmdBM1 0 0
-    TOF TEspCmdBM1 500000
-    PARALLEL
-        SERIES
-            CONTACTS RPrsCmdBM1Blq 1 0
-            COIL RPrsCmdBM1OK 0 0 0 0
-        END
-        SERIES
-            TON TTOCmdBM1 500000
-            COIL RPrsCmdBM1Blq 0 0 0 0
-        END
-    END
-END
-RUNG
-    CONTACTS XPrsCmdBM2 0 0
-    TOF TEspCmdBM2 500000
-    PARALLEL
-        SERIES
-            CONTACTS RPrsCmdBM2Blq 1 0
-            COIL RPrsCmdBM2OK 0 0 0 0
-        END
-        SERIES
-            TON TTOCmdBM2 500000
-            COIL RPrsCmdBM2Blq 0 0 0 0
-        END
-    END
-END
-RUNG
-    CONTACTS RPrsCmdBM1OK 0 0
-    CONTACTS RPrsCmdBM2OK 0 0
-    CONTACTS XPrsDeslContinuo 0 0
-    COIL RPrsCmdBMOK 0 0 0 0
-END
-RUNG
-    COMMENT Lógica para iniciar prensa
-END
-RUNG
-    CONTACTS RMaqPronta 0 0
-    CONTACTS RPrsMotorOK 0 0
-    CONTACTS YPrsLigaNormal 0 0
-    PARALLEL
-        CONTACTS YMbPrsIniciar 0 9
-        CONTACTS RPrsCmdBMOK 0 0
-    END
-    PARALLEL
-        COIL RPrsIniciarCiclo 0 1 0 0
-        COIL YMbPrsIniciar 0 0 1 9
-        COIL RBloquearPrensa 0 0 1 0
-    END
-END
-RUNG
-    COMMENT Lógica para parar a prensa
-END
-RUNG
-    CONTACTS YPrsEmbreagem 0 0
-    PARALLEL
-        CONTACTS XPrsDeslContinuo 1 0
-        CONTACTS YMbPrsParar 0 10
-    END
-    OSR
-    PARALLEL
-        COIL RPrsPararMartelo 0 1 0 0
-        COIL YMbPrsParar 0 0 1 10
-    END
-END
-RUNG
-    CONTACTS XPrsDeslContinuo 0 0
-    OSF
-    COIL RBloquearPrensa 0 1 0 0
-END
-RUNG
-    COMMENT Lógica que libera o ajuste de martelo
-END
-RUNG
-    CONTACTS YMbModoAutoAtivo 1 0
-    CONTACTS RMaqOK 0 0
-    CONTACTS YPrsEmbreagem 1 0
-    COIL YPrsAjMartelo 0 0 0 0
-END
-RUNG
-    COMMENT *** Fim da Lógica - Prensa ***
 END
 RUNG
     COMMENT Lógica de configuração do servo
@@ -1505,12 +954,11 @@ RUNG
     END
 END
 RUNG
-    COMMENT Lógica de operação automática da perfiladeira - Checagens Gerais
+    COMMENT Lógica de operação automática da aplanadora - Checagens Gerais
 END
 RUNG
     CONTACTS RMaqOK 0 0
     CONTACTS RModoAuto 0 0
-    CONTACTS YMbPrsSentidoInv 1 4
     COIL RModoAutoOK 0 0 0 0
 END
 RUNG
@@ -1554,7 +1002,6 @@ RUNG
     OSF
     PARALLEL
         COIL YMbModoAutoAtivo 0 0 1 0
-        COIL RPrsPararMartelo 0 1 0 0
         COIL RAplanLigarMotor 0 0 1 0
         COIL RMaqInicioAuto 0 0 1 0
         COIL RMaqPosicionando 0 0 1 0
@@ -1570,28 +1017,14 @@ RUNG
     CONTACTS RMaqProduzindo 1 0
     CONTACTS RMaqErroPosic 1 0
     CONTACTS RMaqConfigOK 0 0
-    CONTACTS YMbPrsSentidoInv 1 4
     PARALLEL
         COIL RMaqStartProd 0 1 0 0
-        COIL YMbAplanExtSubir 0 0 1 6
-        COIL YMbAplanExpandir 0 0 1 7
         COIL RAplanZerarEnc 0 1 0 0
     END
 END
 RUNG
     CONTACTS RMaqStartProd 0 0
-    CONTACTS RPrsMotorLigado 1 0
-    COIL YMbPrsLigaMotor 0 1 0 8
-END
-RUNG
-    CONTACTS RMaqStartProd 0 0
-    CONTACTS XAplanFechada 1 0
-    COIL YMbAplanFecha 0 1 0 3
-END
-RUNG
-    CONTACTS RMaqStartProd 0 0
     TON TEspExtRepouso 3000000
-    CONTACTS RPrsMotorOK 0 0
     CONTACTS XAplanFechada 0 0
     OSR
     COIL RMaqStartProd 0 0 1 0
@@ -1604,9 +1037,7 @@ RUNG
             CONTACTS RModoAutoOK 0 0
             PARALLEL
                 COIL RMaqProduzindo 0 1 0 0
-                COIL RPrsIniciarCiclo 0 1 0 0
                 COIL RMaqInicioAuto 0 1 0 0
-                COIL RBloquearPrensa 0 0 1 0
             END
         END
         SERIES
@@ -1654,7 +1085,6 @@ RUNG
                     CONTACTS RMaqInicioAuto 1 0
                     PARALLEL
                         COIL RMaqErroPosic 0 1 0 0
-                        COIL RPrsPararMartelo 0 1 0 0
                         DIV YMbMaqErroPos DifPosic 10
                     END
                 END
@@ -1692,11 +1122,6 @@ RUNG
     PARALLEL
         COIL RAplanLigarMotor 0 0 1 0
         SERIES
-            CONTACTS RMaqPosicOK 0 0
-            CONTACTS YPrsEmbreagem 1 0
-            COIL RPrsIniciarCiclo 0 1 0 0
-        END
-        SERIES
             CONTACTS RMaqPosicOK 1 0
             CONTACTS RAplanAvancoOK 0 0
             COIL RAplanCorrigeEnc 0 1 0 0
@@ -1721,7 +1146,7 @@ RUNG
             COIL RMaqPosicionando 0 1 0 0
         END
         SERIES
-            TOF TEspSrvParar 300000
+            TOF TEspSrvParar 100000
             COIL RSrvMotorParado 1 0 0 0
         END
     END
@@ -1768,10 +1193,6 @@ RUNG
     PARALLEL
         COIL RMaqCfgSrvErro 0 0 1 0
         COIL RMaqErroPosic 0 0 1 0
-        SERIES
-            TOF TEspInvLimpaErr 100000
-            COIL YInvLimpaErro 0 0 0 0
-        END
         COIL YMbLimpaErro 0 0 1 2
     END
 END
@@ -1791,25 +1212,12 @@ RUNG
     COIL YMbErrBombaHidr 0 0 0 2
 END
 RUNG
-    CONTACTS XTermMartelo 1 0
-    COIL YMbErrMartelo 0 0 0 3
-END
-RUNG
     CONTACTS RPressaoArOK 1 0
     COIL YMbErrPressaoAr 0 0 0 4
 END
 RUNG
-    CONTACTS XInversorOK 1 0
-    COIL YMbErrInversor 0 0 0 5
-END
-RUNG
     CONTACTS RServoOK 1 0
     COIL YMbErrServo 0 0 0 6
-END
-RUNG
-    CONTACTS XDesbobOK 1 0
-    OPEN
-    COIL YMbErrDesbob 0 0 0 7
 END
 RUNG
     CONTACTS RMaqCfgSrvErro 0 0
@@ -1839,14 +1247,6 @@ RUNG
     COIL YMbAplanAvancoOK 0 0 0 4
 END
 RUNG
-    CONTACTS RPrsMotorParado 0 0
-    COIL YMbPrsParado 0 0 0 5
-END
-RUNG
-    CONTACTS RPrsMotorLigado 0 0
-    COIL YMbPrsLigado 0 0 0 6
-END
-RUNG
     CONTACTS RMaqProduzindo 0 0
     COIL YMbMaqProduzindo 0 0 0 7
 END
@@ -1857,18 +1257,6 @@ END
 RUNG
     CONTACTS RMaqForaPosic 0 0
     COIL YMbMaqForaPosic 0 0 0 9
-END
-RUNG
-    CONTACTS XAplanFechada 1 0
-    COIL YMbAplanAberta 0 0 0 12
-END
-RUNG
-    CONTACTS RAplanExtSubir 0 0
-    COIL YMbAplanExtCima 0 0 0 11
-END
-RUNG
-    CONTACTS XAplanExtRecuada 1 0
-    COIL YMbAplanExtAvanc 0 0 0 10
 END
 RUNG
     CONTACTS XSrvInPos 0 0
@@ -1892,10 +1280,6 @@ RUNG
         COIL YMbEncFator 0 0 1 0
         COIL YMbEncResol 0 0 1 0
         COIL YMbEncPerim 0 0 1 0
-        COIL YMbNovoCiclosMil 0 0 1 0
-        COIL YMbNovoCiclosUnd 0 0 1 0
-        COIL YMbPrsCiclosMil 0 0 1 0
-        COIL YMbPrsCiclosUnid 0 0 1 0
         COIL YMbMaqErroPos 0 0 1 0
         COIL YMbPosAtual 0 0 1 0
     END
@@ -1912,9 +1296,6 @@ RUNG
         MOVE YMbEncFator 10000
         MOVE YMbEncResol 2500
         MOVE YMbEncPerim 400
-        MOVE PrsCiclos 0
-        MOVE YMbNovoCiclosMil 0
-        MOVE YMbNovoCiclosUnd 0
     END
 END
 RUNG
