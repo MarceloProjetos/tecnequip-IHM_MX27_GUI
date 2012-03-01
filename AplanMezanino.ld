@@ -27,8 +27,8 @@ IO LIST
     XFaltaFase at 4 0
     XMbModoAuto at 22 0
     XPressaoArOK at 18 0
+    XPrsAvancoOK at 0 0
     XSrvInPos at 19 0
-    XTermBombaHidr at 2 0
     YAplanManAvcIHM at 24 0
     YAplanManRecIHM at 24 1
     YMbAplanAcelMS at 31 0
@@ -60,6 +60,11 @@ IO LIST
     YMbPosAtual at 25 0
     YMbPosicOK at 21 14
     YMbSrvInPos at 21 13
+    YPorta1 at 0 0
+    YPorta2 at 0 0
+    YPorta3 at 0 0
+    YPorta4 at 0 0
+    YPorta5 at 0 0
     YPrsEmbreagem at 11 0
     YSrvHabilita at 16 0
     ZEncPerfil at 1 0
@@ -67,7 +72,7 @@ END
 
 PROGRAM
 RUNG
-    COMMENT Programa de Controle da Aplanadora e Prensa da Linha PP (Porta-Palete) - v1.0\r\nDesenvolvido por Marcelo Utikawa da Fonseca em 07/02/2011
+    COMMENT Programa de Controle da Aplanadora da Prensa de Mezanino (Antiga Porta-Palete) - v1.0\r\nDesenvolvido por Marcelo Utikawa da Fonseca em 23/02/2012
 END
 RUNG
     COMMENT Descrição das flags utilizadas no programa:
@@ -298,7 +303,6 @@ RUNG
 END
 RUNG
     CONTACTS RErroGeral 1 0
-    CONTACTS RErroBombaHidr 1 0
     CONTACTS RPressaoArOK 0 0
     CONTACTS RServoOK 0 0
     CONTACTS YMbMaqLib 0 1
@@ -386,6 +390,9 @@ RUNG
     DIV MaqPosAtual MaqPosAtual 10000
 END
 RUNG
+    ADD MaqPosAtual MaqPosAtual MaqPosOffset
+END
+RUNG
     MOVE YMbPosAtual MaqPosAtual
 END
 RUNG
@@ -424,6 +431,241 @@ RUNG
             COIL RMaqCfgSrvErro 0 1 0 0
         END
     END
+END
+RUNG
+    COMMENT *** Lógicas relacionadas aos passos da aplanadora ***
+END
+RUNG
+    COMMENT Lógica que carrega as portas utilizadas no passo atual
+END
+RUNG
+    PARALLEL
+        SERIES
+            EQU PassoAtual 1
+            CHECK_BIT PortasLow 1 0
+        END
+        SERIES
+            EQU PassoAtual 2
+            CHECK_BIT PortasLow 1 5
+        END
+        SERIES
+            EQU PassoAtual 3
+            CHECK_BIT PortasLow 1 10
+        END
+        SERIES
+            EQU PassoAtual 4
+            CHECK_BIT PortasHigh 1 0
+        END
+        SERIES
+            EQU PassoAtual 5
+            CHECK_BIT PortasHigh 1 5
+        END
+        SERIES
+            EQU PassoAtual 6
+            CHECK_BIT PortasHigh 1 10
+        END
+    END
+    CONTACTS RMaqProduzindo 0 0
+    COIL YPorta1 0 0 0 0
+END
+RUNG
+    PARALLEL
+        SERIES
+            EQU PassoAtual 1
+            CHECK_BIT PortasLow 1 1
+        END
+        SERIES
+            EQU PassoAtual 2
+            CHECK_BIT PortasLow 1 6
+        END
+        SERIES
+            EQU PassoAtual 3
+            CHECK_BIT PortasLow 1 11
+        END
+        SERIES
+            EQU PassoAtual 4
+            CHECK_BIT PortasHigh 1 1
+        END
+        SERIES
+            EQU PassoAtual 5
+            CHECK_BIT PortasHigh 1 6
+        END
+        SERIES
+            EQU PassoAtual 6
+            CHECK_BIT PortasHigh 1 11
+        END
+    END
+    CONTACTS RMaqProduzindo 0 0
+    COIL YPorta2 0 0 0 0
+END
+RUNG
+    PARALLEL
+        SERIES
+            EQU PassoAtual 1
+            CHECK_BIT PortasLow 1 2
+        END
+        SERIES
+            EQU PassoAtual 2
+            CHECK_BIT PortasLow 1 7
+        END
+        SERIES
+            EQU PassoAtual 3
+            CHECK_BIT PortasLow 1 12
+        END
+        SERIES
+            EQU PassoAtual 4
+            CHECK_BIT PortasHigh 1 2
+        END
+        SERIES
+            EQU PassoAtual 5
+            CHECK_BIT PortasHigh 1 7
+        END
+        SERIES
+            EQU PassoAtual 6
+            CHECK_BIT PortasHigh 1 12
+        END
+    END
+    CONTACTS RMaqProduzindo 0 0
+    COIL YPorta3 0 0 0 0
+END
+RUNG
+    PARALLEL
+        SERIES
+            EQU PassoAtual 1
+            CHECK_BIT PortasLow 1 3
+        END
+        SERIES
+            EQU PassoAtual 2
+            CHECK_BIT PortasLow 1 8
+        END
+        SERIES
+            EQU PassoAtual 3
+            CHECK_BIT PortasLow 1 13
+        END
+        SERIES
+            EQU PassoAtual 4
+            CHECK_BIT PortasHigh 1 3
+        END
+        SERIES
+            EQU PassoAtual 5
+            CHECK_BIT PortasHigh 1 8
+        END
+        SERIES
+            EQU PassoAtual 6
+            CHECK_BIT PortasHigh 1 13
+        END
+    END
+    CONTACTS RMaqProduzindo 0 0
+    COIL YPorta4 0 0 0 0
+END
+RUNG
+    PARALLEL
+        SERIES
+            EQU PassoAtual 1
+            CHECK_BIT PortasLow 1 4
+        END
+        SERIES
+            EQU PassoAtual 2
+            CHECK_BIT PortasLow 1 9
+        END
+        SERIES
+            EQU PassoAtual 3
+            CHECK_BIT PortasLow 1 14
+        END
+        SERIES
+            EQU PassoAtual 4
+            CHECK_BIT PortasHigh 1 4
+        END
+        SERIES
+            EQU PassoAtual 5
+            CHECK_BIT PortasHigh 1 9
+        END
+        SERIES
+            EQU PassoAtual 6
+            CHECK_BIT PortasHigh 1 14
+        END
+    END
+    CONTACTS RMaqProduzindo 0 0
+    COIL YPorta5 0 0 0 0
+END
+RUNG
+    COMMENT Cálculo do maior passo entre os utilizados no programa atual
+END
+RUNG
+    MOVE PassoMaior Passo1
+END
+RUNG
+    GRT PassosQtd 1
+    GRT Passo2 PassoMaior
+    MOVE PassoMaior Passo2
+END
+RUNG
+    GRT PassosQtd 2
+    GRT Passo3 PassoMaior
+    MOVE PassoMaior Passo3
+END
+RUNG
+    GRT PassosQtd 3
+    GRT Passo4 PassoMaior
+    MOVE PassoMaior Passo4
+END
+RUNG
+    GRT PassosQtd 4
+    GRT Passo5 PassoMaior
+    MOVE PassoMaior Passo5
+END
+RUNG
+    GRT PassosQtd 5
+    GRT Passo6 PassoMaior
+    MOVE PassoMaior Passo6
+END
+RUNG
+    COMMENT Lógica de cálculo do offset e seleção de número de repetições para o passo atual
+END
+RUNG
+    EQU PassoAtual 1
+    PARALLEL
+        SUB PassoOffset PassoMaior Passo1
+        MOVE PassoAtualRep Passo1Rep
+    END
+END
+RUNG
+    EQU PassoAtual 2
+    PARALLEL
+        SUB PassoOffset PassoMaior Passo2
+        MOVE PassoAtualRep Passo2Rep
+    END
+END
+RUNG
+    EQU PassoAtual 3
+    PARALLEL
+        SUB PassoOffset PassoMaior Passo3
+        MOVE PassoAtualRep Passo3Rep
+    END
+END
+RUNG
+    EQU PassoAtual 4
+    PARALLEL
+        SUB PassoOffset PassoMaior Passo4
+        MOVE PassoAtualRep Passo4Rep
+    END
+END
+RUNG
+    EQU PassoAtual 5
+    PARALLEL
+        SUB PassoOffset PassoMaior Passo5
+        MOVE PassoAtualRep Passo5Rep
+    END
+END
+RUNG
+    EQU PassoAtual 6
+    PARALLEL
+        SUB PassoOffset PassoMaior Passo6
+        MOVE PassoAtualRep Passo6Rep
+    END
+END
+RUNG
+    COMMENT *** Fim das lógicas relacionadas aos passos da aplanadora ***
 END
 RUNG
     COMMENT Configura o erro atual como posição do encoder da aplanadora para fazer um reposicionamento
@@ -529,7 +771,8 @@ RUNG
     PARALLEL
         COIL RStartZerarEnc 0 1 0 0
         COIL RMaqSerialBusy 0 1 0 0
-        MOVE EncPosZero 0
+        MOVE MaqPosOffset PassoOffset
+        MOVE EncPosZero MaqPosOffset
     END
 END
 RUNG
@@ -537,7 +780,7 @@ RUNG
     OSR
     CONTACTS RMaqProduzindo 0 0
     CONTACTS RMaqForaPosic 1 0
-    MOVE EncPosZero DifPosic
+    ADD EncPosZero EncPosZero DifPosic
 END
 RUNG
     CONTACTS RStartZerarEnc 0 0
@@ -566,13 +809,6 @@ RUNG
             END
         END
     END
-END
-RUNG
-    COMMENT Lógica de controle da Aplanadora - Controle da Bomba Hidráulica
-END
-RUNG
-    CONTACTS XTermBombaHidr 1 0
-    COIL RErroBombaHidr 0 0 0 0
 END
 RUNG
     COMMENT Lógica de controle manual da mesa do corte voador (JOG)
@@ -1020,12 +1256,14 @@ RUNG
     PARALLEL
         COIL RMaqStartProd 0 1 0 0
         COIL RAplanZerarEnc 0 1 0 0
+        MOVE PassoAtual 1
+        MOVE YMbQtdProd 0
     END
 END
 RUNG
     CONTACTS RMaqStartProd 0 0
-    TON TEspExtRepouso 3000000
     CONTACTS XAplanFechada 0 0
+    TON TEspStartProd 100000
     OSR
     COIL RMaqStartProd 0 0 1 0
 END
@@ -1038,6 +1276,7 @@ RUNG
             PARALLEL
                 COIL RMaqProduzindo 0 1 0 0
                 COIL RMaqInicioAuto 0 1 0 0
+                MOVE CPassosRep PassoAtualRep
             END
         END
         SERIES
@@ -1048,6 +1287,10 @@ RUNG
 END
 RUNG
     COMMENT Lógica de operação automática da linha de Porta-Palete - Loop de Produção
+END
+RUNG
+    CONTACTS XPrsAvancoOK 0 0
+    COIL RPrsAvancoOK 0 0 0 0
 END
 RUNG
     SUB DifPosic MaqPosAtual AplanPasso
@@ -1090,7 +1333,28 @@ RUNG
                 END
                 SERIES
                     CONTACTS RMaqErroPosic 1 0
-                    COIL RAplanZerarEnc 0 1 0 0
+                    PARALLEL
+                        COIL RAplanZerarEnc 0 1 0 0
+                        SERIES
+                            CONTACTS RMaqInicioAuto 1 0
+                            CTD CPassosRep 1
+                            OSF
+                            PARALLEL
+                                SERIES
+                                    OSF
+                                    MOVE CPassosRep PassoAtualRep
+                                END
+                                ADD PassoAtual PassoAtual 1
+                                SERIES
+                                    GRT PassoAtual PassosQtd
+                                    PARALLEL
+                                        MOVE PassoAtual 1
+                                        ADD YMbQtdProd YMbQtdProd 1
+                                    END
+                                END
+                            END
+                        END
+                    END
                 END
                 COIL RAplanLigarMotor 0 0 1 0
                 COIL RMaqPosicionando 0 0 1 0
@@ -1299,6 +1563,26 @@ RUNG
     END
 END
 RUNG
+    OSR
+    PARALLEL
+        MOVE PassosQtd 3
+        MOVE PortasLow 14467
+        MOVE PortasHigh 4161
+        MOVE Passo1 7000
+        MOVE Passo2 16000
+        MOVE Passo3 12000
+        MOVE Passo4 0
+        MOVE Passo5 0
+        MOVE Passo6 0
+        MOVE Passo1Rep 2
+        MOVE Passo2Rep 1
+        MOVE Passo3Rep 5
+        MOVE Passo4Rep 0
+        MOVE Passo5Rep 0
+        MOVE Passo6Rep 0
+    END
+END
+RUNG
     COMMENT Calculando variáveis conforme os valores recebidos pelo ModBUS
 END
 RUNG
@@ -1325,7 +1609,7 @@ RUNG
     MOVE AplanRampa 1
 END
 RUNG
-    MUL AplanPasso YMbAplanPasso 100
+    MOVE AplanPasso PassoMaior
 END
 RUNG
     MUL AplanPassoCorr AplanPasso FatorCorrServo

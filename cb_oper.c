@@ -57,6 +57,7 @@ gboolean tmrExec(gpointer data)
     gtk_widget_set_sensitive(wdg, TRUE);
 
     gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), TRUE);
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "cmbExecModelo")), TRUE);
 
     return FALSE;
   }
@@ -66,6 +67,9 @@ gboolean tmrExec(gpointer data)
 
 void AbrirOper()
 {
+  char sql[100];
+  GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbExecModelo"));
+
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
     WorkAreaGoTo(NTB_ABA_HOME);
@@ -73,13 +77,51 @@ void AbrirOper()
     return;
     }
 
-  // Configura visibilidade de avisos da prensa
-  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub"   )), 0);
-  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
+// Carregamento dos modelos cadastrados no MySQL no ComboBox.
+  sprintf(sql, "select nome from modelos where estado='%d' order by ID", MOD_ESTADO_ATIVO);
+  DB_Execute(&mainDB, 0, sql);
+  CarregaCombo(GTK_COMBO_BOX(obj), 0, NULL);
+}
+
+unsigned int CarregarPrograma(char *modelo)
+{
+  char sql[100];
+  unsigned int id_modelo, i;
+
+  sprintf(sql, "select ID from modelos where nome='%s'", modelo);
+  DB_Execute(&mainDB, 0, sql);
+  if(DB_GetNextRow(&mainDB, 0)>0) {
+    id_modelo = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "nome")));
+  } else {
+    printf("ERRO!!! Modelo inexistente\n");
+    return 0;
+  }
+
+  sprintf(sql, "select * from modelos_programas where ID_modelo=%d", id_modelo);
+  DB_Execute(&mainDB, 0, sql);
+  for(i=0; DB_GetNextRow(&mainDB, 0)>0 && i<MAQ_PASSOS_MAX; i++) {
+    maq_param.aplanadora.passos[i].passo      = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "passo")));
+    maq_param.aplanadora.passos[i].repeticoes = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "repeticoes")));
+    maq_param.aplanadora.passos[i].portas     = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "portas")));
+#ifdef DEBUG_PC
+    printf("Passo %d:\n", i+1);
+    printf("\tpasso.....: %d\n", maq_param.aplanadora.passos[i].passo);
+    printf("\trepeticoes: %d\n", maq_param.aplanadora.passos[i].repeticoes);
+    printf("\tportas....: %c%c%c%c%c\n",
+        maq_param.aplanadora.passos[i].portas & 16 ? 'X' : '.',
+        maq_param.aplanadora.passos[i].portas &  8 ? 'X' : '.',
+        maq_param.aplanadora.passos[i].portas &  4 ? 'X' : '.',
+        maq_param.aplanadora.passos[i].portas &  2 ? 'X' : '.',
+        maq_param.aplanadora.passos[i].portas &  1 ? 'X' : '.');
+#endif
+  }
+
+  return i;
 }
 
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
+  unsigned int passos;
   char *modo_botao[] = { "Iniciar", "Parar" }, msg[40];
   GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
 
@@ -87,15 +129,22 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
     if(!(MaqLerEstado() & MAQ_STATUS_PRONTA))
       return;
 
+    passos = CarregarPrograma(LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbExecModelo"))));
+    if(!passos)
+      return;
+
+    MaqSyncPassos(passos);
+
     Log("Iniciando producao", LOG_TIPO_TAREFA);
 
     MaqConfigModo(MAQ_MODO_AUTO);
     g_timeout_add(1000, tmrExec, NULL);
 
-    sprintf(msg, "Produzindo com passo de %d mm", maq_param.aplanadora.passo);
+    sprintf(msg, "Produzindo com passo de %d mm", 0);//maq_param.aplanadora.passo);
     gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), msg);
 
     gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), FALSE);
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "cmbExecModelo")), FALSE);
 
     gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[1]);
   } else {

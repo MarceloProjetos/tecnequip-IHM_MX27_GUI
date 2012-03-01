@@ -118,7 +118,6 @@ char *lista_ent[] = {
     "entEncoderPerim",
     "entEncoderFator",
     "entEncoderResol",
-    "entConfigAplanPasso",
     "spbConfigAplanVelMaxManual",
     "spbConfigAplanVelMaxAuto",
     "spbConfigAplanRampa",
@@ -142,10 +141,9 @@ int GravarDadosConfig()
   mp.encoder.perimetro     = atof(valor_ent[ 0]);
   MaqConfigEncoder(mp.encoder);
 
-  mp.aplanadora.passo      = atol(valor_ent[ 3]);
-  mp.aplanadora.manual_vel = atol(valor_ent[ 4]);
-  mp.aplanadora.auto_vel   = atol(valor_ent[ 5]);
-  mp.aplanadora.rampa      = atof(valor_ent[ 6]);
+  mp.aplanadora.manual_vel = atol(valor_ent[ 3]);
+  mp.aplanadora.auto_vel   = atol(valor_ent[ 4]);
+  mp.aplanadora.rampa      = atof(valor_ent[ 5]);
   MaqConfigAplan(mp.aplanadora);
 
   GravaDadosBanco();
@@ -183,21 +181,17 @@ void LerDadosConfig()
   valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[0], tmp);
 
-  sprintf(tmp, "%d", mp.aplanadora.passo);
+  sprintf(tmp, "%d", mp.aplanadora.manual_vel);
   valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[3], tmp);
 
-  sprintf(tmp, "%d", mp.aplanadora.manual_vel);
+  sprintf(tmp, "%d", mp.aplanadora.auto_vel);
   valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[4], tmp);
 
-  sprintf(tmp, "%d", mp.aplanadora.auto_vel);
+  sprintf(tmp, "%f", mp.aplanadora.rampa);
   valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[5], tmp);
-
-  sprintf(tmp, "%f", mp.aplanadora.rampa);
-  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[6], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -211,6 +205,9 @@ void LerDadosConfig()
     {
     // Carrega dados da aba de usuários
     CarregaComboUsuarios();
+
+    // Carrega dados da aba de modelos
+    CarregaComboModelos();
     }
 
 // Carrega dados da aba de Banco de Dados
@@ -534,15 +531,37 @@ void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
     }
 }
 
-gboolean ChecarModelo(int passo, int tam_max)
+gboolean ChecarModelo()
 {
   char *msg = NULL;
   GtkWidget *dlg;
+  char nome_wdg[20];
+  unsigned int i, p;
 
-  if(passo <= 0)
-    msg = "O passo tem que ser maior que zero!";
-  if(tam_max < passo)
-    msg = "O Tamanho máximo deve ser maior que o passo!";
+  for(i=0; i<MAQ_PASSOS_MAX; i++) {
+    maq_param.aplanadora.passos[i].passo      = 0;
+    maq_param.aplanadora.passos[i].repeticoes = 0;
+    maq_param.aplanadora.passos[i].portas     = 0;
+  }
+
+  for(i=0; i<MAQ_PASSOS_MAX; i++) {
+    sprintf(nome_wdg, "entModRep%d", i+1);
+    maq_param.aplanadora.passos[i].repeticoes = strtoul(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, nome_wdg))), NULL, 0);
+    if(!maq_param.aplanadora.passos[i].repeticoes) { // repeticoes sendo zero indica que o passo não é usado
+      if(!i) { // Primeiro passo e repeticoes zerado. programa invalido!
+        msg = "Quantidade deve ser preenchido no primeiro passo!";
+      }
+      break;
+    }
+
+    sprintf(nome_wdg, "entModPasso%d", i+1);
+    maq_param.aplanadora.passos[i].passo = strtoul(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, nome_wdg))), NULL, 0);
+
+    for(p = 0; p < 5; p++) {
+      sprintf(nome_wdg, "ckbModPasso%dP%d", i+1, p+1);
+      maq_param.aplanadora.passos[i].portas |= (unsigned int)(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, nome_wdg))))<<p;
+    }
+  }
 
   if(msg==NULL)
     return TRUE;
@@ -563,87 +582,65 @@ gboolean ChecarModelo(int passo, int tam_max)
 
 void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
 {
-  GSList *lst;
-  int pilotar;
-
-  char *lst_campos[] =
-    {
-      "entModPasso" , "passo",
-      "entModTamMax", "tam_max",
-      "entModTamMin", "tam_min",
-      ""            , ""
-    };
-
-  char *lst_botoes[] = { "btnModRemover", "" }, *opt_piloto[] = { "Não", "Sim" };
+  char nome_wdg[20], valor[20];
+  unsigned int passos, i, porta, ativo;
 
   if(gtk_combo_box_get_active(combobox)<0)
     return; // Sem item ativo.
 
-  if(CarregaCampos(combobox, lst_campos, lst_botoes, "modelos", "nome"))
-    pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar"))) ? 1 : 0;
-  else
-    pilotar = 0;
+  passos = CarregarPrograma(LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbModNome"))));
 
-  lst = gtk_radio_button_get_group(GTK_RADIO_BUTTON(gtk_builder_get_object(builder, "rdbModPilotarSim")));
-  while(lst)
-    {
-    if(!strcmp(gtk_button_get_label(GTK_BUTTON(lst->data)), opt_piloto[pilotar]))
-      {
-      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(lst->data), TRUE);
-      break;
-      }
+  // Se não carregou nenhum passo foi escolhida a opção de novo modelo. Desativando o botão Remover. Caso contário, ativa
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnModRemover")), passos ? TRUE : FALSE);
 
-    lst = lst->next;
+  for(i=0; i<MAQ_PASSOS_MAX; i++) {
+    sprintf(nome_wdg, "entModPasso%d", i+1);
+    if(i<passos) {
+      sprintf(valor, "%d", maq_param.aplanadora.passos[i].passo);
+    } else {
+      valor[0] = 0;
     }
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, nome_wdg)), valor);
+
+    sprintf(nome_wdg, "entModRep%d", i+1);
+    if(i<passos) {
+      sprintf(valor, "%d", maq_param.aplanadora.passos[i].repeticoes);
+    } else {
+      valor[0] = 0;
+    }
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, nome_wdg)), valor);
+
+    for(porta = 0; porta < 5; porta++) {
+      sprintf(nome_wdg, "ckbModPasso%dP%d", i+1, porta+1);
+      ativo = (maq_param.aplanadora.passos[i].portas>>porta)&1 ? TRUE : FALSE;
+      gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, nome_wdg)), i<passos ? ativo : FALSE);
+    }
+  }
 }
 
 void cbAplicarModelo(GtkButton *button, gpointer user_data)
 {
   char sql[400], *nome;
-
-  char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
-  char *campos[] =
-    {
-    "cmbModNome",
-    "rdbModPilotarSim",
-    "entModPasso",
-    "entModTamMax",
-    "entModTamMin",
-    ""
-    };
-
+  unsigned int id_modelo, i, inserir = 0;
   GtkWidget *dialog, *obj, *wnd, *entry;
 
-  if(!LerValoresWidgets(campos, valores))
-    return; // Ocorreu algum erro lendo os campos. Retorna.
-
 // Checa se os dados são válidos.
-  if(!ChecarModelo(atol(valores[2]), atol(valores[3])))
+  if(!ChecarModelo())
     return;
 
   obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbModNome"));
   if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, alterar usuário.
     {
+    nome = LerComboAtivo(GTK_COMBO_BOX(obj));
     dialog = gtk_message_dialog_new (NULL,
               GTK_DIALOG_DESTROY_WITH_PARENT,
               GTK_MESSAGE_QUESTION,
               GTK_BUTTONS_YES_NO,
               "Aplicar as alterações ao modelo '%s'?",
-              valores[0]);
+              nome);
 
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "update modelos set pilotar='%d', passo='%s', tam_max='%s', tam_min='%s' where nome='%s'",
-        atoi(valores[1]), valores[2], valores[3], valores[4], valores[0]);
-      DB_Execute(&mainDB, 0, sql);
-
-      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-
-      sprintf(sql, "Alterado modelo %s", valores[0]);
-      Log(sql, LOG_TIPO_CONFIG);
-
-      MessageBox("Modelo alterado com sucesso!");
-      }
+    if(gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_YES)
+      return;
     }
   else
     {
@@ -678,25 +675,58 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
 
         gtk_dialog_run(GTK_DIALOG(wnd));
         gtk_widget_destroy (wnd);
+        gtk_widget_destroy (dialog);
+        return;
         }
       else // O modelo não existe. Realizando inserção.
         {
-        sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
-               "values ('%s', '%d', '%s', '%s', '%s', '%d')",
-               nome, BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], MOD_ESTADO_ATIVO);
-        DB_Execute(&mainDB, 0, sql);
-
-        CarregaItemCombo(GTK_COMBO_BOX(obj), nome);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-        cbConfigModeloSelecionado(GTK_COMBO_BOX(obj), NULL);
-
-        sprintf(sql, "Adicionado modelo %s", nome);
-        Log(sql, LOG_TIPO_CONFIG);
-
-        MessageBox("Modelo adicionado com sucesso!");
+        inserir = 1;
         }
       }
     }
+
+  if(inserir) {
+    sprintf(sql, "insert into modelos (nome, estado) values ('%s', '%d')", nome, MOD_ESTADO_ATIVO);
+    DB_Execute(&mainDB, 0, sql);
+  }
+
+  sprintf(sql, "select ID from modelos where nome='%s'", nome);
+  DB_Execute(&mainDB, 0, sql);
+  if(DB_GetNextRow(&mainDB, 0)>0) {
+    id_modelo = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
+  } else {
+    printf("ERRO!!! Modelo inexistente\n");
+    return;
+  }
+
+  sprintf(sql, "delete from modelos_programas where ID_modelo=%d", id_modelo);
+  DB_Execute(&mainDB, 0, sql);
+
+  for(i=0; i<MAQ_PASSOS_MAX; i++) {
+    if(!maq_param.aplanadora.passos[i].repeticoes)
+      break; // Sai do loop se acabaram os passos
+
+    sprintf(sql, "insert into modelos_programas (ID_modelo, passo, repeticoes, portas) values ('%d', '%d', '%d', '%d')",
+        id_modelo, maq_param.aplanadora.passos[i].passo, maq_param.aplanadora.passos[i].repeticoes, maq_param.aplanadora.passos[i].portas);
+    DB_Execute(&mainDB, 0, sql);
+  }
+
+  if(inserir) {
+    CarregaItemCombo(GTK_COMBO_BOX(obj), nome);
+
+    sprintf(sql, "Adicionado modelo %s", nome);
+    Log(sql, LOG_TIPO_CONFIG);
+
+    MessageBox("Modelo adicionado com sucesso!");
+  } else {
+    sprintf(sql, "Alterado modelo %s", nome);
+    Log(sql, LOG_TIPO_CONFIG);
+
+    MessageBox("Modelo alterado com sucesso!");
+  }
+
+  gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
+  cbConfigModeloSelecionado(GTK_COMBO_BOX(obj), NULL);
 
   gtk_widget_destroy (dialog);
 }

@@ -103,18 +103,41 @@ int MaqSync(unsigned int mask)
   if(mask & MAQ_SYNC_APLAN) {
     printf("maq_param.aplanadora.auto_vel....: %d\n", maq_param.aplanadora.auto_vel);
     printf("maq_param.aplanadora.manual_vel..: %d\n", maq_param.aplanadora.manual_vel);
-    printf("maq_param.aplanadora.passo.......: %d\n", maq_param.aplanadora.passo);
     printf("maq_param.aplanadora.rampa.......: %f\n", maq_param.aplanadora.rampa);
 
     MaqGravarRegistrador(MAQ_REG_APL_VELAUTO, maq_param.aplanadora.auto_vel);
     MaqGravarRegistrador(MAQ_REG_APL_VELMAN , maq_param.aplanadora.manual_vel);
-    MaqGravarRegistrador(MAQ_REG_APL_PASSO  , maq_param.aplanadora.passo);
     MaqGravarRegistrador(MAQ_REG_APL_ACELMS , (unsigned int)(maq_param.aplanadora.rampa*1000));
 
     MaqConfigFlags(MaqLerFlags() | MAQ_MODO_SYNC_SERVO);
   }
 
   return 1;
+}
+
+void MaqSyncPassos(unsigned int passos)
+{
+  unsigned int i, low=0, high=0;
+  printf("Sincronizando passos:\n");
+
+  if(passos > MAQ_PASSOS_MAX) {
+    passos = MAQ_PASSOS_MAX;
+  }
+
+  for(i=0; i<passos; i++) {
+    MaqGravarRegistrador(MAQ_REG_PASSOS_START+i*2  , maq_param.aplanadora.passos[i].passo);
+    MaqGravarRegistrador(MAQ_REG_PASSOS_START+i*2+1, maq_param.aplanadora.passos[i].repeticoes);
+    if(i<MAQ_PASSOS_MAX/2) {
+      low  |= maq_param.aplanadora.passos[i].portas<<(i*5);
+    } else {
+      high |= maq_param.aplanadora.passos[i].portas<<(i*5);
+    }
+  }
+
+  printf("low = %d, high = %d\n", low, high);
+  MaqGravarRegistrador(MAQ_REG_PASSOS_PORTASL, low   );
+  MaqGravarRegistrador(MAQ_REG_PASSOS_PORTASH, high  );
+  MaqGravarRegistrador(MAQ_REG_PASSOS_QTD    , passos);
 }
 
 // Funcao que grava a estrutura de configuracao no disco

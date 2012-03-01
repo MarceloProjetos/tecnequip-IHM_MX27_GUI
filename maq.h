@@ -62,9 +62,16 @@
 #define MAQ_REG_APL_VELAUTO          12
 #define MAQ_REG_APL_VELMAN           13
 #define MAQ_REG_APL_ERRO_POSIC       14
+#define MAQ_REG_PASSOS_START         15
+#define MAQ_REG_PASSOS_PORTASL       16
+#define MAQ_REG_PASSOS_PORTASH       17
+#define MAQ_REG_PASSOS_QTD           18
 #define MAQ_REG_ENC_FATOR            20
 #define MAQ_REG_ENC_RESOL            21
 #define MAQ_REG_ENC_PERIM            22
+
+// Configurações gerais
+#define MAQ_PASSOS_MAX 6
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -78,13 +85,17 @@ struct strMaqParam
   } encoder;
 
   // Parametros relacionados com a mesa
-    struct strMaqParamAplan {
-      // Parâmetros da Aplanadora
-      unsigned int auto_vel;   // Velocidade maxima usada na velocidade automatica em mm/min
-      unsigned int manual_vel; // Velocidade maxima usada na velocidade manual em mm/min
-      unsigned int passo;      // Curso da mesa em mm
-      float        rampa;     // Offset usado para compensar perdas ao sincronizar
-      } aplanadora;
+  struct strMaqParamAplan {
+    // Parâmetros da Aplanadora
+    unsigned int auto_vel;   // Velocidade maxima usada na velocidade automatica em mm/min
+    unsigned int manual_vel; // Velocidade maxima usada na velocidade manual em mm/min
+    struct {
+      unsigned int passo; // Deslocamento em mm do passo atual
+      unsigned int repeticoes; // Número de vezes que o deslocamento atual deve repetir
+      unsigned int portas; // Portas que devem ser ligadas para o passo atual
+    } passos[MAQ_PASSOS_MAX];
+    float        rampa;     // Offset usado para compensar perdas ao sincronizar
+  } aplanadora;
 } maq_param;
 
 /*** Fim das estruturas de informacoes da maquina ***/
@@ -93,6 +104,7 @@ uint16_t MaqLerErros   (void);
 char    *MaqStrErro    (uint16_t status);
 
 int      MaqSync       (unsigned int mask);
+void     MaqSyncPassos (unsigned int passos);
 uint16_t MaqPronta     (void);
 void     MaqLimparErro (void);
 

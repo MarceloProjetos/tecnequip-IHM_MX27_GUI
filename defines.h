@@ -98,6 +98,9 @@
 int  WorkAreaGet (void);
 void WorkAreaGoTo(int NewWorkArea);
 
+// Função que carrega o programa na estrutura de parâmetros da máquina
+unsigned int CarregarPrograma(char *modelo);
+
 /*** Definições para Comunicação entre Threads ***/
 
 key_t fd_rd;
