@@ -57,18 +57,17 @@
 #define MAQ_REG_FLAGS_MANUAL          4
 #define MAQ_REG_POS_ATUAL             5
 
-#define MAQ_REG_APL_PASSO            10
-#define MAQ_REG_APL_ACELMS           11
-#define MAQ_REG_APL_VELAUTO          12
-#define MAQ_REG_APL_VELMAN           13
-#define MAQ_REG_APL_ERRO_POSIC       14
-#define MAQ_REG_PASSOS_START         15
-#define MAQ_REG_PASSOS_PORTASL       16
-#define MAQ_REG_PASSOS_PORTASH       17
-#define MAQ_REG_PASSOS_QTD           18
-#define MAQ_REG_ENC_FATOR            20
-#define MAQ_REG_ENC_RESOL            21
-#define MAQ_REG_ENC_PERIM            22
+#define MAQ_REG_APL_ACELMS           10
+#define MAQ_REG_APL_VELAUTO          11
+#define MAQ_REG_APL_VELMAN           12
+#define MAQ_REG_APL_ERRO_POSIC       13
+#define MAQ_REG_PASSOS_START         20
+#define MAQ_REG_PASSOS_PORTASL       17
+#define MAQ_REG_PASSOS_PORTASH       18
+#define MAQ_REG_PASSOS_QTD           19
+#define MAQ_REG_ENC_FATOR            14
+#define MAQ_REG_ENC_RESOL            16
+#define MAQ_REG_ENC_PERIM            15
 
 // Configurações gerais
 #define MAQ_PASSOS_MAX 6

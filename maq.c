@@ -118,7 +118,6 @@ int MaqSync(unsigned int mask)
 void MaqSyncPassos(unsigned int passos)
 {
   unsigned int i, low=0, high=0;
-  printf("Sincronizando passos:\n");
 
   if(passos > MAQ_PASSOS_MAX) {
     passos = MAQ_PASSOS_MAX;
@@ -134,7 +133,6 @@ void MaqSyncPassos(unsigned int passos)
     }
   }
 
-  printf("low = %d, high = %d\n", low, high);
   MaqGravarRegistrador(MAQ_REG_PASSOS_PORTASL, low   );
   MaqGravarRegistrador(MAQ_REG_PASSOS_PORTASH, high  );
   MaqGravarRegistrador(MAQ_REG_PASSOS_QTD    , passos);

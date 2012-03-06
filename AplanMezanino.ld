@@ -8,7 +8,7 @@ COM=4
 IP=192.168.0.235
 MASK=255.255.255.0
 GW=192.168.0.10
-COMPILED=N:\windows\Maquinas\PrensaPP\AplanadoraPrensaPP.hex
+COMPILED=N:\windows\Projetos\Maquinas\AplanMezanino\AplanMezanino.hex
 
 IO LIST
     EMaqPosAtual at 1 0
@@ -27,18 +27,17 @@ IO LIST
     XFaltaFase at 4 0
     XMbModoAuto at 22 0
     XPressaoArOK at 18 0
-    XPrsAvancoOK at 0 0
+    XPrsAvancoOK at 5 0
     XSrvInPos at 19 0
     YAplanManAvcIHM at 24 0
     YAplanManRecIHM at 24 1
-    YMbAplanAcelMS at 31 0
+    YMbAplanAcelMS at 30 0
     YMbAplanAvancoOK at 21 4
-    YMbAplanPasso at 30 0
-    YMbAplanVelAuto at 32 0
-    YMbAplanVelMan at 33 0
-    YMbEncFator at 40 0
-    YMbEncPerim at 42 0
-    YMbEncResol at 41 0
+    YMbAplanVelAuto at 31 0
+    YMbAplanVelMan at 32 0
+    YMbEncFator at 34 0
+    YMbEncPerim at 35 0
+    YMbEncResol at 36 0
     YMbErrBombaHidr at 20 2
     YMbErrEmergencia at 20 0
     YMbErrFaltaFase at 20 1
@@ -48,7 +47,7 @@ IO LIST
     YMbErrSrvComunic at 20 8
     YMbLimpaErro at 22 2
     YMbMaqCfgSrvOK at 21 3
-    YMbMaqErroPos at 34 0
+    YMbMaqErroPos at 33 0
     YMbMaqForaPosic at 21 9
     YMbMaqLib at 22 1
     YMbMaqOK at 21 1
@@ -57,14 +56,27 @@ IO LIST
     YMbMaqStartProd at 21 8
     YMbModoAutoAtivo at 21 0
     YMbParamSync at 22 3
+    YMbPasso1 at 40 0
+    YMbPasso1Rep at 41 0
+    YMbPasso2 at 42 0
+    YMbPasso2Rep at 43 0
+    YMbPasso3 at 44 0
+    YMbPasso3Rep at 45 0
+    YMbPasso4 at 46 0
+    YMbPasso4Rep at 47 0
+    YMbPasso5 at 48 0
+    YMbPasso5Rep at 49 0
+    YMbPasso6 at 50 0
+    YMbPasso6Rep at 51 0
+    YMbPassos at 39 0
+    YMbPortasHigh at 38 0
+    YMbPortasLow at 37 0
     YMbPosAtual at 25 0
     YMbPosicOK at 21 14
     YMbSrvInPos at 21 13
-    YPorta1 at 0 0
-    YPorta2 at 0 0
-    YPorta3 at 0 0
-    YPorta4 at 0 0
-    YPorta5 at 0 0
+    YPorta1 at 13 0
+    YPorta2 at 14 0
+    YPorta3 at 15 0
     YPrsEmbreagem at 11 0
     YSrvHabilita at 16 0
     ZEncPerfil at 1 0
@@ -556,7 +568,7 @@ RUNG
         END
     END
     CONTACTS RMaqProduzindo 0 0
-    COIL YPorta4 0 0 0 0
+    COIL RPorta4 0 0 0 0
 END
 RUNG
     PARALLEL
@@ -586,7 +598,7 @@ RUNG
         END
     END
     CONTACTS RMaqProduzindo 0 0
-    COIL YPorta5 0 0 0 0
+    COIL RPorta5 0 0 0 0
 END
 RUNG
     COMMENT Cálculo do maior passo entre os utilizados no programa atual
@@ -1540,7 +1552,6 @@ RUNG
         COIL YMbAplanAcelMS 0 0 1 0
         COIL YMbAplanVelAuto 0 0 1 0
         COIL YMbAplanVelMan 0 0 1 0
-        COIL YMbAplanPasso 0 0 1 0
         COIL YMbEncFator 0 0 1 0
         COIL YMbEncResol 0 0 1 0
         COIL YMbEncPerim 0 0 1 0
@@ -1556,7 +1567,6 @@ RUNG
         MOVE YMbAplanVelAuto 100
         MOVE YMbAplanVelMan 30
         MOVE YMbAplanAcelMS 100
-        MOVE YMbAplanPasso 320
         MOVE YMbEncFator 10000
         MOVE YMbEncResol 2500
         MOVE YMbEncPerim 400
@@ -1565,25 +1575,82 @@ END
 RUNG
     OSR
     PARALLEL
-        MOVE PassosQtd 3
-        MOVE PortasLow 14467
-        MOVE PortasHigh 4161
-        MOVE Passo1 7000
-        MOVE Passo2 16000
-        MOVE Passo3 12000
-        MOVE Passo4 0
-        MOVE Passo5 0
-        MOVE Passo6 0
-        MOVE Passo1Rep 2
-        MOVE Passo2Rep 1
-        MOVE Passo3Rep 5
-        MOVE Passo4Rep 0
-        MOVE Passo5Rep 0
-        MOVE Passo6Rep 0
+        COIL YMbPassos 0 0 1 0
+        COIL YMbPortasLow 0 0 1 0
+        COIL YMbPortasHigh 0 0 1 0
+        COIL YMbPasso1 0 0 1 0
+        COIL YMbPasso2 0 0 1 0
+        COIL YMbPasso3 0 0 1 0
+        COIL YMbPasso4 0 0 1 0
+        COIL YMbPasso5 0 0 1 0
+        COIL YMbPasso6 0 0 1 0
+        COIL YMbPasso1Rep 0 0 1 0
+        COIL YMbPasso2Rep 0 0 1 0
+        COIL YMbPasso3Rep 0 0 1 0
+        COIL YMbPasso4Rep 0 0 1 0
+        COIL YMbPasso5Rep 0 0 1 0
+        COIL YMbPasso6Rep 0 0 1 0
+    END
+END
+RUNG
+    OSR
+    PARALLEL
+        MOVE YMbPassos 3
+        MOVE YMbPortasLow 14467
+        MOVE YMbPortasHigh 4161
+        MOVE YMbPasso1 7000
+        MOVE YMbPasso2 16000
+        MOVE YMbPasso3 12000
+        MOVE YMbPasso4 0
+        MOVE YMbPasso5 0
+        MOVE YMbPasso6 0
+        MOVE YMbPasso1Rep 2
+        MOVE YMbPasso2Rep 1
+        MOVE YMbPasso3Rep 5
+        MOVE YMbPasso4Rep 0
+        MOVE YMbPasso5Rep 0
+        MOVE YMbPasso6Rep 0
     END
 END
 RUNG
     COMMENT Calculando variáveis conforme os valores recebidos pelo ModBUS
+END
+RUNG
+    COMMENT Cálculo de variáveis relacionadas com o programa da máquina
+END
+RUNG
+    CONTACTS RMaqProduzindo 1 0
+    PARALLEL
+        MOVE PassosQtd YMbAplanPassos
+        SERIES
+            GRT PassosQtd 6
+            MOVE PassosQtd 6
+        END
+    END
+END
+RUNG
+    CONTACTS RMaqProduzindo 1 0
+    PARALLEL
+        MOVE Passo1 YMbPasso1
+        MOVE Passo2 YMbPasso2
+        MOVE Passo3 YMbPasso3
+        MOVE Passo4 YMbPasso4
+        MOVE Passo5 YMbPasso5
+        MOVE Passo6 YMbPasso6
+        MOVE Passo1Rep YMbPasso1Rep
+        MOVE Passo2Rep YMbPasso2Rep
+        MOVE Passo3Rep YMbPasso3Rep
+        MOVE Passo4Rep YMbPasso4Rep
+        MOVE Passo5Rep YMbPasso5Rep
+        MOVE Passo6Rep YMbPasso6Rep
+    END
+END
+RUNG
+    CONTACTS RMaqProduzindo 1 0
+    PARALLEL
+        MOVE PortasLow YMbPortasLow
+        MOVE PortasHigh YMbPortasHigh
+    END
 END
 RUNG
     COMMENT Calculando parâmetros de velocidade para enviar ao servo
