@@ -13,15 +13,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <ctype.h>
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
 #include "serial.h"
 #include <comm.h>
-#include <net/modbus.h>
 #include <DB.h>
 
+#include "modbus_rtu.h"
 #include "maq.h"
 
 /*** Definições gerais ***/
@@ -30,7 +29,7 @@
 #define DEBUG_PC
 
 // Ativar a linha abaixo para não conectar à POP
-#define DEBUG_PC_NOETH
+//#define DEBUG_PC_NOETH
 
 // Ativar a linha abaixo para carregar a tela de um arquivo ao invés de as criar
 #define DEBUG_CARREGAR_TELA
@@ -103,7 +102,7 @@ void WorkAreaGoTo(int NewWorkArea);
 key_t fd_rd;
 key_t fd_wr;
 
-#define IPCMQ_MAX_BUFSIZE  MB_BUFFER_SIZE
+#define IPCMQ_MAX_BUFSIZE  MODBUS_BUFFER_SIZE
 #define IPCMQ_MESSAGE_SIZE (sizeof(struct strIPCMQ_Message) - sizeof(long))
 
 #define IPCMQ_FNC_TEXT   0x01
@@ -120,9 +119,9 @@ struct strIPCMQ_Message {
     } power;
     struct {
       uint32_t function_code;
-      union MB_FCD_Data data;
+      union MODBUS_FCD_Data data;
     } modbus_query;
-    struct MB_Reply modbus_reply;
+    struct MODBUS_Reply modbus_reply;
     char text[IPCMQ_MAX_BUFSIZE];
   } data;
 };

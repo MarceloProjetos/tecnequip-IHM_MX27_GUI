@@ -457,6 +457,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
     <property name="can_focus">False</property>
     <property name="resizable">False</property>
     <property name="decorated">False</property>
+    <signal name="key-press-event" handler="cbKeyPressed" swapped="no"/>
     <child>
       <object class="GtkNotebook" id="ntbWorkArea">
         <property name="visible">True</property>
@@ -6670,7 +6671,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                 <property name="column_spacing">5</property>
                 <property name="row_spacing">5</property>
                 <child>
-                  <object class="GtkButton" id="btnVK21">
+                  <object class="GtkButton" id="button21">
                     <property name="label" translatable="yes">/</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6684,7 +6685,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK22">
+                  <object class="GtkButton" id="button22">
                     <property name="label" translatable="yes">Z</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6700,7 +6701,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK23">
+                  <object class="GtkButton" id="button23">
                     <property name="label" translatable="yes">X</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6716,7 +6717,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK24">
+                  <object class="GtkButton" id="button24">
                     <property name="label" translatable="yes">C</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6732,7 +6733,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK25">
+                  <object class="GtkButton" id="button25">
                     <property name="label" translatable="yes">V</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6748,7 +6749,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK26">
+                  <object class="GtkButton" id="button26">
                     <property name="label" translatable="yes">B</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6764,7 +6765,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK27">
+                  <object class="GtkButton" id="button27">
                     <property name="label" translatable="yes">N</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6780,7 +6781,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK28">
+                  <object class="GtkButton" id="button28">
                     <property name="label" translatable="yes">M</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6796,7 +6797,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK29">
+                  <object class="GtkButton" id="button29">
                     <property name="label" translatable="yes">.</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6812,7 +6813,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK30">
+                  <object class="GtkButton" id="button30">
                     <property name="label" translatable="yes">@</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6828,7 +6829,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK11">
+                  <object class="GtkButton" id="button1">
                     <property name="label" translatable="yes">A</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6842,7 +6843,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK12">
+                  <object class="GtkButton" id="button2">
                     <property name="label" translatable="yes">S</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6858,7 +6859,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK13">
+                  <object class="GtkButton" id="button13">
                     <property name="label" translatable="yes">D</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6874,7 +6875,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK14">
+                  <object class="GtkButton" id="button14">
                     <property name="label" translatable="yes">F</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6890,7 +6891,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK15">
+                  <object class="GtkButton" id="button15">
                     <property name="label" translatable="yes">G</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6906,7 +6907,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK16">
+                  <object class="GtkButton" id="button16">
                     <property name="label" translatable="yes">H</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6922,7 +6923,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK17">
+                  <object class="GtkButton" id="button17">
                     <property name="label" translatable="yes">J</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6938,7 +6939,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK18">
+                  <object class="GtkButton" id="button18">
                     <property name="label" translatable="yes">K</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6954,7 +6955,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK19">
+                  <object class="GtkButton" id="button19">
                     <property name="label" translatable="yes">L</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6970,7 +6971,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK20">
+                  <object class="GtkButton" id="button20">
                     <property name="label" translatable="yes">Ç</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -6986,7 +6987,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK01">
+                  <object class="GtkButton" id="button3">
                     <property name="label" translatable="yes">Q</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7000,7 +7001,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK02">
+                  <object class="GtkButton" id="button4">
                     <property name="label" translatable="yes">W</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7016,7 +7017,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK03">
+                  <object class="GtkButton" id="button5">
                     <property name="label" translatable="yes">E</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7032,7 +7033,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK04">
+                  <object class="GtkButton" id="button6">
                     <property name="label" translatable="yes">R</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7048,7 +7049,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK05">
+                  <object class="GtkButton" id="button7">
                     <property name="label" translatable="yes">T</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7064,7 +7065,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK06">
+                  <object class="GtkButton" id="button8">
                     <property name="label" translatable="yes">Y</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7080,7 +7081,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK07">
+                  <object class="GtkButton" id="button9">
                     <property name="label" translatable="yes">U</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7096,7 +7097,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK08">
+                  <object class="GtkButton" id="button10">
                     <property name="label" translatable="yes">I</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7112,7 +7113,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK09">
+                  <object class="GtkButton" id="button11">
                     <property name="label" translatable="yes">O</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7128,7 +7129,7 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnVK10">
+                  <object class="GtkButton" id="button12">
                     <property name="label" translatable="yes">P</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -7338,22 +7339,6 @@ Além disso, a bateria manterá o sistema funcionando por cerca de 2 horas.</pro
                     <property name="expand">False</property>
                     <property name="fill">True</property>
                     <property name="position">2</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkToggleButton" id="tgbCapsLock">
-                    <property name="label" translatable="yes">Maiúscula</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
-                    <property name="active">True</property>
-                    <signal name="toggled" handler="cbVirtualKeyboardCapsLock" swapped="no"/>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="position">3</property>
                   </packing>
                 </child>
               </object>

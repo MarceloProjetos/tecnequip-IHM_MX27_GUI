@@ -19,7 +19,7 @@ unsigned long CalcCheckSum(void *ptr, unsigned int tam)
 }
 
 struct strMaqReply {
-  struct MB_Reply modbus_reply;
+  struct MODBUS_Reply modbus_reply;
   uint32_t ready;
 };
 
@@ -34,7 +34,7 @@ void retMaqMB(void *dt, void *res)
 void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
 {
 #ifdef DEBUG_PC_NOETH
-  rp->modbus_reply.ExceptionCode = MB_EXCEPTION_NONE;
+  rp->modbus_reply.ExceptionCode = MODBUS_EXCEPTION_NONE;
   return;
 #endif
   pthread_mutex_lock  (&mutex_gui_lock);
@@ -59,13 +59,13 @@ uint16_t MaqLerRegistrador(uint16_t reg, uint16_t default_value)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_HOLDING_REGISTERS;
   ipc_msg.data.modbus_query.data.read_holding_registers.start = reg;
   ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE) {
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE) {
     return default_value; // Erro de comunicacao
   }
 
@@ -79,7 +79,7 @@ void MaqGravarRegistrador(uint16_t reg, uint16_t val)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = NULL;
   ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_WRITE_SINGLE_REGISTER;
   ipc_msg.data.modbus_query.data.write_single_register.address = reg;
   ipc_msg.data.modbus_query.data.write_single_register.val = val;
 
@@ -223,13 +223,13 @@ uint16_t MaqLerErros(void)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_HOLDING_REGISTERS;
   ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_ERROS;
   ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE)
     return 1; // Erro de comunicacao
 
   erro = CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
@@ -274,13 +274,13 @@ uint32_t MaqLerEntradas(void)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_DISCRETE_INPUTS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_DISCRETE_INPUTS;
   ipc_msg.data.modbus_query.data.read_discrete_inputs.start = 0;
   ipc_msg.data.modbus_query.data.read_discrete_inputs.quant = 19;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE)
     return 0; // Erro de comunicacao
 
   buf  = rp.modbus_reply.reply.read_discrete_inputs.data;
@@ -303,13 +303,13 @@ uint32_t MaqLerSaidas(void)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_COILS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_COILS;
   ipc_msg.data.modbus_query.data.read_coils.start = 0;
   ipc_msg.data.modbus_query.data.read_coils.quant = 16;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE)
     return 0; // Erro de comunicacao
 
   buf = rp.modbus_reply.reply.read_coils.data;
@@ -360,7 +360,7 @@ void MaqConfigFlags(uint16_t flags)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = NULL;
   ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_WRITE_SINGLE_REGISTER;
   ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_FLAGS;
   ipc_msg.data.modbus_query.data.write_single_register.val = flags;
 
@@ -377,7 +377,7 @@ void MaqConfigFlagsManual(uint16_t flags)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = NULL;
   ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_WRITE_SINGLE_REGISTER;
   ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_FLAGS_MANUAL;
   ipc_msg.data.modbus_query.data.write_single_register.val = flags;
 
@@ -391,7 +391,7 @@ void MaqConfigEstado(uint16_t estado)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = NULL;
   ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_WRITE_SINGLE_REGISTER;
   ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_STATUS;
   ipc_msg.data.modbus_query.data.write_single_register.val = estado;
 

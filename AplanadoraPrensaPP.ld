@@ -1,119 +1,119 @@
-POPTools:1.2
+POPTools:1.4
 MICRO=NXP LPC1768 LQFP100
 CYCLE=10000
 CRYSTAL=4000000
 BAUD=19200
 PARITY=4
-COM=4
+COM=0
 IP=192.168.0.235
 MASK=255.255.255.0
 GW=192.168.0.10
-COMPILED=N:\windows\Maquinas\PrensaPP\AplanadoraPrensaPP.hex
+DNS=192.168.0.1
+SNTP=9-0:br.pool.ntp.org
+X4=1
 
 IO LIST
-    EMaqPosAtual at 1 0
-    XAplanExtRecuada at 7 0
-    XAplanFechada at 6 0
-    XAplanManAvanca at 9 0
-    XAplanManRecua at 10 0
-    XBombaHidrLigada at 13 0
-    XDbgDeslReadEnc at 23 1
-    XDbgLimpaErro at 23 7
-    XDbgMaqLib at 23 0
-    XDbgParamSync at 23 6
-    XDbgPrsLigaMotor at 23 3
-    XDbgSimulaEnc at 23 2
-    XDbgSimulaEncNeg at 23 8
-    XDbgValErro0 at 23 4
-    XDbgValErro48 at 23 5
-    XDesbobOK at 8 0
-    XEmergencia at 1 0
-    XFaltaFase at 4 0
-    XInversorOK at 5 0
-    XMbModoAuto at 22 0
-    XPressaoArOK at 18 0
-    XPrsAvancoOK at 11 0
-    XPrsCameParar at 12 0
-    XPrsCmdAjuste at 14 0
-    XPrsCmdBM1 at 15 0
-    XPrsCmdBM2 at 16 0
-    XPrsDeslContinuo at 17 0
-    XSrvInPos at 19 0
-    XTermBombaHidr at 2 0
-    XTermMartelo at 3 0
-    YAplanAvancaMesa at 6 0
-    YAplanExtDesce at 5 0
-    YAplanExtSobe at 4 0
-    YAplanManAvcIHM at 24 0
-    YAplanManRecIHM at 24 1
-    YAplanRecuaMesa at 7 0
-    YHidrAbre at 2 0
-    YHidrDesce at 9 0
-    YHidrFecha at 3 0
-    YHidrSobe at 8 0
-    YHidrVentagem at 10 0
-    YInvLimpaErro at 15 0
-    YLedErro at 17 0
-    YLedUser at 18 0
-    YLigarBombaHidr at 1 0
-    YMbAplanAberta at 21 12
-    YMbAplanAbre at 24 2
-    YMbAplanAcelMS at 31 0
-    YMbAplanAvancoOK at 21 4
-    YMbAplanDesce at 24 5
-    YMbAplanExpandir at 24 7
-    YMbAplanExtAvanc at 21 10
-    YMbAplanExtCima at 21 11
-    YMbAplanExtSubir at 24 6
-    YMbAplanFecha at 24 3
-    YMbAplanPasso at 30 0
-    YMbAplanSobe at 24 4
-    YMbAplanVelAuto at 32 0
-    YMbAplanVelMan at 33 0
-    YMbEncFator at 40 0
-    YMbEncPerim at 42 0
-    YMbEncResol at 41 0
-    YMbErrBombaHidr at 20 2
-    YMbErrDesbob at 20 7
-    YMbErrEmergencia at 20 0
-    YMbErrFaltaFase at 20 1
-    YMbErrInversor at 20 5
-    YMbErrMartelo at 20 3
-    YMbErrPosic at 20 9
-    YMbErrPressaoAr at 20 4
-    YMbErrServo at 20 6
-    YMbErrSrvComunic at 20 8
-    YMbLimpaErro at 22 2
-    YMbMaqCfgSrvOK at 21 3
-    YMbMaqErroPos at 34 0
-    YMbMaqForaPosic at 21 9
-    YMbMaqLib at 22 1
-    YMbMaqOK at 21 1
-    YMbMaqProduzindo at 21 7
-    YMbMaqPronta at 21 2
-    YMbMaqStartProd at 21 8
-    YMbModoAutoAtivo at 21 0
-    YMbNovoCiclosMil at 38 0
-    YMbNovoCiclosUnd at 37 0
-    YMbParamSync at 22 3
-    YMbPosAtual at 25 0
-    YMbPosicOK at 21 14
-    YMbPrsCiclosMil at 36 0
-    YMbPrsCiclosNovo at 22 5
-    YMbPrsCiclosUnid at 35 0
-    YMbPrsIniciar at 24 9
-    YMbPrsLigado at 21 6
-    YMbPrsLigaMotor at 24 8
-    YMbPrsParado at 21 5
-    YMbPrsParar at 24 10
-    YMbPrsSentidoInv at 22 4
-    YMbSrvInPos at 21 13
-    YPrsAjMartelo at 12 0
-    YPrsEmbreagem at 11 0
-    YPrsLigaInv at 13 0
-    YPrsLigaNormal at 14 0
-    YSrvHabilita at 16 0
-    ZEncPerfil at 1 0
+    EMaqPosAtual at 1 0 type 4096
+    PrsLigaLubrif at 8 0 type 2
+    XAplanExtRecuada at 7 0 type 1
+    XAplanFechada at 6 0 type 1
+    XAplanManAvanca at 9 0 type 1
+    XAplanManRecua at 10 0 type 1
+    XBombaHidrLigada at 13 0 type 1
+    XDbgDeslReadEnc at 23 1 type 1
+    XDbgLimpaErro at 23 7 type 1
+    XDbgMaqLib at 23 0 type 1
+    XDbgParamSync at 23 6 type 1
+    XDbgPrsLigaMotor at 23 3 type 1
+    XDbgSimulaEnc at 23 2 type 1
+    XDbgSimulaEncNeg at 23 8 type 1
+    XDbgValErro0 at 23 4 type 1
+    XDbgValErro48 at 23 5 type 1
+    XDesbobOK at 8 0 type 1
+    XEmergencia at 1 0 type 1
+    XFaltaFase at 4 0 type 1
+    XInversorOK at 5 0 type 1
+    XMbModoAuto at 22 0 type 1
+    XPressaoArOK at 18 0 type 1
+    XPrsAvancoOK at 11 0 type 1
+    XPrsCameParar at 12 0 type 1
+    XPrsCmdAjuste at 14 0 type 1
+    XPrsCmdBM1 at 15 0 type 1
+    XPrsCmdBM2 at 16 0 type 1
+    XPrsDeslContinuo at 17 0 type 1
+    XSrvInPos at 19 0 type 1
+    XTermBombaHidr at 2 0 type 1
+    XTermMartelo at 3 0 type 1
+    YAplanAvancaMesa at 6 0 type 2
+    YAplanExtDesce at 5 0 type 2
+    YAplanExtSobe at 4 0 type 2
+    YAplanManAvcIHM at 24 0 type 2
+    YAplanManRecIHM at 24 1 type 2
+    YAplanRecuaMesa at 7 0 type 2
+    YHidrAbre at 2 0 type 2
+    YHidrDesce at 9 0 type 2
+    YHidrFecha at 3 0 type 2
+    YHidrVentagem at 10 0 type 2
+    YInvLimpaErro at 15 0 type 2
+    YLigarBombaHidr at 1 0 type 2
+    YMbAplanAberta at 21 12 type 2
+    YMbAplanAbre at 24 2 type 2
+    YMbAplanAcelMS at 31 0 type 2
+    YMbAplanAvancoOK at 21 4 type 2
+    YMbAplanDesce at 24 5 type 2
+    YMbAplanExpandir at 24 7 type 2
+    YMbAplanExtAvanc at 21 10 type 2
+    YMbAplanExtCima at 21 11 type 2
+    YMbAplanExtSubir at 24 6 type 2
+    YMbAplanFecha at 24 3 type 2
+    YMbAplanPasso at 30 0 type 2
+    YMbAplanSobe at 24 4 type 2
+    YMbAplanVelAuto at 32 0 type 2
+    YMbAplanVelMan at 33 0 type 2
+    YMbEncFator at 40 0 type 2
+    YMbEncPerim at 42 0 type 2
+    YMbEncResol at 41 0 type 2
+    YMbErrBombaHidr at 20 2 type 2
+    YMbErrDesbob at 20 7 type 2
+    YMbErrEmergencia at 20 0 type 2
+    YMbErrFaltaFase at 20 1 type 2
+    YMbErrInversor at 20 5 type 2
+    YMbErrMartelo at 20 3 type 2
+    YMbErrPosic at 20 9 type 2
+    YMbErrPressaoAr at 20 4 type 2
+    YMbErrServo at 20 6 type 2
+    YMbErrSrvComunic at 20 8 type 2
+    YMbLimpaErro at 22 2 type 2
+    YMbMaqCfgSrvOK at 21 3 type 2
+    YMbMaqErroPos at 34 0 type 2
+    YMbMaqForaPosic at 21 9 type 2
+    YMbMaqLib at 22 1 type 2
+    YMbMaqOK at 21 1 type 2
+    YMbMaqProduzindo at 21 7 type 2
+    YMbMaqPronta at 21 2 type 2
+    YMbMaqStartProd at 21 8 type 2
+    YMbModoAutoAtivo at 21 0 type 2
+    YMbNovoCiclosMil at 38 0 type 2
+    YMbNovoCiclosUnd at 37 0 type 2
+    YMbParamSync at 22 3 type 2
+    YMbPosAtual at 25 0 type 2
+    YMbPosicOK at 21 14 type 2
+    YMbPrsCiclosMil at 36 0 type 2
+    YMbPrsCiclosNovo at 22 5 type 2
+    YMbPrsCiclosUnid at 35 0 type 2
+    YMbPrsIniciar at 24 9 type 2
+    YMbPrsLigado at 21 6 type 2
+    YMbPrsLigaMotor at 24 8 type 2
+    YMbPrsParado at 21 5 type 2
+    YMbPrsParar at 24 10 type 2
+    YMbPrsSentidoInv at 22 4 type 2
+    YMbSrvInPos at 21 13 type 2
+    YPrsAjMartelo at 12 0 type 2
+    YPrsEmbreagem at 11 0 type 2
+    YPrsLigaInv at 13 0 type 2
+    YPrsLigaNormal at 14 0 type 2
+    YSrvHabilita at 16 0 type 2
+    ZEncPerfil at 1 0 type 8192
 END
 
 PROGRAM
@@ -308,50 +308,26 @@ RUNG
     CONTACTS RPrsPausaSrvOK 1 0
     CONTACTS RMaqCfgSrvErro 1 0
     CONTACTS RMaqProduzindo 1 0
-    COIL RPrsChecarSrvOK 0 0 0 0
+    CONTACTS RMaqSerialBusy 1 0
+    TON TEspChecarSrvOK 2000000
+    OSR
+    PARALLEL
+        COIL RPrsChecarSrvOK 0 1 0 0
+        COIL RMaqSerialBusy 0 1 0 0
+    END
 END
 RUNG
     CONTACTS RPrsChecarSrvOK 0 0
+    WRITE_SERVO_YASKAWA 0 (empty) ERR
+    TON TEspRespChecar 50000
+    READ_SERVO_YASKAWA 0 PrsValErro ERR NONE
     PARALLEL
+        COIL RServoOK 0 0 1 0
+        COIL RMaqSerialBusy 0 0 1 0
+        COIL RPrsChecarSrvOK 0 0 1 0
         SERIES
-            CONTACTS RMaqSerialBusy 1 0
-            TON TEspChecarON 1000000
-            TOF TEspChecarOFF 1000000
-            PARALLEL
-                COIL RPrsPausaSrvOK 0 0 0 0
-                COIL RSerialReservada 0 0 1 0
-            END
-        END
-        SERIES
-            PARALLEL
-                CONTACTS RMaqSerialBusy 1 0
-                CONTACTS RSerialReservada 0 0
-            END
-            PARALLEL
-                SERIES
-                    OSR
-                    PARALLEL
-                        COIL RSerialReservada 0 1 0 0
-                        COIL RMaqSerialBusy 0 1 0 0
-                    END
-                END
-                SERIES
-                    WRITE_SERVO_YASKAWA 0 (empty) ERR
-                    TON TEspRespChecar 50000
-                    READ_SERVO_YASKAWA 0 PrsValErro ERR NONE
-                    PARALLEL
-                        COIL RServoOK 0 0 1 0
-                        SERIES
-                            OSR
-                            COIL RMaqSerialBusy 0 0 1 0
-                        END
-                        SERIES
-                            EQU PrsValErro 0
-                            COIL RServoOK 0 1 0 0
-                        END
-                    END
-                END
-            END
+            EQU PrsValErro 0
+            COIL RServoOK 0 1 0 0
         END
     END
 END
@@ -397,6 +373,7 @@ RUNG
         COIL RMaqDesabSrv 0 1 0 0
         COIL RMaqCfgSrvOK 0 0 1 0
         COIL YPrsEmbreagem 0 0 1 0
+        COIL PrsAtivarLub 0 0 1 0
     END
 END
 RUNG
@@ -1036,10 +1013,7 @@ RUNG
                 SERIES
                     CONTACTS RMaqLerOKSerial 1 0
                     PARALLEL
-                        SERIES
-                            TON TEspEntreJogs 500000
-                            COIL RStartCfgSrvJog 0 0 1 0
-                        END
+                        COIL RStartCfgSrvJog 0 0 1 0
                         COIL RMaqCfgSrvOK 0 1 0 0
                     END
                 END
@@ -1321,6 +1295,37 @@ RUNG
     CONTACTS RMaqOK 0 0
     CONTACTS YPrsEmbreagem 1 0
     COIL YPrsAjMartelo 0 0 0 0
+END
+RUNG
+    COMMENT Lógica de controle da lubrificação
+END
+RUNG
+    CONTACTS RMaqOK 0 0
+    GEQ PrsCiclos PrsCiclosProxLub
+    OSR
+    PARALLEL
+        COIL PrsAtivarLub 0 1 0 0
+        MOVE PrsContPulsosLub PrsQtdPulsosLub
+    END
+END
+RUNG
+    CONTACTS PrsAtivarLub 0 0
+    CONTACTS PrsLigaLubrif 1 0
+    TON EspLubON 500000
+    TOF EspLubOFF 500000
+    PARALLEL
+        COIL PrsLigaLubrif 0 0 0 0
+        SERIES
+            CTD PrsContPulsosLub 1
+            OSF
+            COIL PrsAtivarLub 0 0 1 0
+        END
+    END
+END
+RUNG
+    CONTACTS PrsAtivarLub 0 0
+    OSF
+    ADD PrsCiclosProxLub PrsCiclos PrsIntervaloLub
 END
 RUNG
     COMMENT *** Fim da Lógica - Prensa ***
@@ -1711,17 +1716,42 @@ RUNG
     COIL RAplanLigarMotor 0 1 0 0
 END
 RUNG
+    COMMENT Lógica que identifica se o motor não partiu depois do comando que o habilita.\r\nNesse caso, o sinal de habilita é desativado e reativado em seguida.
+END
+RUNG
+    CONTACTS XSrvInPos 0 0
+    OSF
+    COIL SrvMotorPartiu 0 1 0 0
+END
+RUNG
+    CONTACTS RAplanLigarMotor 0 0
+    OSR
+    COIL SrvMotorPartiu 0 0 1 0
+END
+RUNG
+    CONTACTS RMaqProduzindo 0 0
+    CONTACTS RAplanLigarMotor 0 0
+    CONTACTS SrvReligarMotor 1 0
+    TON EspSrvPartir 50000
+    CONTACTS SrvMotorPartiu 1 0
+    TOF EspSrvReligar 50000
+    COIL SrvReligarMotor 0 0 0 0
+END
+RUNG
     CONTACTS RAplanLigarMotor 0 0
     CONTACTS RAplanCorrigeEnc 1 0
     CONTACTS RAplanZerarEnc 1 0
     PARALLEL
-        COIL YSrvHabilita 0 0 0 0
+        SERIES
+            CONTACTS SrvReligarMotor 1 0
+            COIL YSrvHabilita 0 0 0 0
+        END
         SERIES
             OSR
             COIL RMaqPosicionando 0 1 0 0
         END
         SERIES
-            TOF TEspSrvParar 300000
+            TOF TEspSrvParar 100000
             COIL RSrvMotorParado 1 0 0 0
         END
     END
@@ -1913,6 +1943,9 @@ RUNG
         MOVE YMbEncResol 2500
         MOVE YMbEncPerim 400
         MOVE PrsCiclos 0
+        MOVE PrsQtdPulsosLub 3
+        MOVE PrsIntervaloLub 1000
+        ADD PrsCiclosProxLub PrsCiclos PrsIntervaloLub
         MOVE YMbNovoCiclosMil 0
         MOVE YMbNovoCiclosUnd 0
     END

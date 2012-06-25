@@ -1,5 +1,4 @@
 #include <gtk/gtk.h>
-#include <net/modbus.h>
 
 #include "defines.h"
 
@@ -30,7 +29,7 @@ void cbDebugModBus(GtkButton *button, gpointer user_data)
 // Envia o comando selecionado pelo ModBus
 void cbModBusSend(GtkButton *button, gpointer user_data)
 {
-  guint fc;
+/*  guint fc;
   uint8_t out[] = { 0, 0 };
   uint32_t i, offset=0;
   char wdgName[100], reply_string[2000] = "";
@@ -318,4 +317,4 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
   mdg = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "%s", reply_string);
   gtk_dialog_run(GTK_DIALOG(mdg));
   gtk_widget_destroy(mdg);
-}
+*/}

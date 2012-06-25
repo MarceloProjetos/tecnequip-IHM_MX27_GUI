@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <net/modbus.h>
-
 #include <gtk/gtk.h>
 
 #include "defines.h"

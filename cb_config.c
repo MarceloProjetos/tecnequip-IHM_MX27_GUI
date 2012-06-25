@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <net/modbus.h>
-
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -11,7 +9,7 @@
 #include "GtkUtils.h"
 
 // Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
+extern struct MODBUS_Device mbdev;
 
 /*** Funcoes e variáveis de suporte ***/
 
@@ -904,19 +902,19 @@ void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 {
   const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(togglebutton));
   char nome_img[30];
-  union MB_FCD_Data data;
-  struct MB_Reply rp;
+  union MODBUS_FCD_Data data;
+  struct MODBUS_Reply rp;
 
   data.write_single_coil.output = atoi(&nome[strlen(nome)-2]);
   data.write_single_coil.val    = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(togglebutton));
 
-  rp = MB_Send(&mbdev, MB_FC_WRITE_SINGLE_COIL, &data);
+  rp = Modbus_RTU_Send(&mbdev, 0, MODBUS_FC_WRITE_SINGLE_COIL, &data);
 
   sprintf(nome_img, "imgManutSai%02d", data.write_single_coil.output-1);
   gtk_image_set_from_stock(GTK_IMAGE(gtk_builder_get_object(builder, nome_img)),
       data.write_single_coil.val ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
 
-  if(rp.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.ExceptionCode != MODBUS_EXCEPTION_NONE)
     printf("Erro escrevendo saida. Exception Code: %02x\n", rp.ExceptionCode);
 }
 
@@ -1023,37 +1021,6 @@ void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
   }
 }
 
-void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data)
-{
-  char tmp[10], *label;
-  unsigned int i;
-  GtkButton *wdg;
-  gboolean toggled = gtk_toggle_button_get_active(button);
-
-  for(i=1;;i++) { // Loop eterno, finaliza quando acabarem os botoes
-    sprintf(tmp, "btnVK%02d", i);
-    wdg = GTK_BUTTON(gtk_builder_get_object(builder, tmp));
-    if(wdg == NULL) // Acabaram os botoes
-      break; // Sai do loop
-
-    // Se não for uma letra, altera para o que deve ser
-    label = (char *)gtk_button_get_label(wdg);
-    if(!strcmp(label, "Ç")) {
-      strcpy(tmp, "ç");
-    } else if(!strcmp(label, "ç")) {
-      strcpy(tmp, "Ç");
-    } else if(!strcmp(label, ".")) {
-      strcpy(tmp, ",");
-    } else if(!strcmp(label, ",")) {
-      strcpy(tmp, ".");
-    } else { // Letra, inverte case.
-      sprintf(tmp, "%c", (toggled ? toupper : tolower)(*label));
-    }
-
-    gtk_button_set_label(wdg, tmp);
-  }
-}
-
 void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
 {
   char *data;
@@ -1118,6 +1085,16 @@ void AbrirVirtualKeyboard(GtkWidget *widget)
 
 // Exibe a janela.
   WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
+}
+
+gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+  if(event->keyval == GDK_F2) {
+    AbrirVirtualKeyboard(gtk_window_get_focus(GTK_WINDOW(widget)));
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
