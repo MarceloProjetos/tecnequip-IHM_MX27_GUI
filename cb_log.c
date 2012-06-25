@@ -2,15 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <net/modbus.h>
-
 #include <gtk/gtk.h>
 
 #include "defines.h"
 #include "GtkUtils.h"
-
-// Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
 
 /*** Funcoes e variáveis de suporte ***/
 

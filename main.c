@@ -11,8 +11,8 @@ extern void AbrirLog   ();
 extern void AbrirOper  ();
 extern void AbrirConfig(unsigned int pos);
 
-struct MB_Device mbdev;
-struct strDB     mainDB;
+struct MODBUS_Device mbdev;
+struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
 pthread_mutex_t mutex_ipcmq_rd  = PTHREAD_MUTEX_INITIALIZER;
@@ -108,14 +108,14 @@ COMM_FNC(CommRX)
 #endif
 }
 
-MB_HANDLER_TX(IHM_MB_TX)
+MODBUS_HANDLER_TX(IHM_MB_TX)
 {
   struct timeval tv;
   static struct timeval tv_last;
   static uint32_t primeiro = 1;
 
   uint32_t i, tent = 50;
-  int32_t resp, wait_usec, wait;
+  int32_t resp, wait_usec, wait, opts;
 
 #ifdef DEBUG_PC_NOETH
   return 0;
@@ -143,10 +143,24 @@ MB_HANDLER_TX(IHM_MB_TX)
     printf("%02x ", data[i]);
   printf("\n");
 
+  tcp_socket = ihm_connect("192.168.2.235", 502);
+  if(tcp_socket >= 0) {
+    // Configura socket para o modo non-blocking e retorna se houver erro.
+    opts = fcntl(tcp_socket,F_GETFL);
+    if (opts < 0) {
+        return 0;
+    }
+    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0) {
+        return 0;
+    }
+  } else {
+        return 0;
+  }
+
 // Envia a mensagem pela ethernet
   send(tcp_socket, data, size, 0);
 
-  while((resp=recv(tcp_socket, data, MB_BUFFER_SIZE, 0))<=0 && tent--) {
+  while((resp=recv(tcp_socket, data, MODBUS_BUFFER_SIZE, 0))<=0 && tent--) {
     usleep(10000);
   }
 
@@ -162,6 +176,8 @@ MB_HANDLER_TX(IHM_MB_TX)
       printf("%02x ", data[i]);
     printf("\n");
   }
+
+  close(tcp_socket);
 
   tv_last = tv;
 
@@ -272,7 +288,7 @@ void IPC_Update(void)
 
     case IPCMQ_FNC_MODBUS:
       switch(rcv.data.modbus_reply.FunctionCode) {
-      case MB_FC_READ_DEVICE_IDENTIFICATION:
+      case MODBUS_FC_READ_DEVICE_IDENTIFICATION:
         printf("Identificador %d: %s\n", rcv.data.modbus_reply.reply.read_device_identification.object_id, rcv.data.modbus_reply.reply.read_device_identification.data);
         break;
       default:
@@ -314,12 +330,14 @@ gboolean tmrGtkUpdate(gpointer data)
       // Leitura do estado dos CLPs, exibindo mensagem de erro caso houver
       current_status = MaqLerErros();
       if(last_status != current_status && current_status) { // houve mudanca e com erro
+        MaqLiberar(0);
         msg_error = MaqStrErro(current_status);
         Log(msg_error, LOG_TIPO_ERRO);
         gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);
         gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
         WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
       } else if (last_status != current_status) {
+        MaqLiberar(1);
         gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), "Sem Erros");
       }
       last_status = current_status;
@@ -395,7 +413,7 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = ReadID;
   ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_DEVICE_IDENTIFICATION;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_DEVICE_IDENTIFICATION;
   ipc_msg.data.modbus_query.data.read_device_identification.id_code   = 0x01;
   ipc_msg.data.modbus_query.data.read_device_identification.object_id = 0x01;
   IPCMQ_Main_Enviar(&ipc_msg);
@@ -638,7 +656,7 @@ void * ihm_update(void *args)
         break;
 
       case IPCMQ_FNC_MODBUS:
-        ipc_msg.data.modbus_reply = MB_Send(&mbdev,
+        ipc_msg.data.modbus_reply = Modbus_RTU_Send(&mbdev, 0,
                                             ipc_msg.data.modbus_query.function_code,
                                             &ipc_msg.data.modbus_query.data);
         IPCMQ_Threads_Enviar(&ipc_msg);
@@ -654,9 +672,6 @@ void * ihm_update(void *args)
 uint32_t IHM_Init(int argc, char *argv[])
 {
   uint32_t ret = 0;
-#ifndef DEBUG_PC_NOETH
-  int32_t opts;
-#endif
   pthread_t tid;
   GSList *lst;
   GtkWidget *wnd;
@@ -740,27 +755,8 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.identification.Id = 0x02;
   mbdev.hl                = NULL;
   mbdev.hl_size           = 0;
-  mbdev.mode              = MB_MODE_MASTER;
+  mbdev.mode              = MODBUS_MODE_TCP_MASTER;
   mbdev.TX                = IHM_MB_TX;
-
-#ifndef DEBUG_PC_NOETH
-  tcp_socket = ihm_connect("192.168.0.235", 502);
-  if(tcp_socket >= 0) {
-    // Configura socket para o modo non-blocking e retorna se houver erro.
-    opts = fcntl(tcp_socket,F_GETFL);
-    if (opts < 0) {
-      ret = 4;
-      goto fim_opt;
-    }
-    if (fcntl(tcp_socket, F_SETFL, opts | O_NONBLOCK) < 0) {
-      ret = 5;
-      goto fim_opt;
-    }
-  } else {
-    ret = 6;
-    goto fim_tcp;
-  }
-#endif
 
   if(!MaqLerConfig()) {
     printf("Erro carregando configuracao\n");
@@ -806,6 +802,10 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
 
+  // Libera a máquina se sem erros.
+  if(!MaqLerErros())
+    MaqLiberar(1);
+
   gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
 
   DB_Close(&mainDB);
@@ -816,12 +816,6 @@ uint32_t IHM_Init(int argc, char *argv[])
 fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
 
-#ifndef DEBUG_PC_NOETH
-fim_opt: // Encerrando por erro na configuracao da conexao TCP
-  close(tcp_socket);
-
-fim_tcp: // Encerrando por falha ao tentar estabelecer a conexao TCP
-#endif
 #ifndef DEBUG_PC
   SerialClose(ps);
 

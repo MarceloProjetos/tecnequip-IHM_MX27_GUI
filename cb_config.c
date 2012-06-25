@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <net/modbus.h>
-
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -247,7 +245,6 @@ char *lista_ent[] = {
 int GravarDadosConfig()
 {
   unsigned int i;
-  GtkWidget *obj;
   char **valor_ent;
   struct strMaqParam mp;
   valor_ent = (char **)(malloc(10*sizeof(char[10])));
@@ -255,7 +252,7 @@ int GravarDadosConfig()
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
   for(i=0; lista_ent[i][0]; i++)
-    printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
+    printf("%d: %s = %s\n" , i, lista_ent[i], valor_ent[i] );
 
   mp.perfil.auto_vel       = atol(valor_ent[ 3]);
   mp.perfil.auto_acel      = atof(valor_ent[ 4]);
@@ -289,8 +286,6 @@ void LerDadosConfig()
   char tmp[100];
   unsigned int i;
   struct strMaqParam mp;
-  GtkWidget *obj;
-  GSList *lst;
   char **valor_ent;
 
   // Diminui em 1 o número de campos devido ao elemento vazio no final.
@@ -389,7 +384,7 @@ void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
 void cbRemoverCliente(GtkButton *button, gpointer user_data)
 {
   int id;
-  char sql[100], tmp[10];
+  char sql[100];
   GtkWidget *dialog;
   GtkComboBox *obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbClientes"));
 
@@ -708,7 +703,7 @@ void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
       {
       *(ptrIDs+tam-i) = atoi((char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
 
-      Asc2Utf(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "descricao")), tmp);
+      Asc2Utf((unsigned char*)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "descricao")), (unsigned char *)tmp);
       wdg = gtk_label_new(tmp);
       gtk_table_attach_defaults(GTK_TABLE(tbl), wdg, 0, 1, i, i+1);
 
@@ -811,7 +806,6 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
 
 void cbAplicarModelo(GtkButton *button, gpointer user_data)
 {
-  int i;
   char sql[400], *nome;
 
   char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
@@ -949,8 +943,6 @@ void cbRemoverModelo(GtkButton *button, gpointer user_data)
 
 void AbrirConfig(unsigned int pos)
 {
-  GtkWidget *wnd;
-
   if(mainDB.res != NULL) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
@@ -992,7 +984,6 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 {
   int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
   char sql[100], *lembrete = "";
-  GtkWidget *wnd;
   char senha[20];
 
   if(mainDB.res==NULL) { // Banco não conectado!
@@ -1081,19 +1072,19 @@ void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 {
   const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(togglebutton));
   char nome_img[30];
-  union MB_FCD_Data data;
-  struct MB_Reply rp;
+  union MODBUS_FCD_Data data;
+  struct MODBUS_Reply rp;
 
   data.write_single_coil.output = atoi(&nome[strlen(nome)-2]);
   data.write_single_coil.val    = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(togglebutton));
 
-  rp = MB_Send(&mbdev, MB_FC_WRITE_SINGLE_COIL, &data);
+  rp.ExceptionCode = 0;//MB_Send(&mbdev, MODBUS_FC_WRITE_SINGLE_COIL, &data);
 
   sprintf(nome_img, "imgManutSai%02d", data.write_single_coil.output-1);
   gtk_image_set_from_stock(GTK_IMAGE(gtk_builder_get_object(builder, nome_img)),
       data.write_single_coil.val ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
 
-  if(rp.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.ExceptionCode != MODBUS_EXCEPTION_NONE)
     printf("Erro escrevendo saida. Exception Code: %02x\n", rp.ExceptionCode);
 }
 

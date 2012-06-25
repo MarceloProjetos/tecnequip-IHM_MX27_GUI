@@ -14,6 +14,11 @@
 // Flag solicitando sincronizacao dos parametros do CLP com o Inversor
 #define MAQ_MODO_PERF_SYNC 0x0020
 
+// Flag que libera a maquina para operacao
+#define MAQ_MODO_LIBERA 0x0040
+
+#define MAQ_MODO_MASK_LIBERA  (~(MAQ_MODO_LIBERA | MAQ_MODO_LIMPAR | MAQ_MODO_MASK))
+
 // Flags para controle manual da perfiladeira
 #define MAQ_MODO_PERF_MASK   0x0018
 #define MAQ_MODO_PERF_AVANCA 0x0008
@@ -32,7 +37,7 @@
 // Registradores do CLP
 #define MAQ_REG_ERROS              0
 #define MAQ_REG_STATUS             1
-#define MAQ_REG_MODO               2
+#define MAQ_REG_FLAGS              2
 
 #define MAQ_REG_PROD_QTD          30
 #define MAQ_REG_PROD_TAM          31
@@ -103,5 +108,11 @@ struct strMaqParamCorte   MaqLerCorte     (void);
 
 int  MaqLerConfig   (void);
 void MaqGravarConfig(void);
+
+void     MaqLimparErro(void);
+void     MaqLiberar   (uint16_t liberar);
+uint16_t MaqLerEstado (void);
+void     MaqPerfManual(uint16_t cmd);
+void     MaqCortar    (void);
 
 #endif

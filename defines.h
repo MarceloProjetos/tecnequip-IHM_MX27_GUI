@@ -6,6 +6,8 @@
 #include <netdb.h>
 #include <errno.h>
 
+#include <gtk/gtk.h>
+
 // Para que a funcao atof funcione corretamente
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +18,7 @@
 #include <unistd.h>
 #include "serial.h"
 #include <comm.h>
-#include <net/modbus.h>
+#include "modbus_rtu.h"
 #include <DB.h>
 #include <crypt.h>
 
@@ -28,7 +30,7 @@
 #define DEBUG_PC
 
 // Ativar a linha abaixo para desativar a comunicação pela Ethernet
-#define DEBUG_PC_NOETH
+//#define DEBUG_PC_NOETH
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"
@@ -92,6 +94,9 @@
 #define MODO_CORTE_HIDR  0
 #define MODO_CORTE_SERRA 1
 
+// Definições para cast de variáveis, evitando problemas com alinhamento.
+#define CONV_PCHAR_UINT16(data) (((uint16_t)(*(data+1))<<8) | (uint16_t)(*data))
+
 /*** Fim das definições gerais ***/
 
 int  WorkAreaGet (void);
@@ -102,7 +107,7 @@ void WorkAreaGoTo(int NewWorkArea);
 key_t fd_rd;
 key_t fd_wr;
 
-#define IPCMQ_MAX_BUFSIZE  MB_BUFFER_SIZE
+#define IPCMQ_MAX_BUFSIZE  MODBUS_BUFFER_SIZE
 #define IPCMQ_MESSAGE_SIZE (sizeof(struct strIPCMQ_Message) - sizeof(long))
 
 #define IPCMQ_FNC_TEXT   0x01
@@ -119,9 +124,9 @@ struct strIPCMQ_Message {
     } power;
     struct {
       uint32_t function_code;
-      union MB_FCD_Data data;
+      union MODBUS_FCD_Data data;
     } modbus_query;
-    struct MB_Reply modbus_reply;
+    struct MODBUS_Reply modbus_reply;
     char text[IPCMQ_MAX_BUFSIZE];
   } data;
 };
@@ -132,3 +137,7 @@ void IPCMQ_Threads_Enviar (struct strIPCMQ_Message *msg);
 int  IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg);
 
 /*** Fim das definições para Comunicação entre Threads ***/
+
+// Prototipos de Funcoes
+void AbrirData  (GtkEntry *entry, GCallback cb);
+int  GetUserPerm(char *permissao);

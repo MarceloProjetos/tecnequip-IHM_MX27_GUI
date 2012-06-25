@@ -1,30 +1,37 @@
 #!/bin/sh
+
+#CFLAGS=-pthread -Wall -ggdb -fpack-struct=1
+CFLAGS="-pthread -ggdb -Wall -Wcast-align"
+
 echo Apagando objetos antigos
 rm -rf *.o
 echo Iniciando...
-gcc -pthread -c -o crc.o ../libARM7/src/util/crc.c -I../libARM7/inc -DCONFIG_CPU_lpc23xx
-gcc -pthread -c -o modbus.o ../libARM7/src/net/modbus.c -I../libARM7/inc -DCONFIG_CPU_lpc23xx
-gcc -pthread -c -o serial.o serial.c
-gcc -pthread -c -o maq.o maq.c -I../IHM_MX27_PM -I../libDB -I../libARM7/inc -DCONFIG_CPU_lpc23xx
-gcc -pthread -c -o GtkUtils.o GtkUtils.c \
+#gcc $CFLAGS -c -o crc.o ../libARM7/src/util/crc.c -I../libARM7/inc -DCONFIG_CPU_lpc23xx
+#gcc $CFLAGS -c -o modbus.o ../libARM7/src/net/modbus.c -I../libARM7/inc -DCONFIG_CPU_lpc23xx
+gcc $CFLAGS -c -o modbus.o modbus_rtu.c
+gcc $CFLAGS -c -o serial.o serial.c
+gcc $CFLAGS -c -o maq.o maq.c \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
+    -I../IHM_MX27_PM -I../libDB -I../libARM7/inc -DCONFIG_CPU_lpc23xx
+gcc $CFLAGS -c -o GtkUtils.o GtkUtils.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libDB
-gcc -pthread -c -o comm.o ../IHM_MX27_PM/comm.c -I../IHM_MX27_PM -I../libARM7/inc -DCONFIG_CPU_lpc21xx
-gcc -pthread -c -export-dynamic -o cb_debug.o cb_debug.c \
+gcc $CFLAGS -c -o comm.o ../IHM_MX27_PM/comm.c -I../IHM_MX27_PM -I../libARM7/inc -DCONFIG_CPU_lpc21xx
+gcc $CFLAGS -c -export-dynamic -o cb_debug.o cb_debug.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libARM7/inc -I../IHM_MX27_PM -I../libDB -DCONFIG_CPU_lpc23xx
-gcc -pthread -c -export-dynamic -o cb_config.o cb_config.c \
+gcc $CFLAGS -c -export-dynamic -o cb_config.o cb_config.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libARM7/inc -I../IHM_MX27_PM -I../libDB -DCONFIG_CPU_lpc23xx
-gcc -pthread -c -export-dynamic -o cb_oper.o cb_oper.c \
+gcc $CFLAGS -c -export-dynamic -o cb_oper.o cb_oper.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libARM7/inc -I../IHM_MX27_PM -I../libDB -DCONFIG_CPU_lpc23xx
-gcc -pthread -c -export-dynamic -o cb_log.o cb_log.c \
+gcc $CFLAGS -c -export-dynamic -o cb_log.o cb_log.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libARM7/inc -I../IHM_MX27_PM -I../libDB -DCONFIG_CPU_lpc23xx
 echo Compilando main.c
-gcc -pthread -export-dynamic -Wall -ggdb -o IHM main.c serial.o comm.o maq.o \
-    crc.o modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
+gcc $CFLAGS -export-dynamic -o IHM main.c serial.o comm.o maq.o \
+    modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
     -lmysqlclient -lcrypt \
