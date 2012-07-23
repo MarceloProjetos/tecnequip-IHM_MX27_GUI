@@ -34,6 +34,6 @@ gcc $CFLAGS -export-dynamic -o IHM main.c serial.o comm.o maq.o \
     modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
-    -lmysqlclient -lcrypt \
+    -lmysqlclient -lcrypt -lsybdb \
     -I../libARM7/inc -I../IHM_MX27_PM -I../libDB -DCONFIG_CPU_lpc23xx
 echo Terminado!

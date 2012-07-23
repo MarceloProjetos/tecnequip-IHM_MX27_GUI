@@ -1,85 +1,94 @@
-POPTools:1.2
+POPTools:1.4
 MICRO=NXP LPC1768 LQFP100
 CYCLE=10000
 CRYSTAL=4000000
-BAUD=9600
+BAUD=19200
 PARITY=1
-COM=4
-IP=192.168.0.235
+COM=0
+IP=192.168.2.235
 MASK=255.255.255.0
-GW=192.168.0.10
-COMPILED=N:\windows\Projetos\Maquinas\VigaMezanino\VigaMezanino.hex
+GW=192.168.2.248
+DNS=192.168.0.10
+SNTP=9-0:br.pool.ntp.org
+X4=1
 
 IO LIST
-    XEmergencia at 1 0
-    XTermBombaHidr at 2 0
-    XInversorOK at 3 0
-    XPerfFimMaterial at 4 0
-    XSnsSupHidr at 5 0
-    XSnsInfHidr at 6 0
-    XSnsSupPiloto at 7 0
-    XSnsInfPiloto at 8 0
-    XInvFimPosic at 9 0
-    XFaltaFase at 10 0
-    XPerfManAvanca at 11 0
-    XPerfManRecua at 12 0
-    XCortePerfManual at 13 0
-    XDesbobOK at 14 0
-    XCortarCanto at 15 0
-    XSnsSupCrtCanto at 16 0
-    XSnsInfCrtCanto at 17 0
-    XTermCrtCanto at 18 0
-    XInvFreioAtivo at 19 0
-    YLigarBombaHidr at 1 0
-    YHidrDesce at 2 0
-    YHidrSobe at 3 0
-    YCorteTravaMesa at 4 0
-    YPilotoDescer at 5 0
-    YInvFreioMotor at 6 0
-    YLoopDesbob at 7 0
-    YAvancarPerf at 8 0
-    YRecuarPerf at 9 0
-    YInvPosicao at 10 0
-    YInvResetPos at 11 0
-    YAvancarCrtCanto at 12 0
-    YRecuarCrtCanto at 13 0
-    YCrtCantoVentag at 14 0
-    YBombaCrtCanto at 15 0
-    YMbErrEmergencia at 20 0
-    YMbErrFaltaFase at 20 1
-    YMbErrBombaHidr at 20 2
-    YMbErrInversor at 20 3
-    YMbErrDesbob at 20 4
-    YMbErrInvComunic at 20 5
-    YMbErrCortePerf at 20 6
-    YMbModoAutoAtivo at 21 0
-    YMbModoAuto at 22 0
-    YMbCorteIHM at 22 1
-    YMbLimpaErro at 22 2
-    YPerfManAvcIHM at 22 3
-    YPerfManRecIHM at 22 4
-    YMbPerfSync at 22 5
-    YMbPerfFatorL at 30 0
-    YMbPerfFatorH at 31 0
-    YMbAutoAcel at 32 0
-    YMbAutoDesac at 33 0
-    YMbAutoVel at 34 0
-    YMbManAcel at 35 0
-    YMbManDesac at 36 0
-    YMbManVel at 37 0
-    YMbEncFator at 40 0
-    YMbEncResol at 41 0
-    YMbEncPerim at 42 0
-    YMbFacaTam at 45 0
-    XDbgModoAuto at 49 0
-    YMbQtd at 50 0
-    YMbTam at 51 0
-    YLedUser at 18 0
+    XEmergencia at 1 0 type 1
+    XTermBombaHidr at 2 0 type 1
+    XInversorOK at 3 0 type 1
+    XFaltaFase at 4 0 type 1
+    XInvFimPosic at 5 0 type 1
+    XPerfFimMaterial at 6 0 type 1
+    XSnsSupHidr at 7 0 type 1
+    XSnsInfHidr at 8 0 type 1
+    XPerfManRecua at 9 0 type 1
+    XPerfManAvanca at 10 0 type 1
+    XCortePerfManual at 11 0 type 1
+    XTermCrtCanto at 12 0 type 1
+    XCortarCanto at 13 0 type 1
+    XSnsSupCrtCanto at 14 0 type 1
+    XSnsInfCrtCanto at 15 0 type 1
+    XDesbobOK at 16 0 type 1
+    XInvFreioAtivo at 19 0 type 1
+    YLigarBombaHidr at 1 0 type 2
+    YHidrDesce at 2 0 type 2
+    YHidrSobe at 3 0 type 2
+    HidrVentagem at 4 0 type 2
+    YBombaCrtCanto at 5 0 type 2
+    YAvancarCrtCanto at 6 0 type 2
+    YRecuarCrtCanto at 7 0 type 2
+    YCrtCantoVentag at 8 0 type 2
+    YInvFreioMotor at 9 0 type 2
+    YAvancarPerf at 10 0 type 2
+    YRecuarPerf at 11 0 type 2
+    YInvPosicao at 12 0 type 2
+    YInvResetPos at 13 0 type 2
+    YLoopDesbob at 14 0 type 2
+    YMbErrEmergencia at 20 0 type 2
+    YMbErrFaltaFase at 20 1 type 2
+    YMbErrBombaHidr at 20 2 type 2
+    YMbErrInversor at 20 3 type 2
+    YMbErrDesbob at 20 4 type 2
+    YMbErrInvComunic at 20 5 type 2
+    YMbErrCortePerf at 20 6 type 2
+    YMbModoAutoAtivo at 21 0 type 2
+    YMbMaqOK at 21 1 type 2
+    YMbMaqConfigOK at 21 2 type 2
+    YMbCortePronto at 21 3 type 2
+    YMbFerrCorteCima at 21 4 type 2
+    YMbPerfManualOK at 21 5 type 2
+    YMbCrtCantoOK at 21 6 type 2
+    YMbMaqProduzindo at 21 7 type 2
+    YMbModoAuto at 22 0 type 2
+    YMbCorteIHM at 22 1 type 2
+    YMbLimpaErro at 22 2 type 2
+    YPerfManAvcIHM at 22 3 type 2
+    YPerfManRecIHM at 22 4 type 2
+    YMbPerfSync at 22 5 type 2
+    YMbMaqLib at 22 6 type 2
+    XDbgMaqLib at 23 0 type 1
+    XDbgModoAuto at 23 1 type 1
+    MbTemp at 25 0 type 2
+    YMbPerfFatorL at 30 0 type 2
+    YMbPerfFatorH at 31 0 type 2
+    YMbAutoAcel at 32 0 type 2
+    YMbAutoDesac at 33 0 type 2
+    YMbAutoVel at 34 0 type 2
+    YMbManAcel at 35 0 type 2
+    YMbManDesac at 36 0 type 2
+    YMbManVel at 37 0 type 2
+    YMbEncFator at 40 0 type 2
+    YMbEncResol at 41 0 type 2
+    YMbEncPerim at 42 0 type 2
+    YMbFacaTam at 45 0 type 2
+    YMbQtd at 50 0 type 2
+    YMbTam at 51 0 type 2
+    Temperatura at 6 0 type 4
 END
 
 PROGRAM
 RUNG
-    COMMENT Programa de Controle da Perfiladeira de Viga de Mezanino - v1.0\r\nDesenvolvido por Marcelo Utikawa da Fonseca em 23/07/2010
+    COMMENT Programa de Controle da Perfiladeira de Sigma - v1.0\r\nDesenvolvido por Marcelo Utikawa da Fonseca em 31/10/2011
 END
 RUNG
     COMMENT Descrição das flags utilizadas no programa:
@@ -256,15 +265,6 @@ RUNG
     COMMENT QtdProd\r\n   Contagem de peças que restam produzir antes de finalizar o loop de produção
 END
 RUNG
-    COMMENT Lógica para piscar o led de status, permitindo ao usuário identificar se a POP está funcionando
-END
-RUNG
-    CONTACTS YLedUser 1 0
-    TON TEsperaLedON 1000000
-    TOF TEsperaLedOFF 1000000
-    COIL YLedUser 0 0 0 0
-END
-RUNG
     COMMENT Checagens gerais da Máquina
 END
 RUNG
@@ -278,11 +278,34 @@ RUNG
     END
 END
 RUNG
+    CONTACTS XDbgMaqLib 0 0
+    OSR
+    COIL YMbMaqLib 0 1 0 6
+END
+RUNG
     CONTACTS RErroGeral 1 0
     CONTACTS XInversorOK 0 0
     CONTACTS XTermBombaHidr 0 0
     CONTACTS XDesbobOK 0 0
-    COIL RMaqOK 0 0 0 0
+    CONTACTS YMbMaqLib 0 6
+    PARALLEL
+        COIL RMaqOK 0 0 0 0
+        COIL YLedErro 1 0 0 0
+    END
+END
+RUNG
+    CONTACTS RMaqOK 0 0
+    OSF
+    COIL YMbMaqLib 0 0 1 6
+END
+RUNG
+    COMMENT Leitura do sensor de Temperatura
+END
+RUNG
+    READ_ADC Temperatura
+END
+RUNG
+    MOVE MbTemp Temperatura
 END
 RUNG
     COMMENT Lógica de controle da ferramenta de corte de canto
@@ -368,21 +391,7 @@ END
 RUNG
     CONTACTS RSnsSupCortePerf 0 0
     CONTACTS RSnsInfCortePerf 1 0
-    CONTACTS XSnsSupPiloto 0 0
-    CONTACTS XSnsInfPiloto 1 0
     COIL RFerramCorteCima 0 0 0 0
-END
-RUNG
-    CONTACTS XSnsInfPiloto 1 0
-    CONTACTS XSnsSupPiloto 0 0
-    TON TEspPilotoEstab 50000
-    COIL RCortePilotoCima 0 0 0 0
-END
-RUNG
-    CONTACTS YCorteTravaMesa 0 0
-    TON TEspTravaSair 500000
-    TOF TEspTravaEntrar 500000
-    COIL RSnsSupTravaMesa 0 0 0 0
 END
 RUNG
     COMMENT Lógica de controle do corte do perfil - Controle da Bomba Hidráulica
@@ -419,30 +428,14 @@ RUNG
     CONTACTS RMaqOK 0 0
     CONTACTS RErroCortePerf 1 0
     CONTACTS RCortarPerf 0 0
-    CONTACTS RMaqOperando 1 0
     CONTACTS RCortePerfAtivo 1 0
     CONTACTS YAvancarPerf 1 0
     CONTACTS YRecuarPerf 1 0
     PARALLEL
         COIL RCortePerfAtivo 0 1 0 0
-        COIL YCorteTravaMesa 0 1 0 0
         COIL RCortarPerf 0 0 1 0
         COIL YMbCorteIHM 0 0 1 1
-        MOVE CNumTentPiloto 0
-        COIL RMaqUsarPiloto 0 1 0 0
-        SERIES
-            CONTACTS RRepeteSemPiloto 0 0
-            COIL RMaqUsarPiloto 0 0 1 0
-        END
-        COIL RRepeteSemPiloto 0 0 1 0
     END
-END
-RUNG
-    CONTACTS RCortePerfAtivo 0 0
-    OSR
-    CONTACTS YMbModoAutoAtivo 1 0
-    CONTACTS XCortePerfManual 0 0
-    COIL RRepeteSemPiloto 0 1 0 0
 END
 RUNG
     CONTACTS RCortePerfAtivo 0 0
@@ -455,154 +448,37 @@ RUNG
     END
     PARALLEL
         COIL RCortePerfAtivo 0 0 1 0
-        COIL YCorteTravaMesa 0 0 1 0
         COIL RErroCortePerf 0 1 0 0
         COIL RCortePerfDesce 0 0 1 0
-        SERIES
-            OSR
-            CONTACTS RCortePilotar 1 0
-            COIL YCorteTravaMesa 0 0 1 0
-        END
-        COIL RCortePilotar 0 0 1 0
-        COIL YPilotoDescer 0 0 1 0
     END
 END
 RUNG
     CONTACTS RCortePerfAtivo 0 0
     CONTACTS RCortePronto 0 0
-    CONTACTS RSnsSupTravaMesa 0 0
-    OSR
-    PARALLEL
-        SERIES
-            CONTACTS RMaqUsarPiloto 0 0
-            COIL RCortePilotar 0 1 0 0
-        END
-        SERIES
-            CONTACTS RMaqUsarPiloto 1 0
-            COIL RCortePerfDesce 0 1 0 0
-        END
-    END
-END
-RUNG
-    CONTACTS RCortePerfAtivo 0 0
-    CONTACTS RCortePronto 0 0
-    CONTACTS RCortePilotar 0 0
-    CONTACTS RCortePilotoCima 0 0
-    CONTACTS YPilotoDescer 1 0
-    CONTACTS RErroCortePerf 1 0
-    TON TEsperaPilotar 50000
-    COIL YPilotoDescer 0 1 0 0
-END
-RUNG
-    CONTACTS RCortePerfAtivo 0 0
-    CONTACTS YPilotoDescer 0 0
-    TON TPilotoDesceTO 500000
-    PARALLEL
-        CONTACTS XSnsInfPiloto 1 0
-        CONTACTS XSnsSupPiloto 0 0
-    END
-    PARALLEL
-        COIL YPilotoDescer 0 0 1 0
-        SERIES
-            CTU CNumTentPiloto 3
-            PARALLEL
-                COIL RErroCortePerf 0 1 0 0
-                COIL RErroCortePiloto 0 1 0 0
-                COIL RCortePilotar 0 0 1 0
-                MOVE CNumTentPiloto 0
-            END
-        END
-    END
-END
-RUNG
-    CONTACTS RCortePerfAtivo 0 0
-    CONTACTS RCortePronto 0 0
-    CONTACTS XSnsInfPiloto 0 0
-    CONTACTS XSnsSupPiloto 1 0
     OSR
     COIL RCortePerfDesce 0 1 0 0
 END
 RUNG
     CONTACTS RCortePerfAtivo 0 0
     CONTACTS RCortePronto 0 0
-    PARALLEL
-        SERIES
-            CONTACTS XSnsInfPiloto 0 0
-            CONTACTS XSnsSupPiloto 1 0
-        END
-        CONTACTS RMaqUsarPiloto 1 0
-    END
     CONTACTS RCortePerfDesce 0 0
     CONTACTS RSnsInfCortePerf 0 0
     COIL RCortePerfDesce 0 0 1 0
 END
 RUNG
-    CONTACTS RCortePerfAtivo 0 0
-    CONTACTS RCortePronto 0 0
-    CONTACTS XSnsInfPiloto 0 0
-    CONTACTS XSnsSupPiloto 1 0
-    CONTACTS RCortePerfDesce 1 0
+    PARALLEL
+        CONTACTS RCortePerfDesce 1 0
+        CONTACTS RErroCortePerf 0 0
+    END
     CONTACTS RSnsSupCortePerf 0 0
-    PARALLEL
-        COIL YPilotoDescer 0 0 1 0
-        COIL RCortePilotar 0 0 1 0
-    END
-END
-RUNG
-    PARALLEL
-        SERIES
-            CONTACTS RCortePerfDesce 1 0
-            CONTACTS RSnsSupCortePerf 0 0
-            OSR
-            CONTACTS RMaqUsarPiloto 1 0
-        END
-        SERIES
-            CONTACTS RErroCortePerf 1 0
-            CONTACTS RCortePilotoCima 0 0
-            OSR
-            CONTACTS RMaqUsarPiloto 0 0
-        END
-        SERIES
-            CONTACTS RErroCortePerf 0 0
-            CONTACTS YPilotoDescer 1 0
-            CONTACTS RCortePilotoCima 0 0
-            CONTACTS RSnsSupCortePerf 0 0
-            OSR
-        END
-    END
-    CONTACTS RCortePerfAtivo 0 0
-    CONTACTS RCortePilotar 1 0
-    COIL YCorteTravaMesa 0 0 1 0
-END
-RUNG
-    CONTACTS RCortePerfAtivo 0 0
-    CONTACTS RSnsSupTravaMesa 1 0
-    CONTACTS YCorteTravaMesa 1 0
     OSR
+    CONTACTS RCortePerfAtivo 0 0
     COIL RCortePerfAtivo 0 0 1 0
 END
 RUNG
     CONTACTS RCortePerfAtivo 0 0
     OSF
-    PARALLEL
-        COIL RCortePilotar 0 0 1 0
-        COIL RCortePerfDesce 0 0 1 0
-    END
-END
-RUNG
-    PARALLEL
-        SERIES
-            CONTACTS XCortePerfManual 0 0
-            TOF TConfirmaOFF 100000
-            OSF
-        END
-        SERIES
-            CONTACTS RCortePerfAtivo 0 0
-            OSF
-            CONTACTS RErroCortePiloto 1 0
-        END
-    END
-    COIL RRepeteSemPiloto 0 0 1 0
+    COIL RCortePerfDesce 0 0 1 0
 END
 RUNG
     COMMENT Lógica de controle do corte do perfil - Mapeamento entre relés internos para entradas e saídas
@@ -610,13 +486,6 @@ END
 RUNG
     CONTACTS RCortePerfAtivo 0 0
     CONTACTS RCortePronto 0 0
-    PARALLEL
-        SERIES
-            CONTACTS XSnsInfPiloto 0 0
-            CONTACTS XSnsSupPiloto 1 0
-        END
-        CONTACTS RMaqUsarPiloto 1 0
-    END
     CONTACTS RCortePerfDesce 0 0
     COIL YHidrDesce 0 0 0 0
 END
@@ -625,22 +494,19 @@ RUNG
     PARALLEL
         SERIES
             CONTACTS RCortePerfAtivo 0 0
-            PARALLEL
-                SERIES
-                    CONTACTS XSnsInfPiloto 0 0
-                    CONTACTS XSnsSupPiloto 1 0
-                END
-                SERIES
-                    CONTACTS RMaqUsarPiloto 1 0
-                    CONTACTS RSnsSupTravaMesa 0 0
-                END
-            END
             CONTACTS RSnsSupCortePerf 1 0
         END
         CONTACTS RForcaRecuoCorte 0 0
     END
     CONTACTS RCortePerfDesce 1 0
     COIL YHidrSobe 0 0 0 0
+END
+RUNG
+    PARALLEL
+        CONTACTS YHidrDesce 0 0
+        CONTACTS YHidrSobe 0 0
+    END
+    COIL HidrVentagem 0 0 0 0
 END
 RUNG
     CONTACTS RCortePerfAtivo 1 0
@@ -653,19 +519,13 @@ RUNG
     CONTACTS RCortarPerf 1 0
     CONTACTS RMaqProduzindo 1 0
     CONTACTS RCortePerfAtivo 1 0
-    PARALLEL
-        COIL RErroCortePerf 0 0 1 0
-        COIL RErroCortePiloto 0 0 1 0
-    END
+    COIL RErroCortePerf 0 0 1 0
 END
 RUNG
     CONTACTS RMaqOK 0 0
     PARALLEL
         SERIES
-            PARALLEL
-                CONTACTS YMbModoAutoAtivo 1 0
-                CONTACTS RMaqModoAjuste 0 0
-            END
+            CONTACTS YMbModoAutoAtivo 1 0
             CONTACTS XPerfManAvanca 1 0
             CONTACTS XPerfManRecua 1 0
             PARALLEL
@@ -674,10 +534,6 @@ RUNG
                     OSR
                 END
                 CONTACTS YMbCorteIHM 0 1
-                SERIES
-                    CONTACTS RCortePerfAtivo 1 0
-                    CONTACTS RRepeteSemPiloto 0 0
-                END
             END
         END
         SERIES
@@ -714,7 +570,10 @@ RUNG
 END
 RUNG
     CONTACTS YInvFreioMotor 0 0
-    CONTACTS XInvFreioAtivo 0 0
+    PARALLEL
+        CONTACTS XInvFreioAtivo 0 0
+        SHORT
+    END
     COIL RInvFreioLib 0 0 0 0
 END
 RUNG
@@ -741,10 +600,7 @@ RUNG
 END
 RUNG
     CONTACTS RMaqOK 0 0
-    PARALLEL
-        CONTACTS YMbModoAutoAtivo 1 0
-        CONTACTS RMaqModoAjuste 0 0
-    END
+    CONTACTS YMbModoAutoAtivo 1 0
     CONTACTS RFerramCorteCima 0 0
     CONTACTS RCortePerfAtivo 1 0
     CONTACTS RMaqConfigOK 0 0
@@ -814,10 +670,7 @@ END
 RUNG
     CONTACTS RStartConfigMan 0 0
     CONTACTS RMaqConfigErro 1 0
-    PARALLEL
-        CONTACTS RMaqProduzindo 1 0
-        CONTACTS RMaqModoAjuste 0 0
-    END
+    CONTACTS RMaqProduzindo 1 0
     PARALLEL
         SERIES
             OSR
@@ -892,10 +745,7 @@ RUNG
     END
 END
 RUNG
-    PARALLEL
-        CONTACTS XInvFimPosic 0 0
-        CONTACTS RMaqModoAjuste 0 0
-    END
+    CONTACTS XInvFimPosic 0 0
     CONTACTS RMaqProduzindo 0 0
     TON TFimPosicEstab 1000000
     PARALLEL
@@ -912,23 +762,34 @@ END
 RUNG
     PARALLEL
         CONTACTS RMaqOK 1 0
-        SERIES
-            CONTACTS RErroCortePerf 0 0
-            CONTACTS RErroCortePiloto 1 0
-        END
+        CONTACTS RErroCortePerf 0 0
     END
     CONTACTS RMaqProduzindo 0 0
     COIL RMaqProduzindo 0 0 1 0
 END
 RUNG
-    CONTACTS RMaqProduzindo 0 0
-    OSF
+    PARALLEL
+        SERIES
+            CONTACTS RMaqProduzindo 0 0
+            OSF
+        END
+        SERIES
+            CONTACTS RMaqOK 0 0
+            OSF
+            CONTACTS RMaqProduzindo 1 0
+            CONTACTS YMbModoAutoAtivo 0 0
+        END
+        SERIES
+            CONTACTS RMaqConfigOK 0 0
+            OSR
+            CONTACTS RMaqProduzindo 1 0
+        END
+    END
     PARALLEL
         COIL RCortarPerfAuto 0 0 1 0
         COIL YInvResetPos 0 0 1 0
         COIL YInvPosicao 0 0 1 0
         COIL YMbModoAutoAtivo 0 0 1 0
-        COIL RMaqModoAjuste 0 0 1 0
     END
 END
 RUNG
@@ -946,7 +807,6 @@ RUNG
     CONTACTS RMaqFimPosic 0 0
     CONTACTS YInvFreioMotor 1 0
     OSR
-    CONTACTS RMaqModoAjuste 1 0
     COIL RCortarPerfAuto 0 1 0 0
 END
 RUNG
@@ -958,32 +818,8 @@ RUNG
         SERIES
             OSF
             CONTACTS RErroCortePerf 1 0
-            PARALLEL
-                COIL YInvResetPos 0 1 0 0
-                SERIES
-                    CONTACTS RMaqModoAjuste 0 0
-                    PARALLEL
-                        COIL RMaqModoAjuste 0 0 1 0
-                        SERIES
-                            CONTACTS RModoAuto 0 0
-                            COIL RStartConfigAuto 0 1 0 0
-                        END
-                    END
-                END
-            END
+            COIL YInvResetPos 0 1 0 0
         END
-    END
-END
-RUNG
-    CONTACTS RMaqProduzindo 0 0
-    CONTACTS RCortePerfAtivo 1 0
-    CONTACTS RErroCortePiloto 0 0
-    OSR
-    PARALLEL
-        COIL RMaqModoAjuste 0 1 0 0
-        COIL RErroCortePerf 0 0 1 0
-        COIL RErroCortePiloto 0 0 1 0
-        COIL RStartConfigMan 0 1 0 0
     END
 END
 RUNG
@@ -1012,7 +848,14 @@ END
 RUNG
     CONTACTS XDbgModoAuto 0 0
     PARALLEL
-        COIL YMbModoAuto 0 1 0 0
+        SERIES
+            OSR
+            COIL YMbModoAuto 0 1 0 0
+        END
+        SERIES
+            OSF
+            COIL YMbModoAuto 0 0 1 0
+        END
         SERIES
             OSR
             PARALLEL
@@ -1041,7 +884,6 @@ RUNG
             PARALLEL
                 COIL RMaqConfigErro 0 0 1 0
                 COIL RErroCortePerf 0 0 1 0
-                COIL RErroCortePiloto 0 0 1 0
             END
         END
     END
@@ -1053,6 +895,9 @@ RUNG
         COIL RStartConfigMan 0 1 0 0
         COIL YMbPerfSync 0 0 1 5
     END
+END
+RUNG
+    COMMENT Mapemanento de Erros para o ModBUS.\r\nO erro é ordenado do mais grave (bit 0) até o menos grave (bit 15)
 END
 RUNG
     CONTACTS XEmergencia 1 0
@@ -1083,6 +928,37 @@ RUNG
     COIL YMbErrCortePerf 0 0 0 6
 END
 RUNG
+    COMMENT Flags que indicam o estado atual da máquina - Somente Leitura
+END
+RUNG
+    CONTACTS RMaqOK 0 0
+    COIL YMbMaqOK 0 0 0 1
+END
+RUNG
+    CONTACTS RMaqConfigOK 0 0
+    COIL YMbMaqConfigOK 0 0 0 2
+END
+RUNG
+    CONTACTS RCortePronto 0 0
+    COIL YMbCortePronto 0 0 0 3
+END
+RUNG
+    CONTACTS RFerramCorteCima 0 0
+    COIL YMbFerrCorteCima 0 0 0 4
+END
+RUNG
+    CONTACTS RPerfManualOK 0 0
+    COIL YMbPerfManualOK 0 0 0 5
+END
+RUNG
+    CONTACTS RCrtCantoOK 0 0
+    COIL YMbCrtCantoOK 0 0 0 6
+END
+RUNG
+    CONTACTS RMaqProduzindo 0 0
+    COIL YMbMaqProduzindo 0 0 0 7
+END
+RUNG
     COMMENT Declaração de variáveis do ModBUS
 END
 RUNG
@@ -1102,6 +978,7 @@ RUNG
         COIL YMbFacaTam 0 0 1 0
         COIL YMbTam 0 0 1 0
         COIL YMbQtd 0 0 1 0
+        COIL MbTemp 0 0 1 0
     END
 END
 RUNG

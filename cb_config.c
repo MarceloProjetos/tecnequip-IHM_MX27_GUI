@@ -14,6 +14,7 @@ extern struct MB_Device mbdev;
 /*** Funcoes e variáveis de suporte ***/
 
 int idUser=0; // Indica usuário que logou se for diferente de zero.
+char *UserPerm = NULL; // Permissoes do usuario conectado
 int CurrentWorkArea  = 0;  // Variavel que armazena a tela atual.
 int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
@@ -25,27 +26,27 @@ char * Crypto(char *str)
   return (char *)(crypt(str,"bc")+2);
 }
 
-int GetUserPerm(char *permissao)
+int GetUserPerm(unsigned int perm)
 {
-  char sql[300];
+  unsigned int len = strlen(UserPerm);
 
-  sprintf(sql, "select p.valor from permissoes as p, lista_permissoes as l, usuarios as u where p.ID_perm = l.ID and p.ID_user = u.ID and l.nome = '%s' and u.id = '%d'", permissao, idUser);
-  DB_Execute(&mainDB, 0, sql);
+  printf("String de permissao: '%s', perm=%d, len=%d\n", UserPerm, perm, len);
 
-// Se existe permissão para o usuário atual, retorna seu valor.
-  if(DB_GetNextRow(&mainDB, 0)>0)
-    return atoi(DB_GetData(&mainDB, 0, 0));
-  else
-    {
-// Não encontrou a permissão para usuário atual, carregando default.
-    sprintf(sql, "select valor from lista_permissoes where nome='%s'", permissao);
-    DB_Execute(&mainDB, 0, sql);
-    if(DB_GetNextRow(&mainDB, 0)>0)
-      return atoi(DB_GetData(&mainDB, 0, 0)); // Retornando valor default
-    }
+  if(perm >= len) // Permissão inexistente
+    return 0; // Não existe a permissão. Retorna zero.
 
-// Não existe a permissão. Retorna zero.
-  return 0;
+  switch(UserPerm[perm]) {
+  case 'w':
+  case 'W':
+    return PERM_WRITE;
+
+  case 'r':
+  case 'R':
+    return PERM_READ;
+
+  default:
+    return PERM_NONE;
+  }
 }
 
 #if 0
@@ -159,17 +160,7 @@ void CarregaComboClientes()
 
 // Carregamento dos clientes cadastrados no MySQL no ComboBox.
   DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj),0, NULL);
-}
-
-void CarregaComboUsuarios()
-{
-  GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-
-// O primeiro item é para inserção de novo usuário.
-// Carregamento dos usuário cadastrados no MySQL no ComboBox.
-  DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj),0, "<Novo Usuário>");
+  CarregaCombo(&mainDB, GTK_COMBO_BOX(obj),0, NULL);
 }
 
 void CarregaComboModelos()
@@ -181,7 +172,7 @@ void CarregaComboModelos()
 // Carregamento dos modelos cadastrados no MySQL no ComboBox.
   sprintf(sql, "select nome from modelos where estado='%d' order by ID", MOD_ESTADO_ATIVO);
   DB_Execute(&mainDB, 0, sql);
-  CarregaCombo(GTK_COMBO_BOX(obj), 0, "<Novo Modelo>");
+  CarregaCombo(&mainDB, GTK_COMBO_BOX(obj), 0, "<Novo Modelo>");
 }
 
 void CarregaDadosBanco()
@@ -352,13 +343,10 @@ void LerDadosConfig()
   }
   free(valor_ent);
 
-  if(mainDB.res != NULL) // Somente carrega se há conexão com o DB
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Somente carrega se há conexão com o DB
     {
     // Carrega clientes cadastrados
     CarregaComboClientes();
-
-    // Carrega dados da aba de usuários
-    CarregaComboUsuarios();
 
     // Carrega dados da aba de modelos
     CarregaComboModelos();
@@ -424,323 +412,6 @@ void cbRemoverCliente(GtkButton *button, gpointer user_data)
   gtk_widget_destroy (dialog);
 }
 
-void cbLoginUserSelected(GtkComboBox *combobox, gpointer user_data)
-{
-  char *lst_campos[] =
-    {
-      "entNome"    , "nome",
-      "entSenha"   , "senha",
-      "entLembrete", "lembrete",
-      ""           , ""
-    };
-
-  char *lst_botoes[] = { "btnExcluir", "btnPerm", "" };
-
-  if(gtk_combo_box_get_active(combobox)>=0)
-    CarregaCampos(combobox, lst_campos, lst_botoes, "usuarios", "login");
-}
-
-void cbAplicarUsuario(GtkButton *button, gpointer user_data)
-{
-  char sql[400], *nome, *senha, *lembrete, *login;
-  GtkWidget *dialog, *obj, *wnd, *entry;
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "entNome"));
-  nome = (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "entSenha"));
-  senha = Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(obj))));
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "entLembrete"));
-  lembrete = (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, alterar usuário.
-    {
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Aplicar as alterações ao usuário '%s'?",
-              LerComboAtivo(GTK_COMBO_BOX(obj)));
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "update usuarios set nome='%s', senha='%s', lembrete='%s' where login='%s'",
-        nome, senha, lembrete, LerComboAtivo(GTK_COMBO_BOX(obj)));
-      DB_Execute(&mainDB, 0, sql);
-
-      sprintf(sql, "Alterado o usuário %s", LerComboAtivo(GTK_COMBO_BOX(obj)));
-      Log(sql, LOG_TIPO_SISTEMA);
-
-      MessageBox("Usuário alterado com sucesso!");
-      }
-    }
-  else
-    {
-    wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndConfig"));
-    dialog = gtk_dialog_new_with_buttons ("Digite o login do usuário:",
-          GTK_WINDOW(wnd),
-          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR,
-          GTK_STOCK_OK,
-          GTK_RESPONSE_OK,
-          GTK_STOCK_CANCEL,
-          GTK_RESPONSE_CANCEL,
-          NULL);
-
-    // TODO: Ler do banco de dados o tamanho do campo de login.
-    entry = gtk_entry_new_with_max_length(10);
-    gtk_container_add (GTK_CONTAINER (GTK_DIALOG(dialog)->vbox), entry);
-    AbrirJanelaModal(dialog);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
-      {
-      login = (char *)(gtk_entry_get_text(GTK_ENTRY(entry)));
-      sprintf(sql, "select ID from usuarios where login='%s'", login);
-      DB_Execute(&mainDB, 0, sql);
-      if(DB_GetNextRow(&mainDB, 0)>0)
-        {
-        wnd = gtk_message_dialog_new (NULL,
-                  GTK_DIALOG_DESTROY_WITH_PARENT,
-                  GTK_MESSAGE_ERROR,
-                  GTK_BUTTONS_OK,
-                  "O usuário '%s' já existe!",
-                  login);
-
-        gtk_dialog_run(GTK_DIALOG(wnd));
-        gtk_widget_destroy (wnd);
-        }
-      else // O usuário não existe. Realizando inserção.
-        {
-        sprintf(sql, "insert into usuarios (nome, senha, lembrete, login) "
-               "values ('%s', '%s', '%s', '%s')",
-               nome, senha, lembrete, login);
-        DB_Execute(&mainDB, 0, sql);
-
-        CarregaItemCombo(GTK_COMBO_BOX(obj), login);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-        cbLoginUserSelected(GTK_COMBO_BOX(obj), NULL);
-
-        sprintf(sql, "Adicionado o usuário %s", login);
-        Log(sql, LOG_TIPO_SISTEMA);
-
-        MessageBox("Usuário adicionado com sucesso!");
-        }
-      }
-    }
-
-  gtk_widget_destroy (dialog);
-}
-
-void cbExcluirUsuario(GtkButton *button, gpointer user_data)
-{
-  int id;
-  char sql[100], *ativo;
-  GtkWidget *dialog, *obj;
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, exclui usuário.
-    {
-    ativo = LerComboAtivo(GTK_COMBO_BOX(obj));
-    sprintf(sql, "select ID from usuarios where login='%s'", ativo);
-    DB_Execute(&mainDB, 0 ,sql);
-    id = atoi(DB_GetData(&mainDB, 0, 0));
-    if(id == idUser) // Tentando remover usuário atual!
-      {
-      sprintf(sql, "O usuário '%s' é o usuário atual, não pode ser excluído!", ativo);
-      MessageBox(sql);
-      return; // Não pode excluir o usuário atual. Retorna!
-      }
-
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Tem certeza que deseja excluir o usuário '%s'?",
-              ativo);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "Removendo usuário %s", ativo);
-      Log(sql, LOG_TIPO_SISTEMA);
-
-      sprintf(sql, "update log set ID_Usuario='1' where ID_Usuario='%d'", id);
-      DB_Execute(&mainDB, 0, sql);
-      sprintf(sql, "delete from permissoes where ID_user='%d'", id);
-      DB_Execute(&mainDB, 0, sql);
-      sprintf(sql, "delete from usuarios where login='%s'", ativo);
-      DB_Execute(&mainDB, 0, sql);
-      ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
-      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-
-      MessageBox("Usuário removido com sucesso!");
-      }
-
-    gtk_widget_destroy (dialog);
-    }
-}
-
-void SaindoUserPerms(gpointer user_data)
-{
-  guint signal_id;
-  gulong handler_id;
-  GtkWidget *wdg;
-  GtkContainer *container = GTK_CONTAINER(gtk_builder_get_object(builder, "tblPerms"));
-  GList *start, *lst = gtk_container_get_children(container);
-
-  start = lst;
-  while(lst) {
-    gtk_container_remove(container, GTK_WIDGET(lst->data));
-    lst = lst->next;
-  }
-
-  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
-
-  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsOK"));
-  handler_id = g_signal_handler_find((gpointer)wdg, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect((gpointer)wdg, handler_id);
-
-  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsCancel"));
-  handler_id = g_signal_handler_find((gpointer)wdg, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect((gpointer)wdg, handler_id);
-
-  gtk_grab_remove(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
-  free((int *)(user_data));
-  g_list_free(start);
-}
-
-void cbUserPermsCancel(GtkButton *button, gpointer user_data)
-{
-  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
-  SaindoUserPerms(user_data);
-}
-
-void cbUserPermsAtual(GtkButton *button, gpointer user_data)
-{
-  int i=0, val_perm, inserir = 0;
-  char sql[100];
-  GList *lst = gtk_container_get_children(GTK_CONTAINER(gtk_builder_get_object(builder, "tblPerms")));
-
-  sprintf(sql,"delete from permissoes where ID_User=%d", *(int *)(user_data));
-  DB_Execute(&mainDB, 0, sql);
-
-  while(lst)
-    {
-    if(GTK_IS_ENTRY(lst->data))
-      {
-      inserir = 1;
-      val_perm = atoi(gtk_entry_get_text(GTK_ENTRY(lst->data)));
-      }
-    else if(GTK_IS_CHECK_BUTTON(lst->data))
-      {
-      inserir = 1;
-      val_perm = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(lst->data));
-      }
-
-    if(inserir)
-      {
-      sprintf(sql,"insert into permissoes values (%d, %d, %d)",
-        *(int *)(user_data),
-        *((int *)(user_data)+i+1),
-        val_perm);
-      DB_Execute(&mainDB, 0, sql);
-
-      i++;
-      inserir = 0;
-      }
-
-    lst = lst->next;
-    }
-
-  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
-  SaindoUserPerms(user_data);
-}
-
-void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
-{
-  char sql[100], tmp[30];
-  int i=0, tam, id_user, val_perm;
-  GtkWidget *wnd, *tbl, *wdg, *combo;
-// Ponteiro para uma lista de IDs para a futura inserção / alteração dos dados no banco.
-  int *ptrIDs;
-
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms"));
-  tbl = GTK_WIDGET(gtk_builder_get_object(builder, "tblPerms"));
-
-  combo = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-  sprintf(sql, "select ID from usuarios where login='%s'", LerComboAtivo(GTK_COMBO_BOX(combo)));
-
-  DB_Execute(&mainDB, 0, sql);
-  DB_GetNextRow(&mainDB, 0);
-
-  id_user = atoi((char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-
-  DB_Execute(&mainDB, 0, "select ID, descricao, valor, tipo from lista_permissoes order by ID");
-  DB_GetNextRow(&mainDB, 0);
-
-  tam = DB_GetCount(&mainDB, 0);
-
-  if(tam>0)
-    {
-    // Aloca o ponteiro para os IDs.
-    // Deve ser desalocado pela função de callback do sinal destroy da janela.
-    ptrIDs = (int *)(malloc(sizeof(int)*(tam+1)));
-    gtk_table_resize(GTK_TABLE(tbl), tam, 2);
-
-// Conexão dos sinais de callback
-    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsOK"));
-    g_signal_connect ((gpointer) wdg, "clicked",
-      G_CALLBACK (cbUserPermsAtual ), (gpointer)(ptrIDs));
-
-    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsCancel"));
-    g_signal_connect ((gpointer) wdg, "clicked",
-      G_CALLBACK (cbUserPermsCancel), (gpointer)(ptrIDs));
-
-// A primeira posicao contém o ID do usuário.
-    *ptrIDs = id_user;
-
-    do
-      {
-      *(ptrIDs+tam-i) = atoi((char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-
-      Asc2Utf((unsigned char*)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "descricao")), (unsigned char *)tmp);
-      wdg = gtk_label_new(tmp);
-      gtk_table_attach_defaults(GTK_TABLE(tbl), wdg, 0, 1, i, i+1);
-
-      sprintf(sql, "select valor from permissoes where ID_user=%d and ID_perm=%d", id_user, *(ptrIDs+tam-i));
-      DB_Execute(&mainDB, 1, sql);
-      if(DB_GetNextRow(&mainDB, 1)>0) // Carrega o valor da permissão para este usuário
-        strcpy(tmp, DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "valor")));
-      else // A permissão do usuário não existe. Carrega o valor default da permissão
-        strcpy(tmp, DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "valor")));
-
-      switch(atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tipo"))))
-        {
-        case PERM_TIPO_BOOL:
-          val_perm = atoi(tmp);
-          wdg      = gtk_check_button_new();
-          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), val_perm);
-
-          break;
-
-        default:
-        case PERM_TIPO_INT:
-          wdg = gtk_entry_new_with_max_length(5); // Tamanho de um inteiro
-          gtk_entry_set_text(GTK_ENTRY(wdg), tmp);
-
-          break;
-        }
-
-      gtk_table_attach_defaults(GTK_TABLE(tbl), wdg, 1, 2, i, i+1);
-
-      i++;
-      } while(DB_GetNextRow(&mainDB, 0)>0);
-
-    AbrirJanelaModal(wnd);
-    gtk_grab_add(wnd);
-    }
-}
-
 gboolean ChecarModelo(int passo, int tam_max)
 {
   char *msg = NULL;
@@ -786,7 +457,7 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
   if(gtk_combo_box_get_active(combobox)<0)
     return; // Sem item ativo.
 
-  if(CarregaCampos(combobox, lst_campos, lst_botoes, "modelos", "nome"))
+  if(CarregaCampos(&mainDB, combobox, lst_campos, lst_botoes, "modelos", "nome"))
     pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar")));
   else
     pilotar = 0;
@@ -943,7 +614,7 @@ void cbRemoverModelo(GtkButton *button, gpointer user_data)
 
 void AbrirConfig(unsigned int pos)
 {
-  if(mainDB.res != NULL) // Banco de dados conectado!
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
       WorkAreaGoTo(NTB_ABA_HOME);
@@ -969,10 +640,18 @@ void cbConfigOk(GtkButton *button, gpointer user_data)
 //  MQ.MQ_Data.data.di[0] = CV_ERRO_CONFIG;
 //  MQ_Transfer(&MQ);
 
+  WorkAreaGoTo(NTB_ABA_HOME);
+
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
+    if(GetUserPerm(PERM_ACESSO_CONFIG) != PERM_WRITE) {
+      WorkAreaGoTo(NTB_ABA_HOME);
+      MessageBox("Sem permissão para alterar configuração! Nada alterado.");
+      return;
+    }
+
   Log("Alterada configuração da máquina", LOG_TIPO_CONFIG);
 
   GravarDadosConfig();
-  WorkAreaGoTo(NTB_ABA_HOME);
 }
 
 void cbConfigVoltar(GtkButton *button, gpointer user_data)
@@ -982,11 +661,18 @@ void cbConfigVoltar(GtkButton *button, gpointer user_data)
 
 void cbLoginOk(GtkButton *button, gpointer user_data)
 {
-  int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
-  char sql[100], *lembrete = "";
-  char senha[20];
+  struct strDB *sDB = MSSQL_Connect();
+  int pos = 4; // Posição da aba de configuração do banco, iniciando de zero.
+  char sql[300], *lembrete = "";
+  char senha[20], *tmpPerm;
 
-  if(mainDB.res==NULL) { // Banco não conectado!
+  // Verifica se conectamos no banco SQL Server
+  if(!(sDB->status & DB_FLAGS_CONNECTED)) {
+    sDB = &mainDB; // Não conectamos, tenta login local
+    MessageBox("Erro ao conectar ao servidor, tentando conexão local");
+  }
+
+  if(!(sDB->status & DB_FLAGS_CONNECTED)) { // Banco não conectado!
     if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) // Senha correta
       {
       idUser=1; // Grava 1 para indicar que foi logado
@@ -999,29 +685,76 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
     else
       lembrete = LEMBRETE_SENHA_MASTER;
   } else {
-    sprintf(sql, "select senha, lembrete, ID from usuarios where login='%s'",
+    sprintf(sql, "select O.*, P.PERMISSAO as pPERMISSAO from OPERADOR as O, PERFIL as P where O.PERFIL=P.ID and O.USUARIO='%s'",
       LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
 
-    DB_Execute(&mainDB, 0, sql);
-    if(DB_GetNextRow(&mainDB, 0)>0) {
-      strcpy(senha, Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))));
-      if(!strcmp(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "senha")),senha)) {
-        // Carrega o ID do usuário que está logando.
-        idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-        Log("Entrada no sistema", LOG_TIPO_SISTEMA);
+    DB_Execute(sDB, 0, sql);
+    if(DB_GetNextRow(sDB, 0)>0) {
+      // Carrega o ID do usuário que está logando.
+      idUser = atoi(DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "ID")));
 
+      strcpy(senha, Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))));
+      if(!strcmp(DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "SENHA")),senha)) {
         // Oculta a janela de login.
         WorkAreaGoTo(NTB_ABA_HOME);
 
         // Limpa a senha digitada
         gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")), "");
 
+        // Carrega permissão
+        tmpPerm = DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "pPERMISSAO"));
+
+        if(UserPerm != NULL)
+          free(UserPerm); // Desaloca permissão anterior
+        UserPerm = (char *)malloc(strlen(tmpPerm)+1);
+
+        strcpy(UserPerm, tmpPerm);
+
+        // Se conectou pelo SQL Server, sincronizar usuário e permissões com o MySQL
+        if(!strcmp(sDB->DriverID, "MSSQL")) {
+          // Primeiro sincroniza os perfis
+          if(MSSQL_Execute(1, "select * from PERFIL", MSSQL_DONT_SYNC) >= 0) {
+            // Exclui registros antigos
+            DB_Execute(&mainDB, 0, "delete from PERFIL");
+
+            // Inclui novos registros
+            while(DB_GetNextRow(sDB, 1) > 0) {
+              sprintf(sql, "insert into PERFIL (ID, NOME, PERMISSAO) values ('%s', '%s', '%s')",
+                  MSSQL_GetData(1, DB_GetFieldNumber(sDB, 1, "ID"       )),
+                  MSSQL_GetData(1, DB_GetFieldNumber(sDB, 1, "NOME"     )),
+                  MSSQL_GetData(1, DB_GetFieldNumber(sDB, 1, "PERMISSAO")));
+              DB_Execute(&mainDB, 0, sql); // Insere perfil
+            }
+          }
+
+          // Agora sincroniza o usuário que acabou de entrar
+          sprintf(sql, "select ID from OPERADOR where ID='%d'", idUser);
+          DB_Execute(&mainDB, 0, sql); // Verifica se usuário já existe
+          if(DB_GetNextRow(&mainDB, 0) > 0) { // Usuario existente! Usar update...
+            sprintf(sql, "update OPERADOR set NOME='%s', USUARIO='%s', SENHA='%s', LEMBRETE='%s', PERFIL='%s' where ID='%d'",
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "NOME"    )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "USUARIO" )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "SENHA"   )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "LEMBRETE")),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "PERFIL"  )), idUser);
+          } else {
+            sprintf(sql, "insert into OPERADOR (ID, NOME, USUARIO, SENHA, LEMBRETE, PERFIL) values ('%s', '%s', '%s', '%s', '%s', '%s')",
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "ID"      )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "NOME"    )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "USUARIO" )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "SENHA"   )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "LEMBRETE")),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "PERFIL" )));
+          }
+
+          DB_Execute(&mainDB, 0, sql); // Insere/Atualiza registro com os dados atuais
+        }
+
+        Log("Entrada no sistema", LOG_TIPO_SISTEMA);
+
         return;
       } else { // Erro durante login. Gera log informando esta falha.
-        lembrete = DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "lembrete"));
-
-        // Carrega Id para associar o log a este usuário
-        idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
+        lembrete = DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "LEMBRETE"));
 
         // Insere o log de erro no login para o usuário selecionado
         Log("Erro durante login", LOG_TIPO_ERRO);
@@ -1088,20 +821,30 @@ void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
     printf("Erro escrevendo saida. Exception Code: %02x\n", rp.ExceptionCode);
 }
 
+extern unsigned int CurrentStatus;
+
 void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
 {
   PreviousWorkArea = CurrentWorkArea;
   CurrentWorkArea  = arg1;
+
+  if((arg1 == NTB_ABA_HOME || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
+    WorkAreaGoTo(NTB_ABA_INDETERMINADO);
+  }
 }
 
 void WorkAreaGoTo(int NewWorkArea)
 {
+  // Se não houve mudança, retorna.
   // Caso estiver na aba de MessageBox, nao permite mudanca.
   // Marca a anterior como a nova e, ao sair do message box, esta nova sera selecionada.
-  if(CurrentWorkArea != NTB_ABA_MESSAGEBOX)
+  if(CurrentWorkArea == NewWorkArea) {
+    return;
+  } else if(CurrentWorkArea != NTB_ABA_MESSAGEBOX) {
     gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NewWorkArea);
-  else if(NewWorkArea != NTB_ABA_MESSAGEBOX)
+  } else if(NewWorkArea != NTB_ABA_MESSAGEBOX) {
     PreviousWorkArea = NewWorkArea;
+  }
 }
 
 void WorkAreaGoPrevious()

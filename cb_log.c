@@ -34,9 +34,9 @@ void CarregaListaLogs(GtkWidget *tvw)
   data_fim = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLogDataFinal")));
 
   if(tipo == LOG_TIPO_TODOS)
-    sprintf(sql, "select l.data, u.nome, l.evento from log as l, usuarios as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') order by data desc", data_ini, data_fim);
+    sprintf(sql, "select l.data, u.NOME, l.evento from log as l, OPERADOR as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') order by data desc", data_ini, data_fim);
   else
-    sprintf(sql, "select l.data, u.nome, l.evento from log as l, usuarios as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') and Tipo='%d' order by data desc", data_ini, data_fim, tipo);
+    sprintf(sql, "select l.data, u.NOME, l.evento from log as l, OPERADOR as u where u.ID = l.ID_Usuario and (Data between '%s' and '%s') and Tipo='%d' order by data desc", data_ini, data_fim, tipo);
 
   DB_Execute(&mainDB, 0, sql);
 

@@ -46,7 +46,7 @@ void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
 
   pthread_mutex_unlock(&mutex_gui_lock);
 #else
-  rp->modbus_reply.ExceptionCode = MB_EXCEPTION_NONE;
+  rp->modbus_reply.ExceptionCode = MODBUS_EXCEPTION_NONE;
 #endif
 }
 

@@ -11,6 +11,8 @@ extern void AbrirLog   ();
 extern void AbrirOper  ();
 extern void AbrirConfig(unsigned int pos);
 
+void Log(char *evento, int tipo);
+
 struct MODBUS_Device mbdev;
 struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
@@ -20,16 +22,203 @@ pthread_mutex_t mutex_ipcmq_wr  = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_gui_lock  = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_comm_lock = PTHREAD_MUTEX_INITIALIZER;
 
+// Funcoes para conexao ao SQL Server
+
+struct strDB *sMSDB = NULL;
+
+// Conversão entre UTF-8 para ISO-8859-1
+char * MSSQL_UTF2ISO(char *data)
+{
+  unsigned char *in, *out;
+
+  if(data == NULL)
+    return NULL;
+
+  // Usamos tanto a entrada como saida o endereco passado como parametro
+  // Assim evitamos a necessidade de alocar e posteriormente liberar memoria
+  // Como o formato ISO usa menos bytes que o UTF, nao existe o risco de estouro do buffer
+  in = out = (unsigned char *)data;
+
+  while(*in) {
+    if (*in & 0x80) {
+      *out    = (*in++ & 0x03)<<6;
+      *out++ |= (*in++ & 0x3f);
+    } else {
+      *out++ = *in++;
+    }
+  }
+
+  *out = 0;
+
+  // Retornamos o proprio data para que se possa utilizar a funcao diretamente em chamadas
+  // de outras funcoes. Ex.: printf("texto = %s\n", MSSQL_UTF2ISO(data));
+  return data;
+}
+
+// Gera string de data no formato do SQL Server a partir de uma variavel time_t
+char * MSSQL_DateFromTimeT(time_t t, char *data)
+{
+  struct tm *now;
+
+  if(data == NULL)
+    return NULL;
+
+  now = localtime(&t);
+  sprintf(data, "%4d-%02d-%02d %02d:%02d:%02d", 1900+now->tm_year, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+
+  // Retornamos o proprio data para que se possa utilizar a funcao diretamente em chamadas
+  // de outras funcoes. Ex.: printf("texto = %s\n", MSSQL_UTF2ISO(data));
+  return data;
+}
+
+// Executa uma consulta SQL
+int MSSQL_Execute(int nres, char *sql, unsigned int flags)
+{
+  char msg[200], *sql_sync;
+  struct strDB *sDB;
+  int ret;
+
+  if(sql == NULL)
+    return -1;
+
+  sDB = MSSQL_Connect();
+  ret = DB_Execute(sDB, nres, sql);
+
+  if(ret < 0) {
+    if(flags & MSSQL_USE_SYNC) {
+      sql_sync = (char *)malloc(strlen(sql)+100);
+      sprintf(sql_sync, "insert into SyncTable (SyncSQL) values (\"%s\")", sql);
+
+      if(DB_Execute(&mainDB, 3, sql_sync) < 0)
+        strcpy(msg, "Erro executando consulta SQL. Sincronismo FALHOU!");
+      else
+        strcpy(msg, "Erro executando consulta SQL. Sincronismo OK");
+
+      free(sql_sync);
+    } else {
+        strcpy(msg, "Erro executando consulta SQL. Sincronismo DESATIVADO!");
+    }
+
+    if(!(flags & MSSQL_DONT_REPORT))
+      Log(msg, LOG_TIPO_SISTEMA);
+  }
+
+  return ret;
+}
+
+// Sincroniza o SQL Server com o MySQL
+void MSSQL_Sync(void)
+{
+  char sql[500];
+  unsigned int SyncDone = 0, SyncIncomplete = 0;
+
+  // Carrega os comandos SQL aguardando para sincronizar
+    DB_Execute(&mainDB, 2, "select SyncID, SyncSQL from SyncTable");
+
+    // Loop entre todos os registros da tabela de sincronismo
+    while(DB_GetNextRow(&mainDB, 2) > 0) {
+      sql[strlen(sql)-1] = 0;
+      strcat(sql, ") values (");
+
+      if(!SyncDone) {
+        Log("Iniciando Sincronismo com SQL Server", LOG_TIPO_SISTEMA);
+        SyncDone = 1;
+      }
+
+      if(MSSQL_Execute(3, DB_GetData(&mainDB, 2, 1), MSSQL_DONT_SYNC) >= 0) {
+        sprintf(sql, "delete from SyncTable where SyncID=%d", atoi(DB_GetData(&mainDB, 2, 0)));
+        DB_Execute(&mainDB, 3, sql);
+      } else {
+        SyncIncomplete = 1;
+        break;
+      }
+    }
+
+  if(SyncDone) {
+    if(SyncIncomplete)
+      Log("Sincronismo com SQL Server falhou", LOG_TIPO_SISTEMA);
+    else
+      Log("Sincronismo com SQL Server finalizado com sucesso", LOG_TIPO_SISTEMA);
+  }
+}
+
+struct strDB * MSSQL_Connect(void)
+{
+  int ret;
+
+  if(sMSDB == NULL) {
+    sMSDB = (struct strDB *)malloc(sizeof(struct strDB));
+    DB_Clear(sMSDB);
+
+    sMSDB->DriverID = "MSSQL";
+    sMSDB->server   = "servidor.altamira.com.br";
+    sMSDB->user     = "scada";
+    sMSDB->passwd   = "altamira@2012";
+    sMSDB->nome_db  = "SCADA";
+
+    ret = DB_Init(sMSDB);
+    if(ret > 0) {
+      MSSQL_Sync();
+    }
+  }
+
+  return sMSDB;
+}
+
+char * MSSQL_GetData(int nres, unsigned int pos)
+{
+  struct strDB *sDB = MSSQL_Connect();
+  char *data = DB_GetData(sDB, nres, pos);
+
+  if(data != NULL) {
+    unsigned char *in = (unsigned char *)data, *out, *dest;
+    dest = out = (unsigned char *)malloc(strlen(data)*2 + 1);
+
+    while (*in)
+        if (*in<128) *out++=*in++;
+        else *out++=0xc2+(*in>0xbf), *out++=(*in++&0x3f)+0x80;
+
+    *out = 0;
+    data = (char *)dest;
+  }
+
+  return data;
+}
+
+void MSSQL_Close(void)
+{
+  if(sMSDB != NULL) {
+    DB_Close(sMSDB);
+    free(sMSDB);
+    sMSDB = NULL;
+  }
+}
+
+#define LOG_ID_SISTEMA 1
+
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 void Log(char *evento, int tipo)
 {
   char sql[200];
+  unsigned int LogID = idUser;
+  static unsigned int log_in_mssql = 0;
 
-  if(mainDB.res != NULL && idUser) // Banco conectado
+  if(!LogID)
+    LogID = LOG_ID_SISTEMA;
+
+  if((mainDB.status & DB_FLAGS_CONNECTED)) // Banco conectado
     {
-    sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", idUser, tipo, evento);
+    sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", LogID, tipo, evento);
     DB_Execute(&mainDB, 3, sql);
     }
+
+  MSSQL_Connect(); // Sempre conecta, nunca fecha. Não sabemos o estado atual!
+  if(!log_in_mssql) {
+    log_in_mssql = 1;
+    sprintf(sql, "insert into LOG_EVENTO (LINHA, MAQUINA, OPERADOR, TIPO, HISTORICO) values ('%s', '%s', '%d', '%d', '%s')", MAQ_LINHA, MAQ_MAQUINA, LogID, tipo, evento);
+    MSSQL_Execute(3, sql, MSSQL_USE_SYNC); // Mesmo que dê erro temos que inserir para sincronizarmos depois.
+    log_in_mssql = 0;
+  }
 }
 
 int32_t ihm_connect(char *host, int16_t port)
@@ -229,6 +418,101 @@ int IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg)
   return ret;
 }
 
+// Funções para configuração do estado da máquina
+unsigned int CurrentStatus = MAQ_STATUS_INDETERMINADO;
+time_t LastStatusChange = 0;
+
+void SetMaqStatus(unsigned int NewStatus)
+{
+  char data[100], sql[500];
+  static time_t t = 0;
+
+  printf("Configurando status. CurrentStatus=%d, NewStatus=%d\n", CurrentStatus, NewStatus);
+
+  LastStatusChange = time(NULL);
+
+  // Se não houve mudança, retorna.
+  if(CurrentStatus == NewStatus)
+    return;
+
+  // Se t for zero, indica que ainda não foi carregado seu valor nenhuma vez, carrega agora.
+  if(!t)
+    t = time(NULL);
+
+  // Checa o novo estado e toma as providências necessárias
+  switch(NewStatus) {
+  default: // Estado invalido! Configurando como indeterminado
+    NewStatus = MAQ_STATUS_INDETERMINADO;
+
+  case MAQ_STATUS_INDETERMINADO:
+    t = time(NULL);
+    break;
+
+  case MAQ_STATUS_PARADA:
+    break;
+
+  case MAQ_STATUS_SETUP:
+    break;
+
+  case MAQ_STATUS_MANUAL:
+    break;
+
+  case MAQ_STATUS_PRODUZINDO:
+    break;
+
+  case MAQ_STATUS_MANUTENCAO:
+    break;
+  }
+
+  // Registra o estado da máquina no sistema
+  if(NewStatus != MAQ_STATUS_INDETERMINADO) {
+    // Se o estado atual não for indeterminado, estamos saindo de um estado válido.
+    // Assim devemos considerar que o momento de transição é agora.
+    // Se o estado atual é indeterminado, a transição de estado aconteceu quando entramos
+    // em estado indeterminado e portanto não devemos ler a hora neste momento.
+    if(CurrentStatus != MAQ_STATUS_INDETERMINADO)
+      t = time(NULL);
+
+    // Gera string com a data/hora do evento
+    MSSQL_DateFromTimeT(t, data);
+
+    // Insere o novo estado no banco e registra um log de evento
+    MSSQL_Connect();
+
+    sprintf(sql, "update LOG_STATUS set DATA_FINAL='%s' where ID=(select MAX(ID) from LOG_STATUS where LINHA='%s' and MAQUINA='%s')",
+        data, MAQ_LINHA, MAQ_MAQUINA);
+    MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
+
+    sprintf(sql, "insert into LOG_STATUS (LINHA, MAQUINA, DATA_INICIAL, CODIGO) values ('%s', '%s', '%s', '%d')",
+        MAQ_LINHA, MAQ_MAQUINA, data, NewStatus);
+    MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
+
+    sprintf(sql, "Status alterado para %d", NewStatus);
+    Log(sql, LOG_TIPO_SISTEMA);
+
+    MSSQL_Close();
+  } else if(WorkAreaGet() == NTB_ABA_HOME || WorkAreaGet() == NTB_ABA_TAREFA) {
+    WorkAreaGoTo(NTB_ABA_INDETERMINADO); // Atingiu timeout em tela home ou tarefa, podemos mudar para a tela de definição de parada
+  }
+
+  // Atualiza o estado atual para o novo estado
+  CurrentStatus = NewStatus;
+}
+
+// Callback para definição do estado da máquina quando em modo indeterminado
+void cbIndetMotivo(GtkButton *button, gpointer user_data)
+{
+  // Descobre o motivo selecionado pelo nome do botão
+  const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(button));
+  unsigned int motivo = atoi(&nome[strlen(nome)-1]);
+
+  // Configura o estado da máquina para o motivo selecionado
+  SetMaqStatus(motivo);
+
+  // Retorna para a tela anterior
+  WorkAreaGoPrevious();
+}
+
 // Timers
 gboolean tmrAD(gpointer data)
 {
@@ -342,6 +626,12 @@ gboolean tmrGtkUpdate(gpointer data)
       }
       last_status = current_status;
 
+      // Se status não for indeterminado, parada ou produzindo e atingiu o tempo limite, entra em estado indeterminado
+      if(CurrentStatus != MAQ_STATUS_INDETERMINADO && CurrentStatus != MAQ_STATUS_PARADA &&
+         CurrentStatus != MAQ_STATUS_PRODUZINDO && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT) {
+        SetMaqStatus(MAQ_STATUS_INDETERMINADO);
+      }
+
       // Atualiza a hora da tela inicial
       if(lbl == NULL)
         lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
@@ -441,6 +731,20 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   }
 }
 
+void LoadComboUsers(void)
+{
+  struct strDB *sDB = MSSQL_Connect();
+  char *sql = "select USUARIO from OPERADOR where ID not in (select ID from OPERADOR where NOME='SISTEMA') order by ID";
+
+  // Carregamento dos usuários cadastrados no SQL Server / MySQL no ComboBox.
+  // Se não conectou no SQL Server, tenta no MySQL local.
+  if(!(sDB->status & DB_FLAGS_CONNECTED))
+    sDB = &mainDB;
+
+  DB_Execute(sDB, 0, sql);
+  CarregaCombo(sDB, GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
+}
+
 void cbLogoff(GtkButton *button, gpointer user_data)
 {
   struct strIPCMQ_Message ipc_msg;
@@ -451,12 +755,11 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
   Log("Saida do sistema", LOG_TIPO_SISTEMA);
 
-// Grava zero em idUser para indicar que não há usuário logado
+  LoadComboUsers();
+
+  // Grava zero em idUser para indicar que não há usuário logado
   idUser = 0;
 
-// Carregamento dos usuários cadastrados no MySQL no ComboBox.
-  DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
-  CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
 
   WorkAreaGoTo(NTB_ABA_LOGIN);
 }
@@ -675,7 +978,6 @@ uint32_t IHM_Init(int argc, char *argv[])
   pthread_t tid;
   GSList *lst;
   GtkWidget *wnd;
-  GtkComboBox *cmb;
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
   char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
 
@@ -691,8 +993,6 @@ uint32_t IHM_Init(int argc, char *argv[])
   builder = gtk_builder_new();
   gtk_builder_add_from_file(builder, "IHM.glade", NULL);
   wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-  cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
-
   //Conecta Sinais aos Callbacks
   gtk_builder_connect_signals(builder, NULL);
 
@@ -767,15 +1067,19 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Limpa a estrutura do banco, zerando ponteiros, etc...
   DB_Clear(&mainDB);
 
+  // Inicializa os drivers para acesso aos diferentes bancos
+  DB_InitDrivers();
+
 #ifndef DEBUG_PC
   // Carrega configuracoes do arquivo de configuracao e conecta ao banco
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
 #endif
     {
-    mainDB.server  = "interno.tecnequip.com.br";
-    mainDB.user    = "root";
-    mainDB.passwd  = "y1cGH3WK20";
-    mainDB.nome_db = "cv";
+    mainDB.DriverID = "MySQL";
+    mainDB.server   = "interno.tecnequip.com.br";
+    mainDB.user     = "root";
+    mainDB.passwd   = "y1cGH3WK20";
+    mainDB.nome_db  = "cv_integrado";
     }
 
   WorkAreaGoTo(NTB_ABA_LOGIN);
@@ -790,14 +1094,18 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   if(DB_Init(&mainDB)) { // Se inicializar o banco, entra no loop do GTK.
     // Carregamento no ComboBox dos usuários cadastrados no MySQL.
-    DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
-    CarregaCombo(cmb,0, NULL);
+    LoadComboUsers();
   } else {
+    GtkComboBox *cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
+
     MessageBox("Erro inicializando banco de dados");
     // Carregamento de usuário Master para acesso de emergência.
     CarregaItemCombo(cmb, "Master");
     gtk_combo_box_set_active(cmb, 0);
   }
+
+  // Configura o estado inicial da máquina
+  SetMaqStatus(MAQ_STATUS_PARADA);
 
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
@@ -807,6 +1115,9 @@ uint32_t IHM_Init(int argc, char *argv[])
     MaqLiberar(1);
 
   gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
+
+  // Configura o estado final da máquina para PARADA pois ela está sendo desligada.
+  SetMaqStatus(MAQ_STATUS_PARADA);
 
   DB_Close(&mainDB);
 

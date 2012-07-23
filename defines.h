@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
+#include <iconv.h>
 
 #include <gtk/gtk.h>
 
@@ -30,7 +31,11 @@
 #define DEBUG_PC
 
 // Ativar a linha abaixo para desativar a comunicação pela Ethernet
-//#define DEBUG_PC_NOETH
+#define DEBUG_PC_NOETH
+
+// Definicao da Linha/Maquina que este programa via rodar
+#define MAQ_LINHA   "PPSIG"
+#define MAQ_MAQUINA "PPSIG"
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"
@@ -43,6 +48,17 @@
 #define LOG_TIPO_ERRO    3
 #define LOG_TIPO_CONFIG  4
 
+// Definição de estados da máquina
+#define MAQ_STATUS_INDETERMINADO 0
+#define MAQ_STATUS_PARADA        1
+#define MAQ_STATUS_PRODUZINDO    2
+#define MAQ_STATUS_MANUAL        3
+#define MAQ_STATUS_SETUP         4
+#define MAQ_STATUS_MANUTENCAO    5
+
+// Tempo máximo de inatividade permitido
+#define MAQ_IDLE_TIMEOUT 30
+
 // Definição de estado das tarefas
 #define TRF_ESTADO_NOVA     0
 #define TRF_ESTADO_PARCIAL  1
@@ -54,18 +70,23 @@
 #define MOD_ESTADO_REMOVIDO 1
 
 // Definição de origem da tarefa
-#define TRF_ORIGEM_MANUAL 0
-#define TRF_ORIGEM_ERP    1
+#define TRF_ORIGEM_ERP    0
+#define TRF_ORIGEM_MANUAL 1
 
 // Definição de tipo de permissão
 #define PERM_TIPO_INT  0
 #define PERM_TIPO_BOOL 1
 
 // Definição de permissões
-#define PERM_ACESSO_CONFIG "acesso_config"
-#define PERM_ACESSO_MANUT  "acesso_manut"
-#define PERM_ACESSO_OPER   "acesso_oper_auto"
-#define PERM_ACESSO_LOGS   "acesso_logs"
+#define PERM_ACESSO_CONFIG   0
+#define PERM_ACESSO_MANUT    1
+#define PERM_ACESSO_OPER     2
+#define PERM_ACESSO_LOGS     3
+#define PERM_CADASTRO_MANUAL 4
+
+#define PERM_NONE  0
+#define PERM_READ  1
+#define PERM_WRITE 2
 
 // Definições de máscaras para acertar entradas NF na tela de manutenção
 #define MASK_SERVO_DIGIN 0x000C
@@ -76,19 +97,21 @@
 #define CHECAR_MANUAL 1
 
 // Numeracao das abas que contem a tela (ntbWorkArea)
-#define NTB_ABA_HOME        0
-#define NTB_ABA_MANUT       1
-#define NTB_ABA_CONFIG      2
-#define NTB_ABA_OPERAR      3
-#define NTB_ABA_MANUAL      4
-#define NTB_ABA_LOGS        5
-#define NTB_ABA_TAREFA      7
-#define NTB_ABA_MODBUS      8
-#define NTB_ABA_DATA        9
-#define NTB_ABA_EXECUTAR   10
-#define NTB_ABA_VIRTUAL_KB 11
-#define NTB_ABA_MESSAGEBOX 12
-#define NTB_ABA_LOGIN      13
+#define NTB_ABA_HOME           0
+#define NTB_ABA_MANUT          1
+#define NTB_ABA_CONFIG         2
+#define NTB_ABA_OPERAR         3
+#define NTB_ABA_MANUAL         4
+#define NTB_ABA_LOGS           5
+#define NTB_ABA_TAREFA         7
+#define NTB_ABA_MODBUS         8
+#define NTB_ABA_DATA           9
+#define NTB_ABA_EXECUTAR      10
+#define NTB_ABA_VIRTUAL_KB    11
+#define NTB_ABA_MESSAGEBOX    12
+#define NTB_ABA_LOGIN         13
+#define NTB_ABA_DADOS_PEDIDO  14
+#define NTB_ABA_INDETERMINADO 15
 
 // Modos de corte da peça
 #define MODO_CORTE_HIDR  0
@@ -100,7 +123,22 @@
 /*** Fim das definições gerais ***/
 
 int  WorkAreaGet (void);
+void WorkAreaGoPrevious(void);
 void WorkAreaGoTo(int NewWorkArea);
+
+void SetMaqStatus(unsigned int NewStatus);
+
+#define MSSQL_DONT_SYNC   0x00
+#define MSSQL_USE_SYNC    0x01
+#define MSSQL_DONT_REPORT 0x02
+
+struct strDB * MSSQL_Connect(void);
+int            MSSQL_Execute(int nres, char *sql, unsigned int flags);
+void           MSSQL_Close  (void);
+
+char         * MSSQL_UTF2ISO(char *data);
+char         * MSSQL_DateFromTimeT(time_t t, char *data);
+char         * MSSQL_GetData(int nres, unsigned int pos);
 
 /*** Definições para Comunicação entre Threads ***/
 
@@ -140,4 +178,4 @@ int  IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg);
 
 // Prototipos de Funcoes
 void AbrirData  (GtkEntry *entry, GCallback cb);
-int  GetUserPerm(char *permissao);
+int  GetUserPerm(unsigned int perm);

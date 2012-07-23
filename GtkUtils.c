@@ -44,15 +44,15 @@ void CarregaItemCombo(GtkComboBox *cmb, char *txt)
 	gtk_combo_box_set_wrap_width(cmb,(gtk_tree_model_iter_n_children(GTK_TREE_MODEL(store),NULL)/5) + 1);
 }
 
-void CarregaCombo(GtkComboBox *cmb, guint nsel, char *adicional)
+void CarregaCombo(struct strDB *sDB, GtkComboBox *cmb, guint nsel, char *adicional)
 {
   gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(cmb)));
 
 	if(adicional != NULL)
 		CarregaItemCombo(cmb, adicional);
 
-	while(DB_GetNextRow(&mainDB, nsel)>0)
-		CarregaItemCombo(cmb, DB_GetData(&mainDB, nsel, 0));
+	while(DB_GetNextRow(sDB, nsel)>0)
+		CarregaItemCombo(cmb, DB_GetData(sDB, nsel, 0));
 
 	gtk_combo_box_set_active(cmb, 0);
 }
@@ -74,10 +74,10 @@ char *LerComboAtivo(GtkComboBox *cmb)
 	return (char *)(g_value_get_string(&valor));
 }
 
-gboolean CarregaCampos(GtkComboBox *cmb, char **campos, char **botoes, char *tabela, char *campo_where)
+int CarregaCampos(struct strDB *sDB, GtkComboBox *cmb, char **campos, char **botoes, char *tabela, char *campo_where)
 {
 	GtkWidget *obj;
-	gboolean estado = FALSE;
+	int estado = FALSE;
 	char sql[100];
 	int i;
 
@@ -86,10 +86,14 @@ gboolean CarregaCampos(GtkComboBox *cmb, char **campos, char **botoes, char *tab
 		sprintf(sql, "select * from %s where %s='%s'",
 			tabela, campo_where, LerComboAtivo(cmb));
 
-		DB_Execute(&mainDB, 0, sql);
-		DB_GetNextRow(&mainDB, 0);
+		// Se ocorrer erro na consulta SQL, retorna erro.
+		if(sDB == NULL || DB_Execute(sDB, 0, sql) < 0)
+		  return -1;
 
-		estado = TRUE;
+		// Carrega o registro retornado
+		DB_GetNextRow(sDB, 0);
+
+    estado = TRUE;
 		}
 
 	for(i=0; campos[i][0]!=0; i+=2)
@@ -97,7 +101,7 @@ gboolean CarregaCampos(GtkComboBox *cmb, char **campos, char **botoes, char *tab
 		obj = GTK_WIDGET(gtk_builder_get_object(builder, campos[i]));
 
 		if(estado == TRUE)
-			gtk_entry_set_text(GTK_ENTRY(obj), DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, campos[i+1])));
+			gtk_entry_set_text(GTK_ENTRY(obj), DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, campos[i+1])));
 		else
 			gtk_entry_set_text(GTK_ENTRY(obj), "");
 		}
