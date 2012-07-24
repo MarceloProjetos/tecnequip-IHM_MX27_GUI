@@ -25,7 +25,7 @@ void Log(char *evento, int tipo)
 {
   char sql[200];
 
-  if(mainDB.res != NULL && idUser) // Banco conectado
+  if((mainDB.status & DB_FLAGS_CONNECTED) && idUser) // Banco conectado
     {
     sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", idUser, tipo, evento);
     DB_Execute(&mainDB, 3, sql);

@@ -69,6 +69,8 @@
 #define MAQ_REG_ENC_RESOL            16
 #define MAQ_REG_ENC_PERIM            15
 
+#define MAQ_REG_QTD                  30
+
 // Configurações gerais
 #define MAQ_PASSOS_MAX 6
 
@@ -108,6 +110,7 @@ uint16_t MaqPronta     (void);
 void     MaqLimparErro (void);
 
 uint16_t MaqLerModo          (void);
+uint16_t MaqLerQtd           (void);
 uint16_t MaqLerFlags         (void);
 uint16_t MaqLerEstado        (void);
 int16_t  MaqLerPosAtual      (void);
@@ -115,6 +118,7 @@ uint32_t MaqLerEntradas      (void);
 uint32_t MaqLerSaidas        (void);
 int16_t  MaqLerAplanErroPosic(void);
 
+void                      MaqConfigQtd          (uint16_t qtd);
 void                      MaqConfigFlags        (uint16_t flags);
 void                      MaqConfigModo         (uint16_t modo);
 void                      MaqLiberar            (uint16_t liberar);

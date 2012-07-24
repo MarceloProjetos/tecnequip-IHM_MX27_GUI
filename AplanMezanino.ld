@@ -1,85 +1,88 @@
-POPTools:1.2
+POPTools:1.4
 MICRO=NXP LPC1768 LQFP100
 CYCLE=10000
 CRYSTAL=4000000
 BAUD=19200
 PARITY=4
-COM=4
+MODBUSID=0
+COM=0
 IP=192.168.0.235
 MASK=255.255.255.0
 GW=192.168.0.10
-COMPILED=N:\windows\Projetos\Maquinas\AplanMezanino\AplanMezanino.hex
+DNS=192.168.0.1
+SNTP=9-0:br.pool.ntp.org
+X4=1
 
 IO LIST
-    EMaqPosAtual at 1 0
-    XAplanFechada at 6 0
-    XAplanManAvanca at 9 0
-    XAplanManRecua at 10 0
-    XDbgDeslReadEnc at 23 1
-    XDbgLimpaErro at 23 7
-    XDbgMaqLib at 23 0
-    XDbgParamSync at 23 6
-    XDbgSimulaEnc at 23 2
-    XDbgSimulaEncNeg at 23 8
-    XDbgValErro0 at 23 4
-    XDbgValErro48 at 23 5
-    XEmergencia at 1 0
-    XFaltaFase at 4 0
-    XMbModoAuto at 22 0
-    XPressaoArOK at 18 0
-    XPrsAvancoOK at 5 0
-    XSrvInPos at 19 0
-    YAplanManAvcIHM at 24 0
-    YAplanManRecIHM at 24 1
-    YMbAplanAcelMS at 30 0
-    YMbAplanAvancoOK at 21 4
-    YMbAplanVelAuto at 31 0
-    YMbAplanVelMan at 32 0
-    YMbEncFator at 34 0
-    YMbEncPerim at 35 0
-    YMbEncResol at 36 0
-    YMbErrBombaHidr at 20 2
-    YMbErrEmergencia at 20 0
-    YMbErrFaltaFase at 20 1
-    YMbErrPosic at 20 9
-    YMbErrPressaoAr at 20 4
-    YMbErrServo at 20 6
-    YMbErrSrvComunic at 20 8
-    YMbLimpaErro at 22 2
-    YMbMaqCfgSrvOK at 21 3
-    YMbMaqErroPos at 33 0
-    YMbMaqForaPosic at 21 9
-    YMbMaqLib at 22 1
-    YMbMaqOK at 21 1
-    YMbMaqProduzindo at 21 7
-    YMbMaqPronta at 21 2
-    YMbMaqStartProd at 21 8
-    YMbModoAutoAtivo at 21 0
-    YMbParamSync at 22 3
-    YMbPasso1 at 40 0
-    YMbPasso1Rep at 41 0
-    YMbPasso2 at 42 0
-    YMbPasso2Rep at 43 0
-    YMbPasso3 at 44 0
-    YMbPasso3Rep at 45 0
-    YMbPasso4 at 46 0
-    YMbPasso4Rep at 47 0
-    YMbPasso5 at 48 0
-    YMbPasso5Rep at 49 0
-    YMbPasso6 at 50 0
-    YMbPasso6Rep at 51 0
-    YMbPassos at 39 0
-    YMbPortasHigh at 38 0
-    YMbPortasLow at 37 0
-    YMbPosAtual at 25 0
-    YMbPosicOK at 21 14
-    YMbSrvInPos at 21 13
-    YPorta1 at 13 0
-    YPorta2 at 14 0
-    YPorta3 at 15 0
-    YPrsEmbreagem at 11 0
-    YSrvHabilita at 16 0
-    ZEncPerfil at 1 0
+    EMaqPosAtual at 1 0 type 4096
+    XAplanFechada at 6 0 type 1
+    XAplanManAvanca at 9 0 type 1
+    XAplanManRecua at 10 0 type 1
+    XDbgDeslReadEnc at 23 1 type 1
+    XDbgLimpaErro at 23 7 type 1
+    XDbgMaqLib at 23 0 type 1
+    XDbgParamSync at 23 6 type 1
+    XDbgSimulaEnc at 23 2 type 1
+    XDbgSimulaEncNeg at 23 8 type 1
+    XDbgValErro0 at 23 4 type 1
+    XDbgValErro48 at 23 5 type 1
+    XEmergencia at 1 0 type 1
+    XFaltaFase at 4 0 type 1
+    XMbModoAuto at 22 0 type 1
+    XPressaoArOK at 18 0 type 1
+    XPrsAvancoOK at 5 0 type 1
+    XSrvInPos at 19 0 type 1
+    YAplanManAvcIHM at 24 0 type 2
+    YAplanManRecIHM at 24 1 type 2
+    YMbAplanAcelMS at 30 0 type 2
+    YMbAplanAvancoOK at 21 4 type 2
+    YMbAplanVelAuto at 31 0 type 2
+    YMbAplanVelMan at 32 0 type 2
+    YMbEncFator at 34 0 type 2
+    YMbEncPerim at 35 0 type 2
+    YMbEncResol at 36 0 type 2
+    YMbErrBombaHidr at 20 2 type 2
+    YMbErrEmergencia at 20 0 type 2
+    YMbErrFaltaFase at 20 1 type 2
+    YMbErrPosic at 20 9 type 2
+    YMbErrPressaoAr at 20 4 type 2
+    YMbErrServo at 20 6 type 2
+    YMbErrSrvComunic at 20 8 type 2
+    YMbLimpaErro at 22 2 type 2
+    YMbMaqCfgSrvOK at 21 3 type 2
+    YMbMaqErroPos at 33 0 type 2
+    YMbMaqForaPosic at 21 9 type 2
+    YMbMaqLib at 22 1 type 2
+    YMbMaqOK at 21 1 type 2
+    YMbMaqProduzindo at 21 7 type 2
+    YMbMaqPronta at 21 2 type 2
+    YMbMaqStartProd at 21 8 type 2
+    YMbModoAutoAtivo at 21 0 type 2
+    YMbParamSync at 22 3 type 2
+    YMbPasso1 at 40 0 type 2
+    YMbPasso1Rep at 41 0 type 2
+    YMbPasso2 at 42 0 type 2
+    YMbPasso2Rep at 43 0 type 2
+    YMbPasso3 at 44 0 type 2
+    YMbPasso3Rep at 45 0 type 2
+    YMbPasso4 at 46 0 type 2
+    YMbPasso4Rep at 47 0 type 2
+    YMbPasso5 at 48 0 type 2
+    YMbPasso5Rep at 49 0 type 2
+    YMbPasso6 at 50 0 type 2
+    YMbPasso6Rep at 51 0 type 2
+    YMbPassos at 39 0 type 2
+    YMbPortasHigh at 38 0 type 2
+    YMbPortasLow at 37 0 type 2
+    YMbPosAtual at 25 0 type 2
+    YMbPosicOK at 21 14 type 2
+    YMbSrvInPos at 21 13 type 2
+    YPorta1 at 13 0 type 2
+    YPorta2 at 14 0 type 2
+    YPorta3 at 15 0 type 2
+    YPrsEmbreagem at 11 0 type 2
+    YSrvHabilita at 16 0 type 2
+    ZEncPerfil at 1 0 type 8192
 END
 
 PROGRAM
@@ -232,6 +235,16 @@ RUNG
 END
 RUNG
     COMMENT QtdProd\r\n   Contagem de peças que restam produzir antes de finalizar o loop de produção
+END
+RUNG
+    COMMENT Declarando variáveis para evitar erro na compilação
+END
+RUNG
+    OSR
+    PARALLEL
+        MOVE PortasLow 0
+        MOVE PortasHigh 0
+    END
 END
 RUNG
     COMMENT Checagens gerais da Máquina
@@ -1265,11 +1278,11 @@ RUNG
     CONTACTS RMaqProduzindo 1 0
     CONTACTS RMaqErroPosic 1 0
     CONTACTS RMaqConfigOK 0 0
+    GRT YMbQtd 0
     PARALLEL
         COIL RMaqStartProd 0 1 0 0
         COIL RAplanZerarEnc 0 1 0 0
         MOVE PassoAtual 1
-        MOVE YMbQtdProd 0
     END
 END
 RUNG
@@ -1361,7 +1374,7 @@ RUNG
                                     GRT PassoAtual PassosQtd
                                     PARALLEL
                                         MOVE PassoAtual 1
-                                        ADD YMbQtdProd YMbQtdProd 1
+                                        SUB YMbQtd YMbQtd 1
                                     END
                                 END
                             END
@@ -1435,6 +1448,11 @@ RUNG
         SERIES
             CONTACTS RPrsAvancoOK 0 0
             OSR
+            CONTACTS RModoAuto 1 0
+        END
+        SERIES
+            EQU YMbQtd 0
+            OSR
         END
         SERIES
             CONTACTS RModoAuto 0 0
@@ -1443,7 +1461,6 @@ RUNG
         END
     END
     CONTACTS RMaqProduzindo 0 0
-    CONTACTS RModoAuto 1 0
     COIL RMaqProduzindo 0 0 1 0
 END
 RUNG

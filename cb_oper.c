@@ -28,15 +28,19 @@ extern void Log(char *evento, int tipo);
 gboolean tmrExec(gpointer data)
 {
   static int iniciando = 1;
-  char tmp[30];
+  char tmp[30], txtQtd[10];
   int erro_posic;
   GtkWidget *wdg;
+  unsigned int qtd;
   static GtkLabel *lblErroPos = NULL;
 
   if(iniciando) {
     iniciando = 0;
     lblErroPos = GTK_LABEL(gtk_builder_get_object(builder, "lblExecErroPos"));
   }
+
+  qtd = MaqLerQtd();
+  sprintf(txtQtd, "%d", qtd);
 
   printf("MaqPosAtual = %d\n", MaqLerPosAtual());
 
@@ -59,8 +63,19 @@ gboolean tmrExec(gpointer data)
     gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), TRUE);
     gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "cmbExecModelo")), TRUE);
 
+    if(qtd) {
+      sprintf(txtQtd, "%d", qtd);
+    } else {
+      txtQtd[0] = 0;
+    }
+
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entExecQtd")), txtQtd);
+
     return FALSE;
   }
+
+  sprintf(txtQtd, "%d", *(unsigned int *)(data) - qtd);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "entExecQtd")), txtQtd);
 
   return TRUE;
 }
@@ -121,7 +136,7 @@ unsigned int CarregarPrograma(char *modelo)
 
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
-  unsigned int passos;
+  unsigned int passos, qtd;
   char *modo_botao[] = { "Iniciar", "Parar" }, msg[40];
   GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
 
@@ -130,15 +145,18 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
       return;
 
     passos = CarregarPrograma(LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbExecModelo"))));
-    if(!passos)
+    qtd    = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entExecQtd"))));
+
+    if(!passos || !qtd)
       return;
 
+    MaqConfigQtd (qtd);
     MaqSyncPassos(passos);
 
     Log("Iniciando producao", LOG_TIPO_TAREFA);
 
     MaqConfigModo(MAQ_MODO_AUTO);
-    g_timeout_add(1000, tmrExec, NULL);
+    g_timeout_add(1000, tmrExec, (gpointer)&qtd);
 
     sprintf(msg, "Produzindo com passo de %d mm", 0);//maq_param.aplanadora.passo);
     gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), msg);
