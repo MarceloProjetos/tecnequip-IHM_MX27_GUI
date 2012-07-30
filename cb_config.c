@@ -10,6 +10,8 @@
 #include "defines.h"
 #include "GtkUtils.h"
 
+#include <crypt.h>
+
 // Estrutura que representa o ModBus
 extern struct MB_Device mbdev;
 
@@ -357,7 +359,7 @@ void LerDadosConfig()
   }
   free(valor_ent);
 
-  if(mainDB.res != NULL) // Somente carrega se há conexão com o DB
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Somente carrega se há conexão com o DB
     {
     // Carrega clientes cadastrados
     CarregaComboClientes();
@@ -951,7 +953,7 @@ void AbrirConfig(unsigned int pos)
 {
   GtkWidget *wnd;
 
-  if(mainDB.res != NULL) // Banco de dados conectado!
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
       WorkAreaGoTo(NTB_ABA_HOME);
@@ -994,7 +996,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
   char sql[100], *lembrete = "";
   GtkWidget *wnd;
 
-  if(mainDB.res==NULL) // Banco não conectado!
+  if(!(mainDB.status & DB_FLAGS_CONNECTED)) // Banco não conectado!
     {
     if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) // Senha correta
       {
@@ -1008,13 +1010,12 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
     else
       lembrete = LEMBRETE_SENHA_MASTER;
     }
-  else
-    {
+  else {
     sprintf(sql, "select senha, lembrete, ID from usuarios where login='%s'",
       LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
 
     DB_Execute(&mainDB, 0, sql);
-    if(DB_GetNextRow(&mainDB, 0)>0)
+    if(DB_GetNextRow(&mainDB, 0)>0) {
       if(!strcmp(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "senha")),Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")))))))
         {
         // Carrega o ID do usuário que está logando.
@@ -1043,6 +1044,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         idUser = 0;
         }
     }
+  }
 
   // Se lembrete for nulo, seleciona para texto em branco.
   if(lembrete == NULL)
@@ -1143,6 +1145,8 @@ void cbGoHome(GtkButton *button, gpointer user_data)
   WorkAreaGoTo(NTB_ABA_HOME);
 }
 
+unsigned int WorkAreaOrigemVK;
+
 void SairVirtualKeyboard()
 {
   GtkButton *button;
@@ -1162,11 +1166,13 @@ void SairVirtualKeyboard()
   handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
   g_signal_handler_disconnect(button, handler_id);
 
-  WorkAreaGoPrevious();
+  WorkAreaGoTo(WorkAreaOrigemVK);
 }
 
 void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
 {
+  int pos;
+  GtkEditable *editable;
   GtkTextBuffer *tb;
   GtkTextIter cursor;
   gchar *str = (gchar *)gtk_button_get_label(button);
@@ -1176,21 +1182,68 @@ void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
     str = "\n";
   } else if (!strcmp(str, "Espaço")) {
     str = " ";
-  } else if (!strcmp(str, "gtk-go-back")) {
+  } else if (!strcmp(str, "gtk-clear")) {
     str = NULL;
   }
 
-  tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-
-  if(str != NULL) {
-    gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
-  } else {
-    if (gtk_text_buffer_get_has_selection (tb)) {
-      gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
+  editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  if(gtk_widget_get_visible(GTK_WIDGET(editable))) {
+    if(str != NULL) {
+      pos = gtk_editable_get_position(editable);
+      gtk_editable_insert_text(editable, str, -1, &pos);
+      gtk_editable_set_position(editable, pos);
+    } else if (gtk_editable_get_selection_bounds(editable, &pos, &pos)) {
+      gtk_editable_delete_selection(editable);
     } else {
-      gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
-      gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
+      pos = gtk_editable_get_position(editable);
+      if(pos) {
+        gtk_editable_delete_text(editable, pos-1, pos);
+      }
     }
+  } else {
+    tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+
+    if(str != NULL) {
+      gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
+    } else {
+      if (gtk_text_buffer_get_has_selection (tb)) {
+        gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
+      } else {
+        gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
+        gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
+      }
+    }
+  }
+}
+
+void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data)
+{
+  char tmp[10], *label;
+  unsigned int i;
+  GtkButton *wdg;
+  gboolean toggled = gtk_toggle_button_get_active(button);
+
+  for(i=1;;i++) { // Loop eterno, finaliza quando acabarem os botoes
+    sprintf(tmp, "btnVK%02d", i);
+    wdg = GTK_BUTTON(gtk_builder_get_object(builder, tmp));
+    if(wdg == NULL) // Acabaram os botoes
+      break; // Sai do loop
+
+    // Se não for uma letra, altera para o que deve ser
+    label = (char *)gtk_button_get_label(wdg);
+    if(!strcmp(label, "Ç")) {
+      strcpy(tmp, "ç");
+    } else if(!strcmp(label, "ç")) {
+      strcpy(tmp, "Ç");
+    } else if(!strcmp(label, ".")) {
+      strcpy(tmp, ",");
+    } else if(!strcmp(label, ",")) {
+      strcpy(tmp, ".");
+    } else { // Letra, inverte case.
+      sprintf(tmp, "%c", (toggled ? toupper : tolower)(*label));
+    }
+
+    gtk_button_set_label(wdg, tmp);
   }
 }
 
@@ -1201,14 +1254,14 @@ void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
   GtkTextIter start, end;
   GtkWidget *widget = (GtkWidget *)user_data;
 
-  tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-  gtk_text_buffer_get_start_iter(tb, &start);
-  gtk_text_buffer_get_end_iter(tb, &end);
-  data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
-
   if(GTK_IS_ENTRY(widget)) {
-    gtk_entry_set_text(GTK_ENTRY(widget), data);
+    gtk_entry_set_text(GTK_ENTRY(widget),gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entVirtualKeyboard"))));
   } else if(GTK_IS_TEXT_VIEW(widget)) {
+    tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+    gtk_text_buffer_get_start_iter(tb, &start);
+    gtk_text_buffer_get_end_iter(tb, &end);
+    data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+
     gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget)), data, -1);
   }
 
@@ -1222,10 +1275,17 @@ void cbVirtualKeyboardCancelar(GtkButton *button, gpointer user_data)
 
 void AbrirVirtualKeyboard(GtkWidget *widget)
 {
-  char *data;
+  char *data, nome_label[100];
+  GtkLabel *lbl, *lblVK;
   GtkWidget *obj;
+  GtkEntry *entry;
   GtkTextBuffer *tb;
+  GtkTextView *textview;
   GtkTextIter start, end;
+  GtkScrolledWindow *scrollwnd;
+
+  // Salva a tela atual para retornar na saída
+  WorkAreaOrigemVK = WorkAreaGet();
 
   // Lê o texto atual.
   if(GTK_IS_ENTRY(widget)) {
@@ -1237,6 +1297,19 @@ void AbrirVirtualKeyboard(GtkWidget *widget)
     data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
   } else {
     return; // Objeto nao suportado
+  }
+
+  // Tenta carregar o label relacionado ao campo de texto
+  sprintf(nome_label, "lbl%s", (char *)(gtk_buildable_get_name(GTK_BUILDABLE(widget))+3));
+  lbl   = GTK_LABEL(gtk_builder_get_object(builder, nome_label));
+
+  lblVK = GTK_LABEL(gtk_builder_get_object(builder, "lblVirtualKeyboard"));
+
+  if(lbl && GTK_IS_LABEL(lbl)) {
+    gtk_label_set_text(lblVK, gtk_label_get_text(lbl));
+    gtk_widget_set_visible(GTK_WIDGET(lblVK), TRUE );
+  } else {
+    gtk_widget_set_visible(GTK_WIDGET(lblVK), FALSE);
   }
 
 // Carrega o ponteiro para o botão de confirmar.
@@ -1253,20 +1326,48 @@ void AbrirVirtualKeyboard(GtkWidget *widget)
   g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardCancelar),
                 (gpointer)(widget));
 
-// Carrega o texto
-  gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard"))), data, -1);
+  // Carrega ponteiro para os campos de edição
+  entry     = GTK_ENTRY          (gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  textview  = GTK_TEXT_VIEW      (gtk_builder_get_object(builder, "txvVirtualKeyboard"));
+  scrollwnd = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "scwVirtualKeyboard"));
+
+  // Carrega o texto e ativa o objeto correspondente
+  if(GTK_IS_ENTRY(widget)) {
+    gtk_entry_set_text(entry, data);
+    gtk_entry_set_visibility(entry, gtk_entry_get_visibility(GTK_ENTRY(widget)));
+    gtk_widget_set_visible(GTK_WIDGET(entry    ), TRUE );
+    gtk_widget_set_visible(GTK_WIDGET(textview ), FALSE);
+    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), FALSE);
+//    gtk_widget_grab_focus (GTK_WIDGET(entry    ));
+  } else {
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(textview), data, -1);
+    gtk_widget_set_visible(GTK_WIDGET(entry    ), FALSE);
+    gtk_widget_set_visible(GTK_WIDGET(textview ), TRUE );
+    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), TRUE );
+//    gtk_widget_grab_focus (GTK_WIDGET(textview ));
+  }
 
 // Exibe a janela.
   WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
 }
 
-gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-  if(event->keyval == GDK_F2) {
-    AbrirVirtualKeyboard(gtk_window_get_focus(GTK_WINDOW(widget)));
+  static int ignorar = 0;
+
+  if(WorkAreaGet() == NTB_ABA_VIRTUAL_KB) {
+    gtk_widget_grab_focus(GTK_WIDGET(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+    return FALSE;
+  }
+
+  if(!ignorar) {
+    ignorar = 1;
+    AbrirVirtualKeyboard(widget);
+    WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
     return TRUE;
   }
 
+  ignorar = 0;
   return FALSE;
 }
 

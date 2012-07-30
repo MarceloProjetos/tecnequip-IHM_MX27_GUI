@@ -281,7 +281,7 @@ uint16_t MaqLerErros(void)
     return 1; // Erro de comunicacao
 
   buf  = rp.modbus_reply.reply.read_holding_registers.data;
-  erro = (((uint16_t)(buf[0]) << 8) | buf[1]);
+  erro = (((uint16_t)(buf[1]) << 8) | buf[0]);
   printf("Erro lido: %04x\n", erro);
 
   return erro << 1;
@@ -309,7 +309,7 @@ uint16_t MaqLerModo(void)
     return 0; // Erro de comunicacao
 
   buf  = rp.modbus_reply.reply.read_holding_registers.data;
-  modo = (((uint16_t)(buf[0]) << 8) | buf[1]);
+  modo = (((uint16_t)(buf[1]) << 8) | buf[0]);
 
   return modo;
 }
@@ -336,7 +336,7 @@ uint16_t MaqLerEstado(void)
     return 0; // Erro de comunicacao
 
   buf    = rp.modbus_reply.reply.read_holding_registers.data;
-  status = (((uint16_t)(buf[0]) << 8) | buf[1]);
+  status = (((uint16_t)(buf[1]) << 8) | buf[0]);
   printf("status: %d\n", status);
 
   return status;
@@ -421,7 +421,7 @@ uint16_t MaqLerProdQtd(void)
     return 0; // Erro de comunicacao
 
   buf = rp.modbus_reply.reply.read_holding_registers.data;
-  qtd = ((uint16_t)(buf[0]) << 8) | buf[1];
+  qtd = ((uint16_t)(buf[1]) << 8) | buf[0];
   printf("Restando %d pecas\n", qtd);
 
   return qtd;

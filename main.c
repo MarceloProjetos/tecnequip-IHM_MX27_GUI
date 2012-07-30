@@ -25,7 +25,7 @@ void Log(char *evento, int tipo)
 {
   char sql[200];
 
-  if(mainDB.res != NULL && idUser) // Banco conectado
+  if((mainDB.status & DB_FLAGS_CONNECTED) && idUser) // Banco conectado
     {
     sprintf(sql, "insert into log (ID_Usuario, Tipo, Evento) values ('%d', '%d', '%s')", idUser, tipo, evento);
     DB_Execute(&mainDB, 3, sql);
@@ -64,7 +64,7 @@ int32_t ihm_connect(char *host, int16_t port)
 
         /* Map TCP transport protocol name to protocol number. */
 
-        if ( ((int32_t)(ptrp = getprotobyname("tcp"))) == 0) {
+        if ( ((long)(ptrp = getprotobyname("tcp"))) == 0) {
                 fprintf(stderr, "Cannot map \"tcp\" to protocol number");
                 return -1;
         }
@@ -109,7 +109,7 @@ MB_HANDLER_TX(IHM_MB_TX)
   uint32_t i, tent = 50;
   int32_t resp, wait_usec, wait;
 
-#ifdef DEBUG_PC
+#ifdef DEBUG_PC_NOETH
   return 0;
 #endif
 
@@ -440,23 +440,18 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
+  struct strIPCMQ_Message ipc_msg;
+
+#ifndef DEBUG_PC
   char tmp[25];
   int32_t  batt_level, curr_batt_level = -1;
-  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp, i, ChangedAD = 0, ciclos = 0;
+  uint32_t ad_vin=-1, ad_term=-1, ad_vbat=-1, rp, ChangedAD = 0, i, ciclos = 0;
   struct comm_msg msg;
   GtkDialog      *dlg;
   GtkLabel       *lbl;
   GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
   GtkImage       *imgBatt;
   GdkPixbuf      *pbBatt[4];
-
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.fnc   = NULL;
-  ipc_msg.res   = NULL;
-  ipc_msg.mtype = IPCMQ_FNC_TEXT;
-  strcpy(ipc_msg.data.text, "mensagem");
-  IPCMQ_Threads_Enviar(&ipc_msg);
 
   gdk_threads_enter();
 
@@ -473,12 +468,20 @@ void * ihm_update(void *args)
   }
 
   gdk_threads_leave();
+#endif
+
+  ipc_msg.fnc   = NULL;
+  ipc_msg.res   = NULL;
+  ipc_msg.mtype = IPCMQ_FNC_TEXT;
+  strcpy(ipc_msg.data.text, "mensagem");
+  IPCMQ_Threads_Enviar(&ipc_msg);
 
   /****************************************************************************
    * Loop
    ***************************************************************************/
   while (1) {
     usleep(500);
+#ifndef DEBUG_PC
     /*** Loop de checagem de mensagens vindas da CPU LPC2109 ***/
     comm_update();
     if(comm_ready()) {
@@ -608,6 +611,7 @@ void * ihm_update(void *args)
     }
 
     /*** Fim do loop para atualizacao da imagem da bateria ***/
+#endif
 
     // Loop de checagem de mensagens vindas da thread principal
     if(IPCMQ_Threads_Receber(&ipc_msg) >= 0) {
@@ -634,7 +638,9 @@ void * ihm_update(void *args)
 uint32_t IHM_Init(int argc, char *argv[])
 {
   uint32_t ret = 0;
+#ifndef DEBUG_PC_NOETH
   int32_t opts;
+#endif
   pthread_t tid;
   GtkWidget *wnd;
   GtkComboBox *cmb;
@@ -689,11 +695,8 @@ uint32_t IHM_Init(int argc, char *argv[])
     goto fim_fila_wr;
   }
 
-#ifdef DEBUG_PC
-  ps = SerialInit("/dev/ttyUSB0");
-#else
+#ifndef DEBUG_PC
   ps = SerialInit("/dev/ttymxc2");
-#endif
 
   if(ps == NULL) {
     printf("Erro abrindo porta serial!\n");
@@ -709,6 +712,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   comm_init(CommTX, CommRX);
   comm_put (&(struct comm_msg){ COMM_FNC_LED, { 0xA } });
   comm_put (&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
+#endif
 
 // Inicializacao do ModBus
   mbdev.identification.Id = 0x02;
@@ -717,7 +721,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.mode              = MB_MODE_MASTER;
   mbdev.TX                = IHM_MB_TX;
 
-#ifndef DEBUG_PC
+#ifndef DEBUG_PC_NOETH
   tcp_socket = ihm_connect("192.168.0.235", 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
@@ -745,24 +749,35 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Limpa a estrutura do banco, zerando ponteiros, etc...
   DB_Clear(&mainDB);
 
-#ifndef DEBUG_PC
   // Carrega configuracoes do arquivo de configuracao e conecta ao banco
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
-#endif
     {
-    mainDB.server  = "192.168.0.2";
+#ifdef DEBUG_PC
+    mainDB.server  = "interno.tecnequip.com.br";
     mainDB.user    = "root";
     mainDB.passwd  = "y1cGH3WK20";
     mainDB.nome_db = "cv";
+//    mainDB.server  = "localhost";
+//    mainDB.user    = "ihm";
+//    mainDB.passwd  = "alis666net";
+//    mainDB.nome_db = "cv";
+#else
+    mainDB.server  = "127.0.0.1";
+    mainDB.user    = "root";
+    mainDB.passwd  = "y1cGH3WK20";
+    mainDB.nome_db = "cv";
+#endif
     }
 
   WorkAreaGoTo(NTB_ABA_LOGIN);
   gtk_widget_show_all(wnd);
 
   // Iniciando os timers
+#ifndef DEBUG_PC
   g_timeout_add( 500, tmrAD       , NULL);
-  g_timeout_add( 500, tmrGtkUpdate, NULL);
   g_timeout_add(1000, tmrPowerDown, NULL);
+#endif
+  g_timeout_add( 500, tmrGtkUpdate, NULL);
 
   pthread_create (&tid, NULL, ihm_update, NULL);
 
@@ -789,14 +804,17 @@ uint32_t IHM_Init(int argc, char *argv[])
 
 fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
-
+#ifndef DEBUG_PC_NOETH
 fim_opt: // Encerrando por erro na configuracao da conexao TCP
   close(tcp_socket);
 
 fim_tcp: // Encerrando por falha ao tentar estabelecer a conexao TCP
+#endif
+#ifndef DEBUG_PC
   SerialClose(ps);
 
 fim_serial: // Encerrando por erro ao abrir a porta serial
+#endif
   msgctl(fd_wr, IPC_RMID, NULL);
 
 fim_fila_wr: // Encerrando por falha ao criar fila de mensagens para escrita
