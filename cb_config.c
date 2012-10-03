@@ -16,7 +16,6 @@ extern struct MB_Device mbdev;
 int idUser=0; // Indica usuário que logou se for diferente de zero.
 char *UserPerm = NULL; // Permissoes do usuario conectado
 int CurrentWorkArea  = 0;  // Variavel que armazena a tela atual.
-int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
@@ -30,10 +29,8 @@ int GetUserPerm(unsigned int perm)
 {
   unsigned int len = strlen(UserPerm);
 
-  printf("String de permissao: '%s', perm=%d, len=%d\n", UserPerm, perm, len);
-
   if(perm >= len) // Permissão inexistente
-    return 0; // Não existe a permissão. Retorna zero.
+    return PERM_NONE; // Não existe a permissão. Retorna sem permissão.
 
   switch(UserPerm[perm]) {
   case 'w':
@@ -356,6 +353,267 @@ void LerDadosConfig()
   CarregaDadosBanco();
 }
 
+#define VK_TYPE_WIDGET 0
+#define VK_TYPE_PCHAR  1
+
+typedef struct strVKData VKData;
+
+struct strVKData {
+  int type;
+  union {
+    struct {
+      int        size;
+      char      *buffer;
+      char      *msg;
+      void      (*finish)(VKData *vkd, int ok);
+      void      *user_data;
+    } pchar;
+    GtkWidget   *widget;
+  } obj;
+};
+
+void SairVirtualKeyboard()
+{
+  GtkButton *button;
+  guint signal_id;
+  gulong handler_id;
+
+  // Recebe o ID do sinal do callback
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+
+  // Remove do botao Cancelar
+  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  // Remove do botao OK
+  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  WorkAreaGoPrevious();
+}
+
+void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
+{
+  int pos;
+  GtkEditable *editable;
+  GtkTextBuffer *tb;
+  GtkTextIter cursor;
+  gchar *str = (gchar *)gtk_button_get_label(button);
+
+  // Verifica o label para identificar se foi clicado espaco, backspace ou enter.
+  if        (!strcmp(str, "Enter")) {
+    str = "\n";
+  } else if (!strcmp(str, "Espaço")) {
+    str = " ";
+  } else if (!strcmp(str, "gtk-clear")) {
+    str = NULL;
+  }
+
+  editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  if(gtk_widget_get_visible(GTK_WIDGET(editable))) {
+    if(str != NULL) {
+      pos = gtk_editable_get_position(editable);
+      gtk_editable_insert_text(editable, str, -1, &pos);
+      gtk_editable_set_position(editable, pos);
+    } else if (gtk_editable_get_selection_bounds(editable, &pos, &pos)) {
+      gtk_editable_delete_selection(editable);
+    } else {
+      pos = gtk_editable_get_position(editable);
+      if(pos) {
+        gtk_editable_delete_text(editable, pos-1, pos);
+      }
+    }
+  } else {
+    tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+
+    if(str != NULL) {
+      gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
+    } else {
+      if (gtk_text_buffer_get_has_selection (tb)) {
+        gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
+      } else {
+        gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
+        gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
+      }
+    }
+  }
+}
+
+void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data)
+{
+  char tmp[10], *label;
+  unsigned int i;
+  GtkButton *wdg;
+  gboolean toggled = gtk_toggle_button_get_active(button);
+
+  for(i=1;;i++) { // Loop eterno, finaliza quando acabarem os botoes
+    sprintf(tmp, "btnVK%02d", i);
+    wdg = GTK_BUTTON(gtk_builder_get_object(builder, tmp));
+    if(wdg == NULL) // Acabaram os botoes
+      break; // Sai do loop
+
+    // Se não for uma letra, altera para o que deve ser
+    label = (char *)gtk_button_get_label(wdg);
+    if(!strcmp(label, "Ç")) {
+      strcpy(tmp, "ç");
+    } else if(!strcmp(label, "ç")) {
+      strcpy(tmp, "Ç");
+/*    } else if(!strcmp(label, ".")) {
+      strcpy(tmp, ",");
+    } else if(!strcmp(label, ",")) {
+      strcpy(tmp, ".");*/
+    } else { // Letra, inverte case.
+      sprintf(tmp, "%c", (toggled ? toupper : tolower)(*label));
+    }
+
+    gtk_button_set_label(wdg, tmp);
+  }
+}
+
+void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
+{
+  char *data;
+  GtkTextBuffer *tb;
+  GtkTextIter start, end;
+  VKData *vkdata = (VKData *)user_data;
+  GtkWidget *widget = vkdata->obj.widget;
+
+  if(vkdata->type == VK_TYPE_WIDGET) {
+    if(GTK_IS_ENTRY(widget)) {
+      gtk_entry_set_text(GTK_ENTRY(widget),gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entVirtualKeyboard"))));
+    } else if(GTK_IS_TEXT_VIEW(widget)) {
+      tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+      gtk_text_buffer_get_start_iter(tb, &start);
+      gtk_text_buffer_get_end_iter(tb, &end);
+      data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+
+      gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget)), data, -1);
+    }
+  } else {
+    strncpy(vkdata->obj.pchar.buffer, gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entVirtualKeyboard"))), vkdata->obj.pchar.size);
+    vkdata->obj.pchar.buffer[vkdata->obj.pchar.size] = 0;
+    if(vkdata->obj.pchar.finish != NULL) {
+      (*vkdata->obj.pchar.finish)(vkdata, TRUE);
+    }
+  }
+
+  free(vkdata);
+
+  SairVirtualKeyboard();
+}
+
+void cbVirtualKeyboardCancelar(GtkButton *button, gpointer user_data)
+{
+  VKData *vkdata = (VKData *)user_data;
+
+  if(vkdata->type == VK_TYPE_PCHAR && vkdata->obj.pchar.finish != NULL) {
+    (*vkdata->obj.pchar.finish)(vkdata, FALSE);
+  }
+
+  free(vkdata);
+
+  SairVirtualKeyboard();
+}
+
+void AbrirVirtualKeyboard(VKData *vkdata)
+{
+  VKData *vkd;
+  const char *msg = NULL;
+  char *data, nome_label[100];
+  GtkWidget *obj, *widget = vkdata->obj.widget;
+  GtkEntry *entry;
+  GtkTextBuffer *tb;
+  GtkLabel *lbl = NULL, *lblVK;
+  GtkTextView *textview;
+  GtkTextIter start, end;
+  GtkScrolledWindow *scrollwnd;
+
+  // Lê o texto atual.
+  if(vkdata->type == VK_TYPE_WIDGET) {
+    if(GTK_IS_ENTRY(widget)) {
+      data = (char *)gtk_entry_get_text(GTK_ENTRY(widget));
+    } else if(GTK_IS_TEXT_VIEW(widget)) {
+      tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+      gtk_text_buffer_get_start_iter(tb, &start);
+      gtk_text_buffer_get_end_iter(tb, &end);
+      data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+    } else {
+      return; // Objeto nao suportado
+    }
+
+    // Tenta carregar o label relacionado ao campo de texto
+    sprintf(nome_label, "lbl%s", (char *)(gtk_buildable_get_name(GTK_BUILDABLE(widget))+3));
+    lbl   = GTK_LABEL(gtk_builder_get_object(builder, nome_label));
+    if(lbl && GTK_IS_LABEL(lbl)) {
+      msg = gtk_label_get_text(lbl);
+    }
+  } else if(vkdata->type == VK_TYPE_PCHAR) {
+    data = vkdata->obj.pchar.buffer;
+    msg  = vkdata->obj.pchar.msg;
+  } else { // Tipo nao suportado!
+    return;
+  }
+
+  vkd  = (VKData *)malloc(sizeof(VKData));
+  *vkd = *vkdata;
+
+  lblVK = GTK_LABEL(gtk_builder_get_object(builder, "lblVirtualKeyboard"));
+
+  if(msg != NULL) {
+    gtk_label_set_text(lblVK, msg);
+    gtk_widget_set_visible(GTK_WIDGET(lblVK), TRUE );
+  } else {
+    gtk_widget_set_visible(GTK_WIDGET(lblVK), FALSE);
+  }
+
+// Carrega o ponteiro para o botão de confirmar.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
+
+// Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardOK),
+              (gpointer)(vkd));
+
+  // Carrega o ponteiro para o botão de cancelar.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
+
+  // Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardCancelar),
+                (gpointer)(vkd));
+
+  // Carrega ponteiro para os campos de edição
+  entry     = GTK_ENTRY          (gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  textview  = GTK_TEXT_VIEW      (gtk_builder_get_object(builder, "txvVirtualKeyboard"));
+  scrollwnd = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "scwVirtualKeyboard"));
+
+  // Carrega o texto e ativa o objeto correspondente
+  if(vkdata->type == VK_TYPE_PCHAR || GTK_IS_ENTRY(widget)) {
+    gtk_entry_set_text(entry, data);
+    if(vkdata->type == VK_TYPE_PCHAR) {
+      gtk_entry_set_visibility(entry, TRUE);
+    } else {
+      gtk_entry_set_visibility(entry, gtk_entry_get_visibility(GTK_ENTRY(widget)));
+    }
+    gtk_widget_set_visible(GTK_WIDGET(entry    ), TRUE );
+    gtk_widget_set_visible(GTK_WIDGET(textview ), FALSE);
+    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), FALSE);
+
+    GtkEditable *editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
+    gtk_editable_set_position(editable, -1);
+//    gtk_widget_grab_focus (GTK_WIDGET(entry    ));
+  } else {
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(textview), data, -1);
+    gtk_widget_set_visible(GTK_WIDGET(entry    ), FALSE);
+    gtk_widget_set_visible(GTK_WIDGET(textview ), TRUE );
+    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), TRUE );
+//    gtk_widget_grab_focus (GTK_WIDGET(textview ));
+  }
+
+// Exibe a janela.
+  WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
+}
+
 void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
 {
   gboolean estado;
@@ -475,11 +733,62 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
     }
 }
 
+typedef struct strModData ModData;
+
+struct strModData {
+  char **valores;
+  char **opt_piloto;
+};
+
+void FinalizaInserirModelo(VKData *vkdata, int result)
+{
+  char sql[400];
+  GtkWidget   *wnd;
+  GtkComboBox *obj;
+  ModData *md = (ModData *)vkdata->obj.pchar.user_data;
+
+  if(result == TRUE)
+    {
+    sprintf(sql, "select ID from modelos where nome='%s'", vkdata->obj.pchar.buffer);
+    DB_Execute(&mainDB, 0, sql);
+    if(DB_GetNextRow(&mainDB, 0)>0)
+      {
+      wnd = gtk_message_dialog_new (NULL,
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_ERROR,
+                GTK_BUTTONS_OK,
+                "O modelo '%s' já existe!",
+                vkdata->obj.pchar.buffer);
+
+      gtk_dialog_run(GTK_DIALOG(wnd));
+      gtk_widget_destroy (wnd);
+      }
+    else // O modelo não existe. Realizando inserção.
+      {
+      sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
+             "values ('%s', '%d', '%s', '%s', '%s', '%d')",
+             vkdata->obj.pchar.buffer, BuscaStringLista(md->opt_piloto, md->valores[1], FALSE), md->valores[2], md->valores[3], md->valores[4], MOD_ESTADO_ATIVO);
+      DB_Execute(&mainDB, 0, sql);
+
+      obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbModNome"));
+      CarregaItemCombo(obj, vkdata->obj.pchar.buffer);
+      gtk_combo_box_set_active(obj, 0);
+      cbConfigModeloSelecionado(obj, NULL);
+
+      sprintf(sql, "Adicionado modelo %s", vkdata->obj.pchar.buffer);
+      Log(sql, LOG_TIPO_CONFIG);
+
+      MessageBox("Modelo adicionado com sucesso!");
+      }
+    } else {
+      MessageBox("Operação cancelada!");
+    }
+}
+
 void cbAplicarModelo(GtkButton *button, gpointer user_data)
 {
-  char sql[400], *nome;
-
-  char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
+  char sql[400];
+  static char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
   char *campos[] =
     {
     "cmbModNome",
@@ -489,8 +798,9 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
     "entModTamMin",
     ""
     };
+  static ModData md = { valores, opt_piloto };
 
-  GtkWidget *dialog, *obj, *wnd, *entry;
+  GtkWidget *dialog, *obj;
 
   if(!LerValoresWidgets(campos, valores))
     return; // Ocorreu algum erro lendo os campos. Retorna.
@@ -522,61 +832,22 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
 
       MessageBox("Modelo alterado com sucesso!");
       }
+
+    gtk_widget_destroy (dialog);
     }
   else
     {
-    wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-    dialog = gtk_dialog_new_with_buttons ("Digite o nome do modelo:",
-          GTK_WINDOW(wnd),
-          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR,
-          GTK_STOCK_OK,
-          GTK_RESPONSE_OK,
-          GTK_STOCK_CANCEL,
-          GTK_RESPONSE_CANCEL,
-          NULL);
+    VKData vkdata;
+    vkdata.type                = VK_TYPE_PCHAR;
+    vkdata.obj.pchar.buffer    = (char *)malloc(21);
+    vkdata.obj.pchar.size      = 20;
+    vkdata.obj.pchar.msg       = "Nome do Modelo";
+    vkdata.obj.pchar.finish    = FinalizaInserirModelo;
+    vkdata.obj.pchar.user_data = &md;
+    vkdata.obj.pchar.buffer[0] = 0;
 
-    // TODO: Ler do banco de dados o tamanho do campo de nome.
-    entry = gtk_entry_new_with_max_length(20);
-    gtk_container_add (GTK_CONTAINER (GTK_DIALOG(dialog)->vbox), entry);
-    AbrirJanelaModal(dialog);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
-      {
-      nome = (char *)(gtk_entry_get_text(GTK_ENTRY(entry)));
-      sprintf(sql, "select ID from modelos where nome='%s'", nome);
-      DB_Execute(&mainDB, 0, sql);
-      if(DB_GetNextRow(&mainDB, 0)>0)
-        {
-        wnd = gtk_message_dialog_new (NULL,
-                  GTK_DIALOG_DESTROY_WITH_PARENT,
-                  GTK_MESSAGE_ERROR,
-                  GTK_BUTTONS_OK,
-                  "O modelo '%s' já existe!",
-                  nome);
-
-        gtk_dialog_run(GTK_DIALOG(wnd));
-        gtk_widget_destroy (wnd);
-        }
-      else // O modelo não existe. Realizando inserção.
-        {
-        sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
-               "values ('%s', '%d', '%s', '%s', '%s', '%d')",
-               nome, BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], MOD_ESTADO_ATIVO);
-        DB_Execute(&mainDB, 0, sql);
-
-        CarregaItemCombo(GTK_COMBO_BOX(obj), nome);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-        cbConfigModeloSelecionado(GTK_COMBO_BOX(obj), NULL);
-
-        sprintf(sql, "Adicionado modelo %s", nome);
-        Log(sql, LOG_TIPO_CONFIG);
-
-        MessageBox("Modelo adicionado com sucesso!");
-        }
-      }
+    AbrirVirtualKeyboard(&vkdata);
     }
-
-  gtk_widget_destroy (dialog);
 }
 
 void cbRemoverModelo(GtkButton *button, gpointer user_data)
@@ -649,7 +920,7 @@ void cbConfigOk(GtkButton *button, gpointer user_data)
       return;
     }
 
-  Log("Alterada configuração da máquina", LOG_TIPO_CONFIG);
+  Log("Alterada configuracao da maquina", LOG_TIPO_CONFIG);
 
   GravarDadosConfig();
 }
@@ -667,7 +938,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
   char senha[20], *tmpPerm;
 
   // Verifica se conectamos no banco SQL Server
-  if(!(sDB->status & DB_FLAGS_CONNECTED)) {
+  if(!(sDB && (sDB->status & DB_FLAGS_CONNECTED))) {
     sDB = &mainDB; // Não conectamos, tenta login local
     MessageBox("Erro ao conectar ao servidor, tentando conexão local");
   }
@@ -711,7 +982,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
         strcpy(UserPerm, tmpPerm);
 
         // Se conectou pelo SQL Server, sincronizar usuário e permissões com o MySQL
-        if(!strcmp(sDB->DriverID, "MSSQL")) {
+        if(sDB->DriverID != NULL && !strcmp(sDB->DriverID, "MSSQL")) {
           // Primeiro sincroniza os perfis
           if(MSSQL_Execute(1, "select * from PERFIL", MSSQL_DONT_SYNC) >= 0) {
             // Exclui registros antigos
@@ -787,7 +1058,7 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
     {
 // DB_Execute() retorna -1 se ocorrer um erro ou zero no sucesso.
 // Se algum retornar algo diferente de zero existe um erro com o banco!
-    if(DB_Execute(&tmpDB, 0, "select * from usuarios") ||
+    if(DB_Execute(&tmpDB, 0, "select * from OPERADOR") ||
        DB_Execute(&tmpDB, 1, "select * from tarefas" ) ||
        DB_Execute(&tmpDB, 2, "select * from modelos" ) ||
        DB_Execute(&tmpDB, 3, "select * from clientes"))
@@ -823,12 +1094,83 @@ void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 
 extern unsigned int CurrentStatus;
 
+typedef struct strWAList WAList;
+
+struct strWAList {
+  int WorkArea;
+  WAList *next;
+};
+
+WAList *WA_PreviousList = NULL;
+
+WAList * AddWA(WAList **list, int WA)
+{
+  int i = 1;
+  WAList *newWA;
+
+  if(list == NULL) {
+    return NULL;
+  }
+
+  newWA = (WAList *)malloc(sizeof(WAList));
+  newWA->WorkArea = WA;
+  newWA->next     = NULL;
+
+  if(*list == NULL) {
+    *list = newWA;
+  } else {
+    WAList *current = *list;
+    while(current->next != NULL) {
+      i++;
+      current = current->next;
+    }
+
+    current->next = newWA;
+  }
+
+  return newWA;
+}
+
+int RemoveWA(WAList **list)
+{
+  int i = 0;
+  int WA = NTB_ABA_HOME; // Por default retorna a tela anterior como a aba HOME.
+
+  if(list != NULL && *list != NULL) {
+    WAList *current = *list, *previous = NULL;
+    while(current->next != NULL) {
+      i++;
+      previous = current;
+      current = current->next;
+    }
+
+    WA = current->WorkArea;
+    free(current);
+
+    if(previous == NULL) {
+      *list = NULL;
+    } else {
+      previous->next = NULL;
+    }
+  }
+
+  return WA;
+}
+
 void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
 {
-  PreviousWorkArea = CurrentWorkArea;
+  if(CurrentWorkArea != NTB_ABA_NONE) {
+    AddWA(&WA_PreviousList, CurrentWorkArea);
+  }
   CurrentWorkArea  = arg1;
 
-  if((arg1 == NTB_ABA_HOME || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
+  if(CurrentWorkArea != NTB_ABA_ESPERA && CurrentWorkArea != NTB_ABA_MESSAGEBOX) {
+    atividade++;
+  }
+
+  if(CurrentWorkArea == NTB_ABA_POWERDOWN && !OnPowerDown) {
+    WorkAreaGoPrevious(); // Tela nao faz mais sentido agora, energia restabelecida!
+  } else if((arg1 == NTB_ABA_HOME || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
     WorkAreaGoTo(NTB_ABA_INDETERMINADO);
   }
 }
@@ -840,16 +1182,25 @@ void WorkAreaGoTo(int NewWorkArea)
   // Marca a anterior como a nova e, ao sair do message box, esta nova sera selecionada.
   if(CurrentWorkArea == NewWorkArea) {
     return;
-  } else if(CurrentWorkArea != NTB_ABA_MESSAGEBOX) {
+  } else if(CurrentWorkArea != NTB_ABA_MESSAGEBOX || NewWorkArea == NTB_ABA_ESPERA ||
+      (NewWorkArea == NTB_ABA_POWERDOWN && CurrentWorkArea != NTB_ABA_ESPERA)) {
+    // Se estiver indo para a aba HOME, exclui lista de telas anteriores e desmarca tela atual.
+    if(NewWorkArea == NTB_ABA_HOME) {
+      CurrentWorkArea = NTB_ABA_NONE;
+      while(WA_PreviousList != NULL)
+        RemoveWA(&WA_PreviousList);
+    }
+
     gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NewWorkArea);
   } else if(NewWorkArea != NTB_ABA_MESSAGEBOX) {
-    PreviousWorkArea = NewWorkArea;
+    AddWA(&WA_PreviousList, NewWorkArea);
   }
 }
 
 void WorkAreaGoPrevious()
 {
-  WorkAreaGoTo(PreviousWorkArea);
+  CurrentWorkArea = NTB_ABA_NONE;
+  WorkAreaGoTo(RemoveWA(&WA_PreviousList));
 }
 
 int WorkAreaGet()
@@ -860,7 +1211,6 @@ int WorkAreaGet()
 void cbMessageBoxOk(GtkButton *button, gpointer user_data)
 {
   MaqLimparErro();
-  CurrentWorkArea = NTB_ABA_HOME;
   WorkAreaGoPrevious();
 }
 
@@ -874,195 +1224,9 @@ void cbGoHome(GtkButton *button, gpointer user_data)
   WorkAreaGoTo(NTB_ABA_HOME);
 }
 
-void SairVirtualKeyboard()
-{
-  GtkButton *button;
-  guint signal_id;
-  gulong handler_id;
-
-  // Recebe o ID do sinal do callback
-  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
-
-  // Remove do botao Cancelar
-  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
-  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect(button, handler_id);
-
-  // Remove do botao OK
-  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
-  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect(button, handler_id);
-
-  WorkAreaGoPrevious();
-}
-
-void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
-{
-  int pos;
-  GtkEditable *editable;
-  GtkTextBuffer *tb;
-  GtkTextIter cursor;
-  gchar *str = (gchar *)gtk_button_get_label(button);
-
-  // Verifica o label para identificar se foi clicado espaco, backspace ou enter.
-  if        (!strcmp(str, "Enter")) {
-    str = "\n";
-  } else if (!strcmp(str, "Espaço")) {
-    str = " ";
-  } else if (!strcmp(str, "gtk-clear")) {
-    str = NULL;
-  }
-
-  editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
-  if(gtk_widget_get_visible(GTK_WIDGET(editable))) {
-    if(str != NULL) {
-      pos = gtk_editable_get_position(editable);
-      gtk_editable_insert_text(editable, str, -1, &pos);
-      gtk_editable_set_position(editable, pos);
-    } else if (gtk_editable_get_selection_bounds(editable, &pos, &pos)) {
-      gtk_editable_delete_selection(editable);
-    } else {
-      pos = gtk_editable_get_position(editable);
-      if(pos) {
-        gtk_editable_delete_text(editable, pos-1, pos);
-      }
-    }
-  } else {
-    tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-
-    if(str != NULL) {
-      gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
-    } else {
-      if (gtk_text_buffer_get_has_selection (tb)) {
-        gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
-      } else {
-        gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
-        gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
-      }
-    }
-  }
-}
-
-void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data)
-{
-  char tmp[10], *label;
-  unsigned int i;
-  GtkButton *wdg;
-  gboolean toggled = gtk_toggle_button_get_active(button);
-
-  for(i=1;;i++) { // Loop eterno, finaliza quando acabarem os botoes
-    sprintf(tmp, "btnVK%02d", i);
-    wdg = GTK_BUTTON(gtk_builder_get_object(builder, tmp));
-    if(wdg == NULL) // Acabaram os botoes
-      break; // Sai do loop
-
-    // Se não for uma letra, altera para o que deve ser
-    label = (char *)gtk_button_get_label(wdg);
-    if(!strcmp(label, "Ç")) {
-      strcpy(tmp, "ç");
-    } else if(!strcmp(label, "ç")) {
-      strcpy(tmp, "Ç");
-    } else if(!strcmp(label, ".")) {
-      strcpy(tmp, ",");
-    } else if(!strcmp(label, ",")) {
-      strcpy(tmp, ".");
-    } else { // Letra, inverte case.
-      sprintf(tmp, "%c", (toggled ? toupper : tolower)(*label));
-    }
-
-    gtk_button_set_label(wdg, tmp);
-  }
-}
-
-void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
-{
-  char *data;
-  GtkTextBuffer *tb;
-  GtkTextIter start, end;
-  GtkWidget *widget = (GtkWidget *)user_data;
-
-  if(GTK_IS_ENTRY(widget)) {
-    gtk_entry_set_text(GTK_ENTRY(widget),gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entVirtualKeyboard"))));
-  } else if(GTK_IS_TEXT_VIEW(widget)) {
-    tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-    gtk_text_buffer_get_start_iter(tb, &start);
-    gtk_text_buffer_get_end_iter(tb, &end);
-    data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
-
-    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget)), data, -1);
-  }
-
-  SairVirtualKeyboard();
-}
-
-void cbVirtualKeyboardCancelar(GtkButton *button, gpointer user_data)
-{
-  SairVirtualKeyboard();
-}
-
-void AbrirVirtualKeyboard(GtkWidget *widget)
-{
-  char *data;
-  GtkWidget *obj;
-  GtkEntry *entry;
-  GtkTextBuffer *tb;
-  GtkTextView *textview;
-  GtkTextIter start, end;
-  GtkScrolledWindow *scrollwnd;
-
-  // Lê o texto atual.
-  if(GTK_IS_ENTRY(widget)) {
-    data = (char *)gtk_entry_get_text(GTK_ENTRY(widget));
-  } else if(GTK_IS_TEXT_VIEW(widget)) {
-    tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
-    gtk_text_buffer_get_start_iter(tb, &start);
-    gtk_text_buffer_get_end_iter(tb, &end);
-    data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
-  } else {
-    return; // Objeto nao suportado
-  }
-
-// Carrega o ponteiro para o botão de confirmar.
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
-
-// Conexão dos sinais de callback
-  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardOK),
-              (gpointer)(widget));
-
-  // Carrega o ponteiro para o botão de cancelar.
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
-
-  // Conexão dos sinais de callback
-  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardCancelar),
-                (gpointer)(widget));
-
-  // Carrega ponteiro para os campos de edição
-  entry     = GTK_ENTRY          (gtk_builder_get_object(builder, "entVirtualKeyboard"));
-  textview  = GTK_TEXT_VIEW      (gtk_builder_get_object(builder, "txvVirtualKeyboard"));
-  scrollwnd = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "scwVirtualKeyboard"));
-
-  // Carrega o texto e ativa o objeto correspondente
-  if(GTK_IS_ENTRY(widget)) {
-    gtk_entry_set_text(entry, data);
-    gtk_entry_set_visibility(entry, gtk_entry_get_visibility(GTK_ENTRY(widget)));
-    gtk_widget_set_visible(GTK_WIDGET(entry    ), TRUE );
-    gtk_widget_set_visible(GTK_WIDGET(textview ), FALSE);
-    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), FALSE);
-//    gtk_widget_grab_focus (GTK_WIDGET(entry    ));
-  } else {
-    gtk_text_buffer_set_text(gtk_text_view_get_buffer(textview), data, -1);
-    gtk_widget_set_visible(GTK_WIDGET(entry    ), FALSE);
-    gtk_widget_set_visible(GTK_WIDGET(textview ), TRUE );
-    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), TRUE );
-//    gtk_widget_grab_focus (GTK_WIDGET(textview ));
-  }
-
-// Exibe a janela.
-  WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
-}
-
 gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
+  VKData vkdata;
   static int ignorar = 0;
 
   if(WorkAreaGet() == NTB_ABA_VIRTUAL_KB) {
@@ -1072,7 +1236,9 @@ gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 
   if(!ignorar) {
     ignorar = 1;
-    AbrirVirtualKeyboard(widget);
+    vkdata.type = VK_TYPE_WIDGET;
+    vkdata.obj.widget = widget;
+    AbrirVirtualKeyboard(&vkdata);
     WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
     return TRUE;
   }
@@ -1199,6 +1365,112 @@ void AbrirData(GtkEntry *entry, GCallback cb)
 
 // Exibe a janela.
   WorkAreaGoTo(NTB_ABA_DATA);
+}
+
+// Funcao executada quando for clicado Mudar Senha na tela de Login
+void cbMudarSenha(GtkButton *button, gpointer user_data)
+{
+  char user[100];
+  // Limpa os campos de texto
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual"   )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaNova"    )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaConfirma")), "");
+
+  // Carrega campo exibindo o usuario sendo alterado
+  sprintf(user, "Alterando senha para o usuário %s",
+      LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblSenhaUsuario")), user);
+
+  WorkAreaGoTo(NTB_ABA_MUDAR_SENHA);
+}
+
+// Funcao executada quando for aplicada a alteracao de senha
+void cbSenhaAlterar(GtkButton *button, gpointer user_data)
+{
+  int i;
+  struct strDB *sDB;
+  char senha[100], sql[100];
+  char *user     = (char*)gtk_label_get_text(GTK_LABEL(gtk_builder_get_object(builder, "lblSenhaUsuario" )));
+  char *lembrete = (char*)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaLembrete")));
+
+  strcpy(senha, gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaNova"))));
+  if(strcmp(senha, gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaConfirma"))))) {
+    MessageBox("Nova senha e confirmação são diferentes!");
+    return;
+  }
+
+  for(i=strlen(user)-1; i>=0; i--) {
+    if(user[i] == ' ') {
+      i++;
+      break;
+    }
+  }
+
+  if(i>0 && (sDB = MSSQL_Connect()) != NULL) {
+    sprintf(sql, "select SENHA from OPERADOR where USUARIO='%s'", user+i);
+    MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
+    DB_GetNextRow(sDB, 0);
+    if(!strcmp(Crypto((char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual")))), MSSQL_GetData(0, 0))) {
+      sprintf(sql, "update OPERADOR set SENHA='%s', LEMBRETE='%s' where USUARIO='%s'", Crypto(senha), lembrete, user+i);
+      MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
+      MessageBox("Senha alterada com sucesso!");
+      sprintf(sql, "Alterada senha do usuario %s", user+i);
+      Log(sql, LOG_TIPO_SISTEMA);
+      WorkAreaGoPrevious();
+    } else {
+      MessageBox("Senha atual inválida!");
+    }
+  }
+}
+
+// Funcao executada quando for cancelada a alteracao de senha
+void cbSenhaCancelar(GtkButton *button, gpointer user_data)
+{
+  WorkAreaGoPrevious();
+}
+
+// Funcao executada quando for clicado botao "Calcular Fator de Correcao do Encoder"
+void cbCalcFatorPerfil(GtkButton *button, gpointer user_data)
+{
+  // Limpa os campos das medidas
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamMedido" )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamCorreto")), "");
+
+  // Vai para a tela de calculo do fator
+  WorkAreaGoTo(NTB_ABA_CALC_FATOR);
+}
+
+// Funcao executada quando clicar para confirmar alteracao do fator do encoder
+void cbCalcFatorConfirma(GtkButton *button, gpointer user_data)
+{
+  int   NovoFator;
+  char  StringFator[20];
+  int   TamMedido     = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamMedido" ))));
+  int   TamCorreto    = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamCorreto"))));
+  float FatorAnterior = atof(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator"       ))));;
+
+  if(TamCorreto && TamMedido && FatorAnterior) {
+    NovoFator = (int)(((float)(TamCorreto*10000)*FatorAnterior) / TamMedido);
+
+    // Arredonda e depois remove a casa adicional
+    if((NovoFator%10)>5) {
+      NovoFator += 10;
+    }
+    NovoFator /= 10;
+
+    sprintf(StringFator, "%.03f", (float)(NovoFator)/1000);
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator")), StringFator);
+  } else {
+    MessageBox("Parâmetros inválidos!\nAs medidas e o fator atual devem ser diferentes de zero!");
+  }
+
+  WorkAreaGoPrevious();
+}
+
+// Funcao executada quando clicar para cancelar alteracao do fator do encoder
+void cbCalcFatorCancelar(GtkButton *button, gpointer user_data)
+{
+  WorkAreaGoPrevious();
 }
 
 #endif

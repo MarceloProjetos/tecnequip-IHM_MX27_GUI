@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <errno.h>
 #include <iconv.h>
+#include <sys/ioctl.h>
 
 #include <gtk/gtk.h>
 
@@ -17,25 +18,44 @@
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
-#include "serial.h"
-#include <comm.h>
 #include "modbus_rtu.h"
 #include <DB.h>
 #include <crypt.h>
 
+#include "io.h"
 #include "maq.h"
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+#include "twl4030-madc.h"
 
 /*** Definições gerais ***/
 
 // Ativar a linha abaixo para rodar o programa em um PC
-#define DEBUG_PC
+//#define DEBUG_PC
 
 // Ativar a linha abaixo para desativar a comunicação pela Ethernet
-#define DEBUG_PC_NOETH
+//#define DEBUG_PC_NOETH
+
+// Ativar a linha abaixo para rodar em modo de teste
+#define DEBUG_MODO_TESTE
 
 // Definicao da Linha/Maquina que este programa via rodar
+#ifndef DEBUG_MODO_TESTE
 #define MAQ_LINHA   "PPSIG"
 #define MAQ_MAQUINA "PPSIG"
+#define MSG_SEM_ERRO "Sem Erros"
+#else
+#define MAQ_LINHA    "TESTE"
+#define MAQ_MAQUINA  "TESTE"
+
+#ifndef DEBUG_PC_NOETH
+#define MSG_SEM_ERRO "Máquina em Modo de Teste"
+#else
+#define MSG_SEM_ERRO "Máquina em Modo de Teste - Desconectada"
+#endif
+
+#endif
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"
@@ -112,6 +132,11 @@
 #define NTB_ABA_LOGIN         13
 #define NTB_ABA_DADOS_PEDIDO  14
 #define NTB_ABA_INDETERMINADO 15
+#define NTB_ABA_ESPERA        16
+#define NTB_ABA_MUDAR_SENHA   17
+#define NTB_ABA_CALC_FATOR    18
+#define NTB_ABA_POWERDOWN     19
+#define NTB_ABA_NONE          99
 
 // Modos de corte da peça
 #define MODO_CORTE_HIDR  0
@@ -121,6 +146,34 @@
 #define CONV_PCHAR_UINT16(data) (((uint16_t)(*(data+1))<<8) | (uint16_t)(*data))
 
 /*** Fim das definições gerais ***/
+
+// Funções e Estruturas relacionadas com o estado da IHM
+
+#define BOARD_AD_TEMP  0
+#define BOARD_AD_VBAT 12
+#define BOARD_AD_VIN  10
+
+#define BOARD_BATT_PRECHARGE 0
+#define BOARD_BATT_CHARGING  2
+#define BOARD_BATT_FULL      1
+#define BOARD_BATT_ERROR     3
+
+typedef struct strBoardStatus BoardStatus;
+
+struct strBoardStatus {
+  float ExternalVoltage;
+  float BatteryVoltage;
+  float Temperature;
+
+  int BatteryState;
+  int HasExternalPower;
+
+  int    dev;
+  struct twl4030_madc_user_parms *par;
+};
+
+// Variavel indicando que houve atividade
+extern int atividade;
 
 int  WorkAreaGet (void);
 void WorkAreaGoPrevious(void);
@@ -151,6 +204,8 @@ key_t fd_wr;
 #define IPCMQ_FNC_TEXT   0x01
 #define IPCMQ_FNC_POWER  0x02
 #define IPCMQ_FNC_MODBUS 0x03
+#define IPCMQ_FNC_STATUS 0x04
+#define IPCMQ_FNC_BATT   0x05
 
 struct strIPCMQ_Message {
   long mtype;
@@ -166,6 +221,8 @@ struct strIPCMQ_Message {
     } modbus_query;
     struct MODBUS_Reply modbus_reply;
     char text[IPCMQ_MAX_BUFSIZE];
+    BoardStatus bs;
+    int batt_level;
   } data;
 };
 
@@ -175,6 +232,9 @@ void IPCMQ_Threads_Enviar (struct strIPCMQ_Message *msg);
 int  IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg);
 
 /*** Fim das definições para Comunicação entre Threads ***/
+
+// Variavel indicando que a tela de desligamento esta ativada
+extern uint32_t OnPowerDown;
 
 // Prototipos de Funcoes
 void AbrirData  (GtkEntry *entry, GCallback cb);

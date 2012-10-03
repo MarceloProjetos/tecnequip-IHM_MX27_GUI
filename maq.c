@@ -1,8 +1,6 @@
 #include "defines.h"
 #include "maq.h"
 
-extern pthread_mutex_t mutex_gui_lock;
-
 extern void IPC_Update(void);
 
 // Função que retorna checksum de ponteiro
@@ -36,15 +34,11 @@ void retMaqMB(void *dt, void *res)
 void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
 {
 #ifndef DEBUG_PC_NOETH
-  pthread_mutex_lock  (&mutex_gui_lock);
-
   IPCMQ_Main_Enviar(ipc_msg);
   while(!rp->ready) {
     IPC_Update();
     usleep(100);
   }
-
-  pthread_mutex_unlock(&mutex_gui_lock);
 #else
   rp->modbus_reply.ExceptionCode = MODBUS_EXCEPTION_NONE;
 #endif
@@ -215,15 +209,15 @@ char *MaqStrErro(uint16_t erro)
 {
   uint32_t i;
   char *msg_erro[] = {
-      "Erro na comunicação",
-      "Emergência Acionada",
+      "Erro na comunicacao",
+      "Emergencia Acionada",
       "Falta de fase",
-      "Erro na unidade hidráulica",
+      "Erro na unidade hidraulica",
       "Erro no inversor",
       "Erro no desbobinador",
-      "Erro de comunicação - Inversor",
+      "Erro de comunicacao - Inversor",
       "Erro no Corte do Perfil",
-//      "Baixa pressão de ar",
+//      "Baixa pressao de ar",
   };
 
   if(!erro) // Sem erro, retorna string nula

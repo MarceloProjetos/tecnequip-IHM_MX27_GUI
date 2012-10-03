@@ -177,7 +177,7 @@ void GravarValorWidget(char *nome, char *valor)
 		gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(obj)), valor, -1);
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		gtk_combo_box_set_active(GTK_COMBO_BOX(obj), AchaIndiceCombo(GTK_COMBO_BOX(obj), valor));
-  else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "tgb", 3))
+  else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), atol(valor));
 }
 
@@ -209,7 +209,7 @@ char * LerValorWidget(char *nome)
 		gtk_text_buffer_get_end_iter(tb, &end);
 		return (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
 		}
-	else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "tgb", 3))
+	else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
 		return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(obj)) ? "1" : "0";
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		return (char *)(LerComboAtivo(GTK_COMBO_BOX(obj)));
@@ -332,13 +332,12 @@ void TV_GetSelected(GtkWidget *tvw, int pos, char *dado)
   if(gtk_tree_selection_get_selected(gtk_tree_view_get_selection(GTK_TREE_VIEW(tvw)), &model, &iter))
     {
     gtk_tree_model_get_value(model, &iter, pos, &valor);
-    if((char *)(g_value_get_string(&valor)) != NULL)
+    if((char *)(g_value_get_string(&valor)) != NULL) {
       strcpy(dado, (char *)(g_value_get_string(&valor)));
-    else
+      g_value_unset(&valor);
+    } else
       dado[0] = 0;
     }
   else
     dado[0] = 0;
-
-  g_value_unset(&valor);
 }

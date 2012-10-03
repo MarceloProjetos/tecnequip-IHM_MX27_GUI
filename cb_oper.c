@@ -30,6 +30,7 @@ void cbExecTarefa(GtkButton *button, gpointer user_data);
 
 // Estrutura que armazena os dados das tarefas do sistema
 struct strTask {
+  char Produto[51]; // Campo no banco: nvchar(50)
   unsigned int Tamanho, Qtd, QtdProd, ID, Origem;
   int Pedido, OrdemProducao, RomNumero, RomItem;
   struct strTask *Next;
@@ -89,20 +90,18 @@ void LogProd(struct strTask *Task, int LogMode)
   static unsigned int QtdProdStart;
   char sql[500], agora[100], evento[100];
 
-  MSSQL_Connect();
-
   if(LogMode == LOGPROD_START) {
     QtdProdStart = Task->QtdProd;
 
-    sprintf(sql, "insert into LOG_ORDEM_PRODUCAO (LINHA, MAQUINA, OPERADOR, PEDIDO, ORDEM_PRODUCAO, ROMANEIO, ITEM, MANUAL) values ('%s','%s','%d','%d','%d','%d','%d','%d')",
-        MAQ_LINHA, MAQ_MAQUINA, idUser, Task->Pedido, Task->OrdemProducao, Task->RomNumero, Task->RomItem, Task->Origem);
+    sprintf(sql, "insert into LOG_ORDEM_PRODUCAO (LINHA, MAQUINA, OPERADOR, PEDIDO, ORDEM_PRODUCAO, ROMANEIO, ITEM, PRODUTO, TAMANHO, MANUAL) values ('%s','%s','%d','%d','%d','%d','%d','%s','%d','%d')",
+        MAQ_LINHA, MAQ_MAQUINA, idUser, Task->Pedido, Task->OrdemProducao, Task->RomNumero, Task->RomItem, Task->Produto, Task->Tamanho, Task->Origem);
 
-    sprintf(evento, "Produzindo %d peça(s) de %d mm", Task->Qtd - Task->QtdProd, Task->Tamanho);
+    sprintf(evento, "Produzindo %d peca(s) de %d mm", Task->Qtd - Task->QtdProd, Task->Tamanho);
   } else {
     sprintf(sql, "update LOG_ORDEM_PRODUCAO set DATA_FINAL='%s', PRODUZIDO='%d' where ID=(select MAX(ID) from LOG_ORDEM_PRODUCAO where LINHA='%s' and MAQUINA='%s')",
         MSSQL_DateFromTimeT(time(NULL), agora), Task->QtdProd - QtdProdStart, MAQ_LINHA, MAQ_MAQUINA);
 
-    sprintf(evento, "Produzida(s) %d peça(s)", Task->QtdProd - QtdProdStart);
+    sprintf(evento, "Produzida(s) %d peca(s)", Task->QtdProd - QtdProdStart);
   }
 
   MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
@@ -232,9 +231,9 @@ void InsertLocalTask(void)
 
   // Salva dados da tarefa atual
   currTask->ID      = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID"     )));
-  currTask->Tamanho = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tamanho")));
-  currTask->Qtd     = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "qtd"    )));
-  currTask->QtdProd = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "qtdprod")));
+  currTask->Tamanho = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Tamanho")));
+  currTask->Qtd     = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd"    )));
+  currTask->QtdProd = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "QtdProd")));
 
   // Carrega os dados referentes ao pedido
   tmp = DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Pedido"));
@@ -251,7 +250,7 @@ void CarregaListaTarefas(GtkWidget *tvw)
   struct strTask *currTask;
   const int tam = 9;
   struct strDB *mssqlDB;
-  char *valores[tam+1], sql[300];
+  char *valores[tam+1], sql[500];
 
   valores[tam] = NULL;
 
@@ -262,7 +261,7 @@ void CarregaListaTarefas(GtkWidget *tvw)
   TV_Limpar(tvw);
 
   // Carrega as tarefas do MySQL
-  sprintf(sql, "select t.ID, c.nome, t.Pedido, m.nome, t.qtd, t.qtdprod, t.tamanho, t.data, t.coments, t.OrdemProducao, t.RomNumero, t.RomItem from modelos as m, tarefas as t, clientes as c where c.ID = t.ID_Cliente and m.ID = t.ID_Modelo and (t.estado='%d' or t.estado='%d') and m.estado='%d' order by data",
+  sprintf(sql, "select t.ID, c.nome, t.Pedido, m.nome, t.qtd as Qtd, t.qtdprod as QtdProd, t.tamanho as Tamanho, t.data, t.coments, t.OrdemProducao, t.RomNumero, t.RomItem from modelos as m, tarefas as t, clientes as c where c.ID = t.ID_Cliente and m.ID = t.ID_Modelo and (t.estado='%d' or t.estado='%d') and m.estado='%d' order by data",
       TRF_ESTADO_NOVA, TRF_ESTADO_PARCIAL, MOD_ESTADO_ATIVO);
   DB_Execute(&mainDB, 0, sql);
   while(DB_GetNextRow(&mainDB, 0)>0)
@@ -285,8 +284,8 @@ void CarregaListaTarefas(GtkWidget *tvw)
 
   // Carrega as tarefas do sistema (SQL Server) se conseguir a conexao.
   mssqlDB = MSSQL_Connect();
-  if(mssqlDB->status == DB_FLAGS_CONNECTED) {
-    sprintf(sql, "select ORDEM_PRODUCAO, CLIENTE, PEDIDO, TIPO, QUANTIDADE, PRODUZIDO, TAMANHO, DT_INICIO, MATERIAL, ROMANEIO, ITEM from ORDEM_PRODUCAO where LINHA='%s' and MAQUINA='%s' and QUANTIDADE <> PRODUZIDO order by MATERIAL", MAQ_LINHA, MAQ_MAQUINA);
+  if(mssqlDB && (mssqlDB->status == DB_FLAGS_CONNECTED)) {
+    sprintf(sql, "select ORDEM_PRODUCAO, CLIENTE, PEDIDO, TIPO, QUANTIDADE, PRODUZIDO, TAMANHO, DATA_INICIO, MATERIAL_DESCRICAO, ROMANEIO, ITEM, CODIGO from ORDEM_PRODUCAO where LINHA='%s' and MAQUINA='%s' and QUANTIDADE <> PRODUZIDO order by MATERIAL", MAQ_LINHA, MAQ_MAQUINA);
     MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
 
     while(DB_GetNextRow(mssqlDB, 0)>0) {
@@ -315,6 +314,8 @@ void CarregaListaTarefas(GtkWidget *tvw)
       currTask->Qtd           = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "QUANTIDADE"    )));
       currTask->QtdProd       = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "PRODUZIDO"     )));
 
+      strcpy(currTask->Produto, MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "CODIGO")));
+
       // Adiciona linha da tarefa no GtkTreeView
       TV_Adicionar(tvw, valores);
 
@@ -330,8 +331,7 @@ void CarregaListaTarefas(GtkWidget *tvw)
   }
 
   MSSQL_Close();
-
-  ConfigBotoesTarefa(tvw, FALSE);
+  ConfigBotoesTarefa(GTK_WIDGET(tvw), FALSE);
 }
 
 gboolean ChecarTarefa(int qtd, int qtdprod, int tamanho, int passo, int max, int min)
@@ -531,6 +531,7 @@ void cbEditarTarefa(GtkButton *button, gpointer user_data)
 {
   int i;
   GtkWidget *obj;
+  struct strTask *Task;
   char **valor, tmp[30], *campos[] = { "lblTarefaNumero", "cbeTarefaCliente", "entTarefaPedido", "cmbTarefaModNome", "entTarefaQtd", "0", "entTarefaTam", "entTarefaData", "txvTarefaComent", "" };
 
   IniciarDadosTarefa();
@@ -547,6 +548,11 @@ void cbEditarTarefa(GtkButton *button, gpointer user_data)
     if(strcmp(campos[i], "0")) // Se campo for diferente de zero devemos considerá-lo.
       {
       TV_GetSelected(obj, i, tmp);
+      if(!i) { // ID da Tarefa
+        Task = GetTask(atoi(tmp)-1);
+        if(Task != NULL)
+          sprintf(tmp, "%d", Task->ID);
+      }
       valor[i] = (char *)(malloc(strlen(tmp)+1));
       strcpy(valor[i], tmp);
       }
@@ -568,6 +574,7 @@ void cbEditarTarefa(GtkButton *button, gpointer user_data)
 
 void cbRemoverTarefa(GtkButton *button, gpointer user_data)
 {
+  struct strTask *Task;
   char sql[100], tmp[10];
   GtkWidget *dialog;
 
@@ -582,7 +589,8 @@ void cbRemoverTarefa(GtkButton *button, gpointer user_data)
 
   if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
     {
-    sprintf(sql, "update tarefas set estado='%d' where ID='%d'", TRF_ESTADO_REMOVIDA, atoi(tmp));
+    Task = GetTask(atoi(tmp)-1);
+    sprintf(sql, "update tarefas set estado='%d' where ID='%d'", TRF_ESTADO_REMOVIDA, Task->ID);
     DB_Execute(&mainDB, 0, sql);
 
     // Recarrega a lista de tarefas.
@@ -793,6 +801,7 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
 
 void cbExecParar(GtkButton *button, gpointer user_data)
 {
+  atividade++;
   MaqConfigModo(MAQ_MODO_MANUAL);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Terminando...");
   gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);

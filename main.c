@@ -1,11 +1,18 @@
+/* TODO List
+
+ 1 - Não dar foco a campos de texto quando abrir uma nova aba, evitando ocultar a
+aba sendo aberta
+ 2 - Verificar o código de login local pois o programa fechou sozinho
+ 3 - Executar o ntpdate no boot
+ 4 - Se o campo já está com o foco, não consigo abrir o teclado virtual
+
+*/
+
 #include "defines.h"
 #include <gtk/gtk.h>
 #include "GtkUtils.h"
 #include <time.h>
 #include <sys/time.h>
-
-extern SERIAL_TX_FNC(SerialTX);
-extern SERIAL_RX_FNC(SerialRX);
 
 extern void AbrirLog   ();
 extern void AbrirOper  ();
@@ -17,10 +24,8 @@ struct MODBUS_Device mbdev;
 struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
-pthread_mutex_t mutex_ipcmq_rd  = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_ipcmq_wr  = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_gui_lock  = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t mutex_comm_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ipcmq_rd   = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex_ipcmq_wr   = PTHREAD_MUTEX_INITIALIZER;
 
 // Funcoes para conexao ao SQL Server
 
@@ -82,7 +87,11 @@ int MSSQL_Execute(int nres, char *sql, unsigned int flags)
     return -1;
 
   sDB = MSSQL_Connect();
-  ret = DB_Execute(sDB, nres, sql);
+  if(sDB == NULL) {
+    ret = -1;
+  } else {
+    ret = DB_Execute(sDB, nres, sql);
+  }
 
   if(ret < 0) {
     if(flags & MSSQL_USE_SYNC) {
@@ -145,13 +154,14 @@ void MSSQL_Sync(void)
 struct strDB * MSSQL_Connect(void)
 {
   int ret;
+  static time_t timer = 0;
 
-  if(sMSDB == NULL) {
+  if(sMSDB == NULL && time(NULL) > timer) {
     sMSDB = (struct strDB *)malloc(sizeof(struct strDB));
     DB_Clear(sMSDB);
 
     sMSDB->DriverID = "MSSQL";
-    sMSDB->server   = "servidor.altamira.com.br";
+    sMSDB->server   = "AltamiraSQLServer";
     sMSDB->user     = "scada";
     sMSDB->passwd   = "altamira@2012";
     sMSDB->nome_db  = "SCADA";
@@ -159,6 +169,12 @@ struct strDB * MSSQL_Connect(void)
     ret = DB_Init(sMSDB);
     if(ret > 0) {
       MSSQL_Sync();
+    } else {
+      free(sMSDB);
+      sMSDB = NULL;
+
+      // Se ocorreu erro na conexao, aguarda 5 minutos para tentar novamente.
+      timer = time(NULL) + 300;
     }
   }
 
@@ -168,7 +184,7 @@ struct strDB * MSSQL_Connect(void)
 char * MSSQL_GetData(int nres, unsigned int pos)
 {
   struct strDB *sDB = MSSQL_Connect();
-  char *data = DB_GetData(sDB, nres, pos);
+  char *data = sDB != NULL ? DB_GetData(sDB, nres, pos) : NULL;
 
   if(data != NULL) {
     unsigned char *in = (unsigned char *)data, *out, *dest;
@@ -194,6 +210,63 @@ void MSSQL_Close(void)
   }
 }
 
+// Variavel indicando que houve atividade
+int atividade = 0;
+
+gboolean cbBackLightTurnOn(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+#ifndef DEBUG_PC
+  //comm_put(&(struct comm_msg){ COMM_FNC_BL, { 0x1 } });
+#endif
+
+  atividade++;
+
+  return TRUE;
+}
+
+void cbEspera(GtkButton *button, gpointer user_data)
+{
+  gchar *nome;
+  static uint32_t estado_espera = 0;
+  uint32_t selecionado;
+
+  atividade++;
+
+  if(button == NULL) { // Chamado diretamente, limpa estado e desliga backlight
+#ifndef DEBUG_PC
+    //comm_put(&(struct comm_msg){ COMM_FNC_BL, { 0x0 } });
+#endif
+    estado_espera = 0;
+  } else {
+    cbBackLightTurnOn(NULL, NULL, NULL);
+
+    nome = (gchar *)gtk_widget_get_name(GTK_WIDGET(button));
+    selecionado = atoi(&nome[strlen(nome)-1]);
+
+    if(selecionado == estado_espera+1) { // Selecionado botao seguinte
+      estado_espera = selecionado;
+      if(selecionado == 2) {
+        estado_espera = 0;
+        WorkAreaGoPrevious();
+      }
+    } else {
+      estado_espera = 0;
+    }
+  }
+}
+
+gboolean tmrActivity(gpointer data)
+{
+  if(!atividade) {
+    cbEspera(NULL, NULL); // Atualiza o modo de espera
+    WorkAreaGoTo(NTB_ABA_ESPERA);
+  } else {
+    atividade = 0;
+  }
+
+  return TRUE;
+}
+
 #define LOG_ID_SISTEMA 1
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
@@ -212,10 +285,10 @@ void Log(char *evento, int tipo)
     DB_Execute(&mainDB, 3, sql);
     }
 
-  MSSQL_Connect(); // Sempre conecta, nunca fecha. Não sabemos o estado atual!
   if(!log_in_mssql) {
     log_in_mssql = 1;
-    sprintf(sql, "insert into LOG_EVENTO (LINHA, MAQUINA, OPERADOR, TIPO, HISTORICO) values ('%s', '%s', '%d', '%d', '%s')", MAQ_LINHA, MAQ_MAQUINA, LogID, tipo, evento);
+    sprintf(sql, "insert into LOG_EVENTO (LINHA, MAQUINA, OPERADOR, TIPO, HISTORICO) values ('%s', '%s', '%d', '%d', '%s')",
+        MAQ_LINHA, MAQ_MAQUINA, LogID, tipo, evento);
     MSSQL_Execute(3, sql, MSSQL_USE_SYNC); // Mesmo que dê erro temos que inserir para sincronizarmos depois.
     log_in_mssql = 0;
   }
@@ -279,24 +352,6 @@ int32_t ihm_connect(char *host, int16_t port)
 struct PortaSerial *ps;
 int32_t tcp_socket = -1;
 
-COMM_FNC(CommTX)
-{
-#ifndef DEBUG_PC
-  return Transmitir(ps, (char *)data, size, 0);
-#else
-  return 0;
-#endif
-}
-
-COMM_FNC(CommRX)
-{
-#ifndef DEBUG_PC
-  return Receber(ps, (char *)data, size);
-#else
-  return 0;
-#endif
-}
-
 MODBUS_HANDLER_TX(IHM_MB_TX)
 {
   struct timeval tv;
@@ -332,7 +387,11 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
     printf("%02x ", data[i]);
   printf("\n");
 
-  tcp_socket = ihm_connect("192.168.2.235", 502);
+#ifndef DEBUG_PC
+  tcp_socket = ihm_connect("192.168.2.237", 502);
+#else
+  tcp_socket = ihm_connect("192.168.0.172", 502);
+#endif
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
@@ -477,8 +536,6 @@ void SetMaqStatus(unsigned int NewStatus)
     MSSQL_DateFromTimeT(t, data);
 
     // Insere o novo estado no banco e registra um log de evento
-    MSSQL_Connect();
-
     sprintf(sql, "update LOG_STATUS set DATA_FINAL='%s' where ID=(select MAX(ID) from LOG_STATUS where LINHA='%s' and MAQUINA='%s')",
         data, MAQ_LINHA, MAQ_MAQUINA);
     MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
@@ -513,61 +570,241 @@ void cbIndetMotivo(GtkButton *button, gpointer user_data)
   WorkAreaGoPrevious();
 }
 
-// Timers
-gboolean tmrAD(gpointer data)
+// Definições e Funções de controle da placa
+
+#define BOARD_ADDR_GPIO_ENABLE 0x4800218C
+#define BOARD_ADDR_GPIO_READ   0x49056038
+#define BOARD_ADDR_GPIO_CLEAR  0x49054090
+#define BOARD_ADDR_GPIO_SET    0x49054094
+
+int Board_HasExternalPower(BoardStatus *bs)
 {
-  if(WorkAreaGet() == NTB_ABA_HOME || WorkAreaGet() == NTB_ABA_MANUT) {
-    pthread_mutex_lock  (&mutex_comm_lock);
-    comm_put(&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
-    pthread_mutex_unlock(&mutex_comm_lock);
+  return bs->HasExternalPower;
+}
+
+void Board_GetAD(BoardStatus *bs, int channel)
+{
+#ifndef DEBUG_PC
+  int   ret;
+  float result;
+
+  if(channel < 0 || bs == NULL || bs->par == NULL)
+    return;
+
+  memset(bs->par, 0, sizeof(struct twl4030_madc_user_parms));
+  bs->par->channel = channel;
+
+  ret    = ioctl(bs->dev, TWL4030_MADC_IOCX_ADC_RAW_READ, bs->par);
+  result = ((unsigned int)bs->par->result) / 1024.f; // 10 bit ADC -> 1024
+
+  if (ret == 0 && bs->par->status != -1) {
+    switch(channel) {
+    case BOARD_AD_VBAT:
+      bs->BatteryVoltage  = result * 6.0;
+      break;
+
+    case BOARD_AD_VIN:
+      bs->ExternalVoltage = result * 0.0;
+      break;
+
+    case BOARD_AD_TEMP:
+      bs->Temperature     = result * 0.0;
+      break;
+    }
+  }
+#endif
+}
+
+void Board_Led(int TurnOn)
+{
+#ifndef DEBUG_PC
+  io_write(TurnOn ? BOARD_ADDR_GPIO_CLEAR : BOARD_ADDR_GPIO_SET, 0x40000000);
+#endif
+}
+
+void Board_GetPowerState(BoardStatus *bs)
+{
+  if(bs == NULL) return;
+
+#ifndef DEBUG_PC
+  int ps;
+
+  // Leitura dos GPIOs
+  ps = (io_read(BOARD_ADDR_GPIO_READ) >> 28)&7;
+
+  // GPIO 158 indica se existe VIN. Nivel baixo = VIN OK
+  bs->HasExternalPower = !((ps>>2)&1);
+
+  // GPIOs 156 e 157 indicam estado do carregador.
+  // 0 -> Precharge
+  // 1 -> Bateria carregada
+  // 2 -> Fast Charge
+  // 3 -> Erro na bateria
+  bs->BatteryState = ps&3;
+  if(!bs->BatteryState) // Precharge
+    bs->BatteryState = BOARD_BATT_CHARGING;
+#else
+  bs->HasExternalPower = 1;
+  bs->BatteryState     = BOARD_BATT_FULL;
+#endif
+}
+
+void Board_Update(BoardStatus *bs)
+{
+  Board_GetAD(bs, BOARD_AD_VIN );
+  Board_GetAD(bs, BOARD_AD_VBAT);
+  Board_GetAD(bs, BOARD_AD_TEMP);
+
+  Board_GetPowerState(bs);
+}
+
+void Board_Init(BoardStatus *bs)
+{
+  if(bs == NULL)
+    return;
+
+  memset(bs, 0, sizeof(BoardStatus));
+
+#ifndef DEBUG_PC
+  bs->dev = open("/dev/twl4030-madc", O_RDWR | O_NONBLOCK);
+  if(bs->dev >= 0) {
+    bs->par = malloc(sizeof(struct twl4030_madc_user_parms));
+  }
+
+  io_write(BOARD_ADDR_GPIO_ENABLE  , io_read(BOARD_ADDR_GPIO_ENABLE  ) | 0x01000100);
+  io_write(BOARD_ADDR_GPIO_ENABLE+4, io_read(BOARD_ADDR_GPIO_ENABLE+4) | 0x00000100);
+#endif
+
+  Board_Update(bs);
+}
+
+// Timers
+gboolean tmrPowerDown(gpointer data)
+{
+  char msg[15];
+  struct strIPCMQ_Message ipc_msg;
+  BoardStatus *bs = (BoardStatus *)data;
+  static uint32_t timeout=30;
+
+  if(WorkAreaGet() != NTB_ABA_POWERDOWN) {
+    timeout = 30;
+  } else if(!timeout--) {
+    gtk_main_quit();
+  } else {
+    sprintf(msg, "%d segundos", timeout);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")), msg);
+
+    if(Board_HasExternalPower(bs)) {
+      timeout = 30;
+      WorkAreaGoPrevious();
+
+      ipc_msg.fnc   = NULL;
+      ipc_msg.res   = NULL;
+      ipc_msg.mtype = IPCMQ_FNC_POWER;
+      ipc_msg.data.power.status = 2;
+      IPCMQ_Main_Enviar(&ipc_msg);
+    }
   }
 
   return TRUE;
 }
 
-gboolean tmrPowerDown(gpointer data)
+void cbPowerDownCancel(GtkButton *button, gpointer user_data)
 {
-  char msg[15];
-  struct comm_msg cmsg;
-  static uint32_t timeout=30;
-  static GtkDialog *dlg = NULL; // Recebe o ponteiro como parametro nao o endereco apontado.
+  struct strIPCMQ_Message ipc_msg;
 
-  gdk_threads_enter();
+  ipc_msg.fnc   = NULL;
+  ipc_msg.res   = NULL;
+  ipc_msg.mtype = IPCMQ_FNC_POWER;
+  ipc_msg.data.power.status = 1;
+  IPCMQ_Main_Enviar(&ipc_msg);
 
-  if(dlg == NULL)
-    dlg = GTK_DIALOG(gtk_builder_get_object(builder, "dlgPowerDown"));
-
-  if(!GTK_WIDGET_VISIBLE(GTK_WIDGET(dlg))) {
-    timeout = 30;
-  } else if(!timeout--) {
-    gtk_dialog_response(dlg, 0);
-  } else {
-    sprintf(msg, "%d segundos", timeout);
-    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")), msg);
-
-    comm_update();
-    if(comm_ready()) {
-      comm_get(&cmsg);
-      if(cmsg.fnc == COMM_FNC_PWR && cmsg.data.pwr) {
-        timeout = 30;
-        gtk_dialog_response(dlg, 2);
-      }
-    }
-  }
-
-  gdk_threads_leave();
-
-  return TRUE;
+  WorkAreaGoPrevious();
 }
 
 void IPC_Update(void)
 {
   struct strIPCMQ_Message rcv;
+  char *BattStatusDesc[] = { "Pré-Carga", "Carga Completa", "Carregando", "ERRO" };
+
+#ifndef DEBUG_PC
+  int i;
+  char tmp[25];
+  BoardStatus bs;
+  GtkProgressBar *pgbVIN, *pgbVBAT;
+  GtkImage       *imgBatt = NULL;
+  GdkPixbuf      *pbBatt[6];
+  GtkLabel       *lbl, *lblVINOK, *lblBatt;
+
+  if(imgBatt == NULL) {
+    pgbVIN   = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"       ));
+    pgbVBAT  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"      ));
+    imgBatt  = GTK_IMAGE       (gtk_builder_get_object(builder, "imgBateria"   ));
+    lbl      = GTK_LABEL       (gtk_builder_get_object(builder, "lblTemp"      ));
+    lblVINOK = GTK_LABEL       (gtk_builder_get_object(builder, "lblVINOK"     ));
+    lblBatt  = GTK_LABEL       (gtk_builder_get_object(builder, "lblBattStatus"));
+
+    pbBatt[0] = gdk_pixbuf_new_from_file("images/ihm-battery-error.png", NULL);
+    for(i=1; i<5; i++) {
+      sprintf(tmp, "images/ihm-battery-%d.png", i-1);
+      pbBatt[i] = gdk_pixbuf_new_from_file(tmp, NULL);
+    }
+    pbBatt[i] = gdk_pixbuf_new_from_file("images/ihm-battery-full.png" , NULL);
+  }
+#endif
 
   while(IPCMQ_Main_Receber(&rcv, 0) >= 0) {
     switch(rcv.mtype) {
     case IPCMQ_FNC_TEXT:
       printf("Recebida mensagem de texto: %s\n", rcv.data.text);
+      break;
+
+    case IPCMQ_FNC_POWER:
+      gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
+          "30 segundos");
+      WorkAreaGoTo(NTB_ABA_POWERDOWN);
+
+      break;
+
+    case IPCMQ_FNC_BATT:
+#ifndef DEBUG_PC
+      if(rcv.data.batt_level < 0) {
+        rcv.data.batt_level = 0;
+      } else {
+        rcv.data.batt_level++;
+      }
+      gtk_image_set_from_pixbuf(imgBatt, pbBatt[rcv.data.batt_level]);
+#endif
+      *(int *)rcv.res = 0;
+      break;
+
+    case IPCMQ_FNC_STATUS:
+#ifndef DEBUG_PC
+      bs = rcv.data.bs;
+
+      sprintf(tmp, "%.01f °C", bs.Temperature);
+      if(strcmp(tmp, gtk_label_get_text(lbl)))
+        gtk_label_set_text(lbl, tmp);
+
+      // Bateria com tensao inferior a 3V, sistema deve desligar!
+      if(bs.BatteryVoltage < 3 && bs.ExternalVoltage < 8)
+        gtk_main_quit();
+
+      if((WorkAreaGet() == NTB_ABA_MANUT)) {
+        gtk_progress_bar_set_fraction(pgbVIN , bs.ExternalVoltage/35);
+        sprintf(tmp, "%.02f Volts", bs.ExternalVoltage);
+        gtk_progress_bar_set_text(pgbVIN , tmp);
+
+        gtk_progress_bar_set_fraction(pgbVBAT, bs.BatteryVoltage/6.0);
+        sprintf(tmp, "%.02f Volts", bs.BatteryVoltage);
+        gtk_progress_bar_set_text(pgbVBAT , tmp);
+
+        gtk_label_set_text(lblBatt , BattStatusDesc[bs.BatteryState]);
+
+        gtk_label_set_text(lblVINOK, bs.HasExternalPower ? "Sim" : "Não");
+      }
+#endif
+      *(int *)rcv.res = 0;
       break;
 
     case IPCMQ_FNC_MODBUS:
@@ -622,7 +859,7 @@ gboolean tmrGtkUpdate(gpointer data)
         WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
       } else if (last_status != current_status) {
         MaqLiberar(1);
-        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), "Sem Erros");
+        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
       }
       last_status = current_status;
 
@@ -698,15 +935,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
 {
   uint32_t idx;
   const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(button));
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = ReadID;
-  ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_DEVICE_IDENTIFICATION;
-  ipc_msg.data.modbus_query.data.read_device_identification.id_code   = 0x01;
-  ipc_msg.data.modbus_query.data.read_device_identification.object_id = 0x01;
-  IPCMQ_Main_Enviar(&ipc_msg);
 
   idx = nome[strlen(nome)-1]-'0';
   WorkAreaGoTo(idx);
@@ -738,7 +966,7 @@ void LoadComboUsers(void)
 
   // Carregamento dos usuários cadastrados no SQL Server / MySQL no ComboBox.
   // Se não conectou no SQL Server, tenta no MySQL local.
-  if(!(sDB->status & DB_FLAGS_CONNECTED))
+  if(!(sDB && (sDB->status & DB_FLAGS_CONNECTED)))
     sDB = &mainDB;
 
   DB_Execute(sDB, 0, sql);
@@ -747,12 +975,6 @@ void LoadComboUsers(void)
 
 void cbLogoff(GtkButton *button, gpointer user_data)
 {
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.mtype = IPCMQ_FNC_TEXT;
-  ipc_msg.data.text[0] = 0;
-  IPCMQ_Main_Enviar(&ipc_msg);
-
   Log("Saida do sistema", LOG_TIPO_SISTEMA);
 
   LoadComboUsers();
@@ -770,44 +992,17 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
-  int32_t  batt_level, curr_batt_level = -1;
-  uint32_t ad_vin=-1, ad_vbat=-1, ciclos = 0;
+  BoardStatus bs, *newbs =(BoardStatus *)args;
 #ifndef DEBUG_PC
-  char tmp[25];
-  uint32_t ad_term=-1, rp, ChangedAD = 0, i;
-  struct comm_msg msg;
-  GtkProgressBar *pgbVIN, *pgbTERM, *pgbVBAT;
-  GtkImage       *imgBatt;
-  GdkPixbuf      *pbBatt[4];
-  GtkDialog      *dlg;
-  GtkLabel       *lbl;
+  uint32_t ciclos = 0;
+  int32_t  batt_level, curr_batt_level = -2;
+  int StayON = 0, waiting_bs_reply = 0, waiting_batt_reply = 0;
+  uint32_t ChangedBS = 0, LedState = 0;
 #endif
 
   struct strIPCMQ_Message ipc_msg;
 
-  ipc_msg.fnc   = NULL;
-  ipc_msg.res   = NULL;
-  ipc_msg.mtype = IPCMQ_FNC_TEXT;
-  strcpy(ipc_msg.data.text, "mensagem");
-  IPCMQ_Threads_Enviar(&ipc_msg);
-
-#ifndef DEBUG_PC
-  gdk_threads_enter();
-
-  pgbVIN  = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"      ));
-  pgbTERM = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbTERM"     ));
-  pgbVBAT = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVBAT"     ));
-  imgBatt = GTK_IMAGE       (gtk_builder_get_object(builder, "imgBateria"  ));
-  lbl     = GTK_LABEL       (gtk_builder_get_object(builder, "lblTemp"     ));
-  dlg     = GTK_DIALOG      (gtk_builder_get_object(builder, "dlgPowerDown"));
-
-  for(i=0; i<4; i++) {
-    sprintf(tmp, "images/ihm-battery-%d.png", i);
-    pbBatt[i] = gdk_pixbuf_new_from_file(tmp, NULL);
-  }
-
-  gdk_threads_leave();
-#endif
+  bs = *newbs;
 
   /****************************************************************************
    * Loop
@@ -816,152 +1011,129 @@ void * ihm_update(void *args)
     usleep(500);
     /*** Loop de checagem de mensagens vindas da CPU LPC2109 ***/
 #ifndef DEBUG_PC
-    comm_update();
-    if(comm_ready()) {
-      comm_get(&msg);
-      switch(msg.fnc) {
-      case COMM_FNC_AIN: // Resposta do A/D. Divide por 3150 pois representa a tensao em mV.
-        if(!pthread_mutex_trylock(&mutex_gui_lock)) {
-          gdk_threads_enter();
+    Board_Update(newbs);
 
-          sprintf(tmp, "%.01f °C", (float)(msg.data.ad.temp)/1000);
-          if(strcmp(tmp, gtk_label_get_text(lbl)))
-            gtk_label_set_text(lbl, tmp);
+    if(newbs->Temperature      != bs.Temperature      ||
+       newbs->ExternalVoltage  != bs.ExternalVoltage  ||
+       newbs->BatteryVoltage   != bs.BatteryVoltage   ||
+       newbs->HasExternalPower != bs.HasExternalPower ||
+       newbs->BatteryState     != bs.BatteryState) {
 
-          if(msg.data.ad.vin != ad_vin) {
-            ChangedAD = 1;
-            ad_vin = msg.data.ad.vin;
-          }
+      ChangedBS = 1;
+      bs = *newbs;
+    }
 
-          if(msg.data.ad.term != ad_term) {
-            ChangedAD = 1;
-            ad_term = msg.data.ad.term;
-          }
-          if(msg.data.ad.vbat != ad_vbat) {
-            ChangedAD = 1;
-            ad_vbat = msg.data.ad.vbat;
-            // Bateria com tensao inferior a 3V, sistema deve desligar!
-            if(ad_vbat < 3000 && ad_vin < 8000)
-              gtk_main_quit();
-          }
+    if(ChangedBS && !waiting_bs_reply) {
+      ChangedBS = 0;
+      waiting_bs_reply = 1;
 
-          if((WorkAreaGet() == NTB_ABA_MANUT) && ChangedAD) {
-            ChangedAD = 0;
+      ipc_msg.fnc   = NULL;
+      ipc_msg.res   = (void *)&waiting_bs_reply;
+      ipc_msg.mtype = IPCMQ_FNC_STATUS;
+      ipc_msg.data.bs = bs;
+      IPCMQ_Threads_Enviar(&ipc_msg);
 
-            gtk_progress_bar_set_fraction(pgbVIN , (gdouble)(ad_vin)/35000);
-            sprintf(tmp, "%.02f Volts", (gdouble)(ad_vin)/1000);
-            gtk_progress_bar_set_text(pgbVIN , tmp);
+      if((OnPowerDown || StayON) && Board_HasExternalPower(&bs)) {
+        StayON      = 0;
+        OnPowerDown = 0;
+        printf("Sistema energizado\n");
+      } else if(!OnPowerDown && !Board_HasExternalPower(&bs) && !StayON) {
+        OnPowerDown = 1;
+        printf("Sistema sem energia\n");
 
-            gtk_progress_bar_set_fraction(pgbTERM, (gdouble)(ad_term)/3150);
-            sprintf(tmp, "%.02f Volts", (gdouble)(ad_term)/1000);
-            gtk_progress_bar_set_text(pgbTERM , tmp);
+        MaqGravarConfig();
 
-            gtk_progress_bar_set_fraction(pgbVBAT, (gdouble)(ad_vbat)/4500);
-            sprintf(tmp, "%.02f Volts", (gdouble)(ad_vbat)/1000);
-            gtk_progress_bar_set_text(pgbVBAT , tmp);
-          }
-
-          gdk_threads_leave();
-          pthread_mutex_unlock(&mutex_gui_lock);
-        }
-        break;
-
-      case COMM_FNC_PWR:
-        gdk_threads_enter();
-        if(msg.data.pwr) {
-          printf("Sistema energizado");
-
-          // Avisa o LPC2109 que nao deve manter o sistema ligado caso haja nova queda de energia.
-          pthread_mutex_lock  (&mutex_comm_lock);
-          comm_put(&(struct comm_msg){ COMM_FNC_PWR, { 0x0 } });
-          pthread_mutex_unlock(&mutex_comm_lock);
-        } else {
-          OnPowerDown = 1;
-          printf("Sistema sem energia");
-
-          MaqGravarConfig();
-
-          gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
-              "30 segundos");
-          gtk_widget_show_all(GTK_WIDGET(dlg));
-          rp = gtk_dialog_run(dlg);
-          printf("Resposta: %d\n", rp);
-          if(!rp) // Clicado ok, desligar!
-            gtk_main_quit();
-          gtk_widget_hide_all(GTK_WIDGET(dlg));
-
-          if(rp != 2) { // 2: energia reestabelecida, nao pedir para manter ligado
-            // Para manter o sistema ligado, devemos informar o LPC2109
-            pthread_mutex_lock  (&mutex_comm_lock);
-            comm_put(&(struct comm_msg){ COMM_FNC_PWR, { 0x1 } });
-            pthread_mutex_unlock(&mutex_comm_lock);
-          }
-
-          OnPowerDown = 0;
-        }
-        gdk_threads_leave();
-        break;
-
-      case COMM_FNC_ON: // Pressionado botao ON/OFF, termina o programa
-        gdk_threads_enter();
-        gtk_main_quit();
-        gdk_threads_leave();
-        break;
-
-      default:
-        printf("\nFuncao.: 0x%08x\n", msg.fnc);
-        printf("\tds.....: 0x%08x\n", msg.data.ds     );
-        printf("\tled....: 0x%08x\n", msg.data.led    );
-        printf("\tad.vin.: 0x%08x\n", msg.data.ad.vin );
-        printf("\tad.term: 0x%08x\n", msg.data.ad.term);
-        printf("\tds.vbat: 0x%08x\n", msg.data.ad.vbat);
+        ipc_msg.fnc   = NULL;
+        ipc_msg.res   = NULL;
+        ipc_msg.mtype = IPCMQ_FNC_POWER;
+        ipc_msg.data.power.status = 0;
+        IPCMQ_Threads_Enviar(&ipc_msg);
       }
     }
-#endif
 
     /*** Loop para atualizacao da imagem da bateria ***/
 
-    if(ciclos++ > 100) {
+    if(waiting_batt_reply) {
+      ciclos = 0;
+    } else if(ciclos++ > 300) {
       ciclos = 0;
 
-      // Tensao superior a 8 volts indica presenca de alimentacao externa
-      if(ad_vin > 8000) {
-        batt_level = curr_batt_level-1; // Cicla entre as imagens
-        if(batt_level < 0) {
-          batt_level = 3;
+      if(bs.BatteryState == BOARD_BATT_ERROR) {
+        Board_Led(LedState == 1 || LedState == 3);
+        if(LedState++ > 7)
+          LedState = 0;
+      } else {
+        LedState = !LedState;
+        Board_Led(LedState);
+      }
+
+      // Verifica o estado atual da bateria: carregando, cheia ou com erro.
+      if(Board_HasExternalPower(&bs)) {
+        if(bs.BatteryState == BOARD_BATT_ERROR) {
+          batt_level = -1;
+        } else if(bs.BatteryState == BOARD_BATT_FULL) {
+          batt_level = 4;
+        } else {
+          batt_level = curr_batt_level-1; // Cicla entre as imagens
+          if(batt_level < 0) {
+            batt_level = 3;
+          }
         }
       } else { // Sistema alimentado pela bateria, calcula seu nivel atual
-        batt_level = 3999 - ad_vbat;
+        batt_level = (int)((4.0 - bs.BatteryVoltage)*1000);
         if(batt_level < 0) {
           batt_level = 0;
-        } else if(batt_level > 1000) {
-          batt_level = 1000;
+        } else if(batt_level >= 1000) {
+          batt_level = 999;
         }
         batt_level /= 250; // Nivel entre 0 (cheia) e 3 (vazia).
       }
-
       if(curr_batt_level != batt_level) { // Alterado o nivel, atualiza imagem
+        waiting_batt_reply = 1;
         curr_batt_level = batt_level;
-#ifndef DEBUG_PC
-        gtk_image_set_from_pixbuf(imgBatt, pbBatt[curr_batt_level]);
-#endif
+
+        ipc_msg.fnc   = NULL;
+        ipc_msg.res   = (void *)&waiting_batt_reply;
+        ipc_msg.mtype = IPCMQ_FNC_BATT;
+        ipc_msg.data.batt_level = curr_batt_level;
+        IPCMQ_Threads_Enviar(&ipc_msg);
       }
     }
+#endif
 
     /*** Fim do loop para atualizacao da imagem da bateria ***/
 
     // Loop de checagem de mensagens vindas da thread principal
     if(IPCMQ_Threads_Receber(&ipc_msg) >= 0) {
       switch(ipc_msg.mtype) {
+      case IPCMQ_FNC_POWER:
+        printf("Resposta: %d\n", ipc_msg.data.power.status);
+#ifndef DEBUG_PC
+        if(ipc_msg.data.power.status == 1) // Escolhido permanecer ligado
+          StayON = 1;
+#endif
+
+        OnPowerDown = 0;
+
+        break;
+
       case IPCMQ_FNC_TEXT:
         strcpy(ipc_msg.data.text, "resposta");
         IPCMQ_Threads_Enviar(&ipc_msg);
         break;
 
       case IPCMQ_FNC_MODBUS:
-        ipc_msg.data.modbus_reply = Modbus_RTU_Send(&mbdev, 0,
-                                            ipc_msg.data.modbus_query.function_code,
-                                            &ipc_msg.data.modbus_query.data);
+#ifndef DEBUG_PC
+        if(Board_HasExternalPower(&bs)) {
+#else
+        if(1) {
+#endif
+          ipc_msg.data.modbus_reply = Modbus_RTU_Send(&mbdev, 0,
+                                           ipc_msg.data.modbus_query.function_code,
+                                           &ipc_msg.data.modbus_query.data);
+        } else {
+          ipc_msg.data.modbus_reply.ExceptionCode = MODBUS_EXCEPTION_SLAVE_DEVICE_FAILURE;
+        }
         IPCMQ_Threads_Enviar(&ipc_msg);
 
         break;
@@ -972,20 +1144,21 @@ void * ihm_update(void *args)
   return NULL;
 }
 
+void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data);
+
 uint32_t IHM_Init(int argc, char *argv[])
 {
   uint32_t ret = 0;
   pthread_t tid;
   GSList *lst;
   GtkWidget *wnd;
+  BoardStatus bs;
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
   char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
 
   /* init threads */
   g_thread_init (NULL);
   gdk_threads_init ();
-
-  gdk_threads_enter();
 
   gtk_init( &argc, &argv );
 
@@ -1017,6 +1190,12 @@ uint32_t IHM_Init(int argc, char *argv[])
       GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
 
+  // Atualiza o estado inicial do CapsLock como desativado
+  cbVirtualKeyboardCapsLock(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "tgbCapsLock")), NULL);
+
+  // Configura a mensagem inicial da maquina
+  gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
+
   // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
   fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
   if(fd_rd < 0) {
@@ -1032,26 +1211,10 @@ uint32_t IHM_Init(int argc, char *argv[])
     goto fim_fila_wr;
   }
 
-#ifndef DEBUG_PC
-  ps = SerialInit("/dev/ttymxc2");
+  // Inicializa a placa
+  Board_Init(&bs);
 
-  if(ps == NULL) {
-    printf("Erro abrindo porta serial!\n");
-    ret = 3;
-    goto fim_serial;
-  }
-
-  SerialConfig(ps, 115200, 8, 1, SerialParidadeNenhum, 0);
-
-  ps->txf = SerialTX;
-  ps->rxf = SerialRX;
-
-  comm_init(CommTX, CommRX);
-  comm_put (&(struct comm_msg){ COMM_FNC_LED, { 0xA } });
-  comm_put (&(struct comm_msg){ COMM_FNC_AIN, { 0x0 } });
-#endif
-
-// Inicializacao do ModBus
+  // Inicializacao do ModBus
   mbdev.identification.Id = 0x02;
   mbdev.hl                = NULL;
   mbdev.hl_size           = 0;
@@ -1070,10 +1233,8 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Inicializa os drivers para acesso aos diferentes bancos
   DB_InitDrivers();
 
-#ifndef DEBUG_PC
   // Carrega configuracoes do arquivo de configuracao e conecta ao banco
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
-#endif
     {
     mainDB.DriverID = "MySQL";
     mainDB.server   = "interno.tecnequip.com.br";
@@ -1086,11 +1247,11 @@ uint32_t IHM_Init(int argc, char *argv[])
   gtk_widget_show_all(wnd);
 
   // Iniciando os timers
-  g_timeout_add( 500, tmrAD       , NULL);
-  g_timeout_add( 500, tmrGtkUpdate, NULL);
-  g_timeout_add(1000, tmrPowerDown, NULL);
+  g_timeout_add(   500, tmrGtkUpdate, (gpointer)(&bs));
+  g_timeout_add(  1000, tmrPowerDown, (gpointer)(&bs));
+  g_timeout_add(300000, tmrActivity , NULL);
 
-  pthread_create (&tid, NULL, ihm_update, NULL);
+  pthread_create (&tid, NULL, ihm_update, (void *)(&bs));
 
   if(DB_Init(&mainDB)) { // Se inicializar o banco, entra no loop do GTK.
     // Carregamento no ComboBox dos usuários cadastrados no MySQL.
@@ -1127,11 +1288,6 @@ uint32_t IHM_Init(int argc, char *argv[])
 fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
 
-#ifndef DEBUG_PC
-  SerialClose(ps);
-
-fim_serial: // Encerrando por erro ao abrir a porta serial
-#endif
   msgctl(fd_wr, IPC_RMID, NULL);
 
 fim_fila_wr: // Encerrando por falha ao criar fila de mensagens para escrita
@@ -1146,6 +1302,22 @@ fim_fila_rd: // Encerrando por falha ao criar fila de mensagens para leitura
 
 void TrataSinal(int sinal)
 {
+  char *lock[] = { "UNLOCKED", "LOCKED" };
+  int rd_locked = 1, wr_locked = 1;
+
+  if(!pthread_mutex_trylock(&mutex_ipcmq_rd)) {
+    rd_locked = 0;
+    pthread_mutex_unlock(&mutex_ipcmq_rd);
+  }
+
+  if(!pthread_mutex_trylock(&mutex_ipcmq_wr)) {
+    wr_locked = 0;
+    pthread_mutex_unlock(&mutex_ipcmq_wr);
+  }
+
+  printf("Estado dos mutex:\n\nRD = %s\nWR = %s\n\n",
+      lock[rd_locked], lock[wr_locked]);
+
   printf("Recebido sinal %d, saindo!\n", sinal);
   gtk_main_quit();
 }
