@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
 
 // Para que a funcao atof funcione corretamente
 #include <stdio.h>
@@ -56,6 +57,7 @@ typedef uint16_t u16;
 #endif
 
 #endif
+
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"

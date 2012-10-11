@@ -8,14 +8,9 @@
 #include "maq.h"
 #include "GtkUtils.h"
 
-// Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
-
 /*** Funcoes e variáveis de suporte ***/
 
 extern int idUser; // Indica usuário que logou se for diferente de zero.
-extern int CurrentWorkArea;  // Variavel que armazena a tela atual.
-extern int PreviousWorkArea; // Variavel que armazena a tela anterior.
 
 #define TRF_TEXT_SIZE 10
 
@@ -925,10 +920,13 @@ void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, 
 gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
 //  GdkPixbuf *pbtmp;
+  GtkStyle *style;
+  GtkAllocation allocation;
   static GdkPixbuf *pb = NULL;
   if(pb == NULL) {
+    gtk_widget_get_allocation(widget, &allocation);
     pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
+        allocation.width, allocation.height,
         FALSE, NULL);
 
     LoadIntoPixbuf(pb, "images/maq-desbob.png"      ,  0,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
@@ -945,8 +943,9 @@ gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer da
     LoadIntoPixbuf(pb, "images/maq-perf-guia.png"   , -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
   }
 
-  gdk_draw_pixbuf(widget->window,
-                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+  style = gtk_widget_get_style(widget);
+  gdk_draw_pixbuf(gtk_widget_get_window(widget),
+                  style->fg_gc[gtk_widget_get_state(widget)],
                   pb,
                   0, 0, 0, 0, -1, -1,
                   GDK_RGB_DITHER_NONE, 0, 0);

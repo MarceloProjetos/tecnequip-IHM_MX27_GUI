@@ -9,7 +9,7 @@
 #include "GtkUtils.h"
 
 // Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
+//extern struct MB_Device mbdev;
 
 /*** Funcoes e variáveis de suporte ***/
 
@@ -1049,10 +1049,11 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
 {
   struct strDB tmpDB;
 
-  tmpDB.server  = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoIP"   )));
-  tmpDB.user    = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoUser" )));
-  tmpDB.passwd  = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoSenha")));
-  tmpDB.nome_db = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoNome" )));
+  tmpDB.DriverID = "MySQL";
+  tmpDB.server   = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoIP"   )));
+  tmpDB.user     = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoUser" )));
+  tmpDB.passwd   = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoSenha")));
+  tmpDB.nome_db  = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoNome" )));
 
   if(DB_Init(&tmpDB)) // Se inicializar o banco, precisamos verificar se existem as tabelas.
     {

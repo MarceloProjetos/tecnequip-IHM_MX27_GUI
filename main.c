@@ -502,6 +502,7 @@ void SetMaqStatus(unsigned int NewStatus)
   switch(NewStatus) {
   default: // Estado invalido! Configurando como indeterminado
     NewStatus = MAQ_STATUS_INDETERMINADO;
+    /* no break */
 
   case MAQ_STATUS_INDETERMINADO:
     t = time(NULL);
@@ -725,9 +726,9 @@ void cbPowerDownCancel(GtkButton *button, gpointer user_data)
 void IPC_Update(void)
 {
   struct strIPCMQ_Message rcv;
-  char *BattStatusDesc[] = { "Pré-Carga", "Carga Completa", "Carregando", "ERRO" };
 
 #ifndef DEBUG_PC
+  char *BattStatusDesc[] = { "Pré-Carga", "Carga Completa", "Carregando", "ERRO" };
   int i;
   char tmp[25];
   BoardStatus bs;
@@ -814,6 +815,7 @@ void IPC_Update(void)
         break;
       default:
         printf("Funcao desconhecida do modbus: %d\n", rcv.data.modbus_reply.FunctionCode);
+        break;
       }
 
        if(rcv.fnc != NULL) {
@@ -824,6 +826,7 @@ void IPC_Update(void)
 
     default:
       printf("Mensagem de tipo desconhecido: %ld\n", rcv.mtype);
+      break;
     }
   }
 }
@@ -837,6 +840,7 @@ gboolean tmrGtkUpdate(gpointer data)
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
   static GdkPixbuf *pb_on = NULL, *pb_off = NULL;
+
   static int ciclos = 0, current_status = 0, last_status = 0;
 
   if(!OnPowerDown) {
@@ -992,17 +996,17 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
-  BoardStatus bs, *newbs =(BoardStatus *)args;
 #ifndef DEBUG_PC
+  BoardStatus bs, *newbs =(BoardStatus *)args;
   uint32_t ciclos = 0;
   int32_t  batt_level, curr_batt_level = -2;
   int StayON = 0, waiting_bs_reply = 0, waiting_batt_reply = 0;
   uint32_t ChangedBS = 0, LedState = 0;
+
+  bs = *newbs;
 #endif
 
   struct strIPCMQ_Message ipc_msg;
-
-  bs = *newbs;
 
   /****************************************************************************
    * Loop
@@ -1211,8 +1215,10 @@ uint32_t IHM_Init(int argc, char *argv[])
     goto fim_fila_wr;
   }
 
+#ifndef DEBUG_PC
   // Inicializa a placa
   Board_Init(&bs);
+#endif
 
   // Inicializacao do ModBus
   mbdev.identification.Id = 0x02;
