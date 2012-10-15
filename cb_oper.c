@@ -842,6 +842,9 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 
 void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
 {
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_MANUAL);
+
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
 
@@ -850,6 +853,9 @@ void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
 
 void cbManualMesaRecua(GtkButton *button, gpointer user_data)
 {
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_MANUAL);
+
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
 
@@ -866,6 +872,9 @@ void cbManualMesaParar(GtkButton *button, gpointer user_data)
 
 void cbManualMesaCortar(GtkButton *button, gpointer user_data)
 {
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_MANUAL);
+
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
 
