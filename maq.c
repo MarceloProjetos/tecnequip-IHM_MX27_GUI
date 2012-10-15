@@ -1,7 +1,7 @@
 #include "defines.h"
 #include "maq.h"
 
-extern pthread_mutex_t mutex_gui_lock;
+extern void IPC_Update(void);
 
 // Função que retorna checksum de ponteiro
 unsigned long CalcCheckSum(void *ptr, unsigned int tam)
@@ -18,10 +18,89 @@ unsigned long CalcCheckSum(void *ptr, unsigned int tam)
   return checksum;
 }
 
+struct strMaqReply {
+  struct MODBUS_Reply modbus_reply;
+  uint32_t ready;
+};
+
+void retMaqMB(void *dt, void *res)
+{
+  struct strMaqReply *rp = (struct strMaqReply *)res;
+
+  rp->modbus_reply = ((union uniIPCMQ_Data *)dt)->modbus_reply;
+  rp->ready = 1; // Recebida resposta
+}
+
+void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
+{
+#ifndef DEBUG_PC_NOETH
+  IPCMQ_Main_Enviar(ipc_msg);
+  while(!rp->ready) {
+    IPC_Update();
+    usleep(100);
+  }
+#else
+  rp->modbus_reply.ExceptionCode = MODBUS_EXCEPTION_NONE;
+#endif
+}
+
+// Funcao que sincroniza a estrutura de parametros com o clp. Retorna default_value se erro
+uint16_t MaqLerRegistrador(uint16_t reg, uint16_t default_value)
+{
+  struct strMaqReply rp;
+  struct strIPCMQ_Message ipc_msg;
+
+  memset(&rp, 0, sizeof(rp));
+
+  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+  ipc_msg.fnc   = retMaqMB;
+  ipc_msg.res   = (void *)&rp;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_HOLDING_REGISTERS;
+  ipc_msg.data.modbus_query.data.read_holding_registers.start = reg;
+  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
+
+  EnviarMB(&ipc_msg, &rp);
+
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE) {
+    return default_value; // Erro de comunicacao
+  }
+
+  return CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
+}
+
+void MaqGravarRegistrador(uint16_t reg, uint16_t val)
+{
+  struct strIPCMQ_Message ipc_msg;
+
+  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
+  ipc_msg.fnc   = NULL;
+  ipc_msg.res   = NULL;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_WRITE_SINGLE_REGISTER;
+  ipc_msg.data.modbus_query.data.write_single_register.address = reg;
+  ipc_msg.data.modbus_query.data.write_single_register.val = val;
+
+  IPCMQ_Main_Enviar(&ipc_msg);
+}
+
+uint16_t MaqLerFlags(void)
+{
+  static uint16_t flags = 0;
+
+  flags = MaqLerRegistrador(MAQ_REG_FLAGS, flags);
+
+  return flags;
+}
+
+void MaqConfigFlags(uint16_t flags)
+{
+  printf("flags = %d\n", flags);
+  MaqGravarRegistrador(MAQ_REG_FLAGS, flags);
+}
+
 // Funcao que sincroniza a estrutura de parametros com o clp
 int MaqSync(unsigned int mask)
 {
-  struct strIPCMQ_Message ipc_msg;
+  static unsigned int first = 1;
   unsigned long rel_motor_perfil = 0;
 
   printf("Sincronizando parametros da maquina:\n");
@@ -41,71 +120,17 @@ int MaqSync(unsigned int mask)
     printf("maq_param.perfil.manual_acel...: %f\n" , maq_param.perfil.manual_acel);
     printf("maq_param.perfil.manual_desacel: %f\n" , maq_param.perfil.manual_desacel);
 
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_VEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.auto_vel;
-    IPCMQ_Main_Enviar(&ipc_msg);
+    MaqGravarRegistrador(MAQ_REG_PERF_AUTO_VEL    ,                maq_param.perfil.auto_vel           );
+    MaqGravarRegistrador(MAQ_REG_PERF_AUTO_ACEL   , (unsigned int)(maq_param.perfil.auto_acel     *100));
+    MaqGravarRegistrador(MAQ_REG_PERF_AUTO_DESACEL, (unsigned int)(maq_param.perfil.auto_desacel  *100));
+    MaqGravarRegistrador(MAQ_REG_PERF_MAN_VEL     ,                maq_param.perfil.manual_vel         );
+    MaqGravarRegistrador(MAQ_REG_PERF_MAN_ACEL    , (unsigned int)(maq_param.perfil.manual_acel   *100));
+    MaqGravarRegistrador(MAQ_REG_PERF_MAN_DESACEL , (unsigned int)(maq_param.perfil.manual_desacel*100));
+    MaqGravarRegistrador(MAQ_REG_PERF_FATOR_LOW   , (rel_motor_perfil    ) & 0XFFFF);
+    MaqGravarRegistrador(MAQ_REG_PERF_FATOR_HIGH  , (rel_motor_perfil>>16) & 0XFFFF);
 
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_ACEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.auto_acel*100);
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_AUTO_DESACEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.auto_desacel*100);
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_MAN_VEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.perfil.manual_vel;
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_MAN_ACEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.manual_acel*100);
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_MAN_DESACEL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.perfil.manual_desacel*100);
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_FATOR_LOW;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (rel_motor_perfil   ) & 0XFFFF;
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PERF_FATOR_HIGH;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (rel_motor_perfil>>16) & 0XFFFF;
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    MaqConfigModo(MAQ_MODO_PERF_SYNC);
+    MaqConfigFlags((first ? 0 : MaqLerFlags()) | MAQ_MODO_PERF_SYNC);
+    first = 0;
   }
 
   if(mask & MAQ_SYNC_ENCODER) {
@@ -113,41 +138,15 @@ int MaqSync(unsigned int mask)
     printf("maq_param.encoder.perimetro: %d\n", maq_param.encoder.perimetro);
     printf("maq_param.encoder.precisao.: %d\n", maq_param.encoder.precisao);
 
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_ENC_FATOR;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = (unsigned int)(maq_param.encoder.fator*1000);
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_ENC_RESOL;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.encoder.precisao;
-    IPCMQ_Main_Enviar(&ipc_msg);
-
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_ENC_PERIM;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.encoder.perimetro;
-    IPCMQ_Main_Enviar(&ipc_msg);
+    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator*1000));
+    MaqGravarRegistrador(MAQ_REG_ENC_RESOL,                maq_param.encoder.precisao   );
+    MaqGravarRegistrador(MAQ_REG_ENC_PERIM,                maq_param.encoder.perimetro  );
   }
 
   if(mask & MAQ_SYNC_CORTE) {
     printf("maq_param.corte.tam_faca...: %d\n", maq_param.corte.tam_faca);
 
-    ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-    ipc_msg.fnc   = NULL;
-    ipc_msg.res   = NULL;
-    ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-    ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_CRT_FACA;
-    ipc_msg.data.modbus_query.data.write_single_register.val     = maq_param.corte.tam_faca;
-    IPCMQ_Main_Enviar(&ipc_msg);
+    MaqGravarRegistrador(MAQ_REG_CRT_FACA, maq_param.corte.tam_faca);
   }
 
   return 1;
@@ -206,24 +205,19 @@ int MaqLerConfig(void)
   return ret;
 }
 
-struct strMaqReply {
-  struct MB_Reply modbus_reply;
-  uint32_t ready;
-};
-
 char *MaqStrErro(uint16_t erro)
 {
   uint32_t i;
   char *msg_erro[] = {
-      "Erro na comunicação",
-      "Emergência Acionada",
+      "Erro na comunicacao",
+      "Emergencia Acionada",
       "Falta de fase",
-      "Erro na unidade hidráulica",
+      "Erro na unidade hidraulica",
       "Erro no inversor",
       "Erro no desbobinador",
-      "Erro de comunicação - Inversor",
+      "Erro de comunicacao - Inversor",
       "Erro no Corte do Perfil",
-//      "Baixa pressão de ar",
+//      "Baixa pressao de ar",
   };
 
   if(!erro) // Sem erro, retorna string nula
@@ -238,31 +232,9 @@ char *MaqStrErro(uint16_t erro)
   }
 }
 
-void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
-{
-  pthread_mutex_lock  (&mutex_gui_lock);
-
-  IPCMQ_Main_Enviar(ipc_msg);
-  while(!rp->ready) {
-    IPC_Update();
-    usleep(100);
-  }
-
-  pthread_mutex_unlock(&mutex_gui_lock);
-}
-
-void retMaqMB(void *dt, void *res)
-{
-  struct strMaqReply *rp = (struct strMaqReply *)res;
-
-  rp->modbus_reply = ((union uniIPCMQ_Data *)dt)->modbus_reply;
-  rp->ready = 1; // Recebida resposta
-}
-
 uint16_t MaqLerErros(void)
 {
   uint16_t erro;
-  unsigned char *buf;
   struct strMaqReply rp;
   struct strIPCMQ_Message ipc_msg;
 
@@ -271,72 +243,26 @@ uint16_t MaqLerErros(void)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_HOLDING_REGISTERS;
   ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_ERROS;
   ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE)
     return 1; // Erro de comunicacao
 
-  buf  = rp.modbus_reply.reply.read_holding_registers.data;
-  erro = (((uint16_t)(buf[1]) << 8) | buf[0]);
+  erro = CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
   printf("Erro lido: %04x\n", erro);
 
   return erro << 1;
 }
 
-uint16_t MaqLerModo(void)
-{
-  uint16_t modo;
-  unsigned char *buf;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
-
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_MODO;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  buf  = rp.modbus_reply.reply.read_holding_registers.data;
-  modo = (((uint16_t)(buf[1]) << 8) | buf[0]);
-
-  return modo;
-}
-
 uint16_t MaqLerEstado(void)
 {
-  uint16_t status;
-  unsigned char *buf;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
+  static uint16_t status = 0;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_STATUS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 0x01;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  buf    = rp.modbus_reply.reply.read_holding_registers.data;
-  status = (((uint16_t)(buf[1]) << 8) | buf[0]);
+  status = MaqLerRegistrador(MAQ_REG_STATUS, status);
   printf("status: %d\n", status);
 
   return status;
@@ -354,13 +280,13 @@ uint32_t MaqLerEntradas(void)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_DISCRETE_INPUTS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_DISCRETE_INPUTS;
   ipc_msg.data.modbus_query.data.read_discrete_inputs.start = 0;
   ipc_msg.data.modbus_query.data.read_discrete_inputs.quant = 18;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE)
     return 0; // Erro de comunicacao
 
   buf  = rp.modbus_reply.reply.read_discrete_inputs.data;
@@ -383,13 +309,13 @@ uint32_t MaqLerSaidas(void)
   ipc_msg.mtype = IPCMQ_FNC_MODBUS;
   ipc_msg.fnc   = retMaqMB;
   ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_COILS;
+  ipc_msg.data.modbus_query.function_code = MODBUS_FC_READ_COILS;
   ipc_msg.data.modbus_query.data.read_coils.start = 0;
   ipc_msg.data.modbus_query.data.read_coils.quant = 16;
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE)
     return 0; // Erro de comunicacao
 
   buf = rp.modbus_reply.reply.read_coils.data;
@@ -401,27 +327,9 @@ uint32_t MaqLerSaidas(void)
 
 uint16_t MaqLerProdQtd(void)
 {
-  volatile uint16_t qtd;
-  unsigned char *buf;
-  struct strMaqReply rp;
-  struct strIPCMQ_Message ipc_msg;
+  static uint16_t qtd = 0;
 
-  memset(&rp, 0, sizeof(rp));
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = retMaqMB;
-  ipc_msg.res   = (void *)&rp;
-  ipc_msg.data.modbus_query.function_code = MB_FC_READ_HOLDING_REGISTERS;
-  ipc_msg.data.modbus_query.data.read_holding_registers.start = MAQ_REG_PROD_QTD;
-  ipc_msg.data.modbus_query.data.read_holding_registers.quant = 1;
-
-  EnviarMB(&ipc_msg, &rp);
-
-  if(rp.modbus_reply.ExceptionCode != MB_EXCEPTION_NONE)
-    return 0; // Erro de comunicacao
-
-  buf = rp.modbus_reply.reply.read_holding_registers.data;
-  qtd = ((uint16_t)(buf[1]) << 8) | buf[0];
+  qtd = MaqLerRegistrador(MAQ_REG_PROD_QTD, qtd);
   printf("Restando %d pecas\n", qtd);
 
   return qtd;
@@ -429,87 +337,63 @@ uint16_t MaqLerProdQtd(void)
 
 void MaqConfigEstado(uint16_t estado)
 {
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = NULL;
-  ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-  ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_STATUS;
-  ipc_msg.data.modbus_query.data.write_single_register.val = estado;
-
-  IPCMQ_Main_Enviar(&ipc_msg);
+  MaqGravarRegistrador(MAQ_REG_STATUS, estado);
 }
 
 void MaqConfigModo(uint16_t modo)
 {
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = NULL;
-  ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-  ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_MODO;
-  ipc_msg.data.modbus_query.data.write_single_register.val = modo;
+  uint16_t flags = MaqLerFlags();
 
   printf("modo = %d\n", modo);
 
-  IPCMQ_Main_Enviar(&ipc_msg);
+  MaqConfigFlags((flags & ~MAQ_MODO_MASK) | modo);
+}
+
+void MaqLiberar(uint16_t liberar)
+{
+  uint16_t flags = MaqLerFlags();
+
+  // Se bloqueou a máquina, desliga todas as flags indicadas pela máscara.
+  MaqConfigFlags(liberar ? flags | MAQ_MODO_LIBERA : flags & MAQ_MODO_MASK_LIBERA);
+
+  printf("maquina liberada ? %d\n", liberar);
 }
 
 void MaqLimparErro()
 {
-  uint16_t modo = MaqLerModo();
-  modo |= MAQ_MODO_LIMPAR;
-  MaqConfigModo(modo);
+  uint16_t flags = MaqLerFlags();
+  flags |= MAQ_MODO_LIMPAR;
+  MaqConfigFlags(flags);
 }
 
 void MaqCortar()
 {
-  uint16_t modo = MaqLerModo();
-  modo |= MAQ_MODO_CORTAR;
-  MaqConfigModo(modo);
+  uint16_t flags = MaqLerFlags();
+  flags |= MAQ_MODO_CORTAR;
+  MaqConfigFlags(flags);
 }
 
 void MaqPerfManual(uint16_t cmd)
 {
-  uint16_t modo = MaqLerModo();
+  uint16_t flags = MaqLerFlags();
 
-  modo &= ~MAQ_MODO_PERF_MASK;
+  flags &= ~MAQ_MODO_PERF_MASK;
   if     (cmd == PERF_AVANCA)
-    modo |= MAQ_MODO_PERF_AVANCA;
+    flags |= MAQ_MODO_PERF_AVANCA;
   else if(cmd == PERF_RECUA)
-    modo |= MAQ_MODO_PERF_RECUA;
+    flags |= MAQ_MODO_PERF_RECUA;
 
-  MaqConfigModo(modo);
+  MaqConfigFlags(flags);
 }
 
 void MaqConfigProdQtd(uint16_t qtd)
 {
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = NULL;
-  ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-  ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PROD_QTD;
-  ipc_msg.data.modbus_query.data.write_single_register.val = qtd;
-
-  IPCMQ_Main_Enviar(&ipc_msg);
+  MaqGravarRegistrador(MAQ_REG_PROD_QTD, qtd);
 }
 
 void MaqConfigProdTam(uint16_t tam)
 {
-  struct strIPCMQ_Message ipc_msg;
-
-  ipc_msg.mtype = IPCMQ_FNC_MODBUS;
-  ipc_msg.fnc   = NULL;
-  ipc_msg.res   = NULL;
-  ipc_msg.data.modbus_query.function_code = MB_FC_WRITE_SINGLE_REGISTER;
-  ipc_msg.data.modbus_query.data.write_single_register.address = MAQ_REG_PROD_TAM;
-  ipc_msg.data.modbus_query.data.write_single_register.val = tam;
-
-  IPCMQ_Main_Enviar(&ipc_msg);
+  MaqGravarRegistrador(MAQ_REG_PROD_TAM, tam);
 }
 
 void MaqConfigPerfil(struct strMaqParamPerfil pf)

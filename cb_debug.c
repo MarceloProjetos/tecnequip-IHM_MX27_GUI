@@ -1,5 +1,4 @@
 #include <gtk/gtk.h>
-#include <net/modbus.h>
 
 #include "defines.h"
 
@@ -8,6 +7,9 @@ extern GtkBuilder *builder;
 
 // Estrutura que representa o ModBus
 extern struct MB_Device mbdev;
+
+// Funcao para retornar para a tela anterior
+extern void WorkAreaGoPrevious(void);
 
 // Carrega aba referente aos controles da funcao de codigo escolhida
 void cbFunctionCodeChanged(GtkComboBox *widget, gpointer user_data)
@@ -30,7 +32,7 @@ void cbDebugModBus(GtkButton *button, gpointer user_data)
 // Envia o comando selecionado pelo ModBus
 void cbModBusSend(GtkButton *button, gpointer user_data)
 {
-  guint fc;
+/*  guint fc;
   uint8_t out[] = { 0, 0 };
   uint32_t i, offset=0;
   char wdgName[100], reply_string[2000] = "";
@@ -298,7 +300,7 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
 
     if(!rp.ExceptionCode) {
       wdg = GTK_WIDGET(gtk_builder_get_object(builder, "lblReadDeviceIdentificationVal"));
-      gtk_label_set_text(GTK_LABEL(wdg), rp.reply.read_device_identification.data);
+      gtk_label_set_text(GTK_LABEL(wdg), (const gchar *)rp.reply.read_device_identification.data);
 
       offset += sprintf(reply_string+offset, "Retorno:\nFunction Code: %d\n", rp.FunctionCode);
       offset += sprintf(reply_string+offset, "string: %s\n", rp.reply.read_device_identification.data);
@@ -318,4 +320,4 @@ void cbModBusSend(GtkButton *button, gpointer user_data)
   mdg = gtk_message_dialog_new(NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, "%s", reply_string);
   gtk_dialog_run(GTK_DIALOG(mdg));
   gtk_widget_destroy(mdg);
-}
+*/}
