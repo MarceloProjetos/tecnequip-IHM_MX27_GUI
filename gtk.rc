@@ -1,0 +1,7 @@
+gtk-icon-theme-name="IHM27"
+style "font"
+{
+font_name = "Arial 16"
+}
+widget_class "*" style "font"
+gtk-font-name = "Arial 16" 

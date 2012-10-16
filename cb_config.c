@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <net/modbus.h>
-
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
@@ -11,481 +9,44 @@
 #include "GtkUtils.h"
 
 // Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
+//extern struct MB_Device mbdev;
 
 /*** Funcoes e variáveis de suporte ***/
 
 int idUser=0; // Indica usuário que logou se for diferente de zero.
+char *UserPerm = NULL; // Permissoes do usuario conectado
 int CurrentWorkArea  = 0;  // Variavel que armazena a tela atual.
-int PreviousWorkArea = 0; // Variavel que armazena a tela anterior.
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
 extern void Log(char *evento, int tipo);
-
-// Vetor de erros da máquina e função que retorna o erro atual conforme prioridade
-char *StrErro[] =
-  {
-  "Emergencia",
-  "Problema no servo",
-  "Problema no Posicionamento",
-  "Falha seguindo Perfil",
-  "Erro na configuração",
-  "Tempo máximo de inatividade alcançado",
-  "Tempo máximo de atuação do cilindro excedida",
-  "Supervisor indicando falta de fase",
-  "Erro no sistema hidráulico",
-  "Falha na comunicação",
-  };
-
-char * LerStrErro(unsigned int erro)
-{
-  unsigned int i;
-
-  for(i=0;erro>>i;i++)
-    if((erro>>i)&1)
-      return StrErro[i];
-
-  return "Desconhecido";
-}
 
 char * Crypto(char *str)
 {
   return (char *)(crypt(str,"bc")+2);
 }
 
-int GetUserPerm(char *permissao)
+int GetUserPerm(unsigned int perm)
 {
-  char sql[300];
+  unsigned int len = strlen(UserPerm);
 
-  sprintf(sql, "select p.valor from permissoes as p, lista_permissoes as l, usuarios as u where p.ID_perm = l.ID and p.ID_user = u.ID and l.nome = '%s' and u.id = '%d'", permissao, idUser);
-  DB_Execute(&mainDB, 0, sql);
+  if(perm >= len) // Permissão inexistente
+    return PERM_NONE; // Não existe a permissão. Retorna sem permissão.
 
-// Se existe permissão para o usuário atual, retorna seu valor.
-  if(DB_GetNextRow(&mainDB, 0)>0)
-    return atoi(DB_GetData(&mainDB, 0, 0));
-  else
-    {
-// Não encontrou a permissão para usuário atual, carregando default.
-    sprintf(sql, "select valor from lista_permissoes where nome='%s'", permissao);
-    DB_Execute(&mainDB, 0, sql);
-    if(DB_GetNextRow(&mainDB, 0)>0)
-      return atoi(DB_GetData(&mainDB, 0, 0)); // Retornando valor default
-    }
+  switch(UserPerm[perm]) {
+  case 'w':
+  case 'W':
+    return PERM_WRITE;
 
-// Não existe a permissão. Retorna zero.
-  return 0;
+  case 'r':
+  case 'R':
+    return PERM_READ;
+
+  default:
+    return PERM_NONE;
+  }
 }
 
 #if 0
-// Função que é executada a cada 200 ms e que serve para checar o estado da máquina.
-gint sync_cv(gpointer dados)
-{
-  static unsigned int erro_ant = CV_ERRO_NENHUM, num_erros_timeout=0;
-  char str[100];
-
-  MQ.MQ_Data.funcao = CV_MQFNC_ERRO;
-  switch(MQ_Transfer(&MQ))
-    {
-    default: // Erro não foi de timeout, limpa erros.
-      num_erros_timeout=0;
-      break;
-
-    case MQ_ERRO_NENHUM:
-      num_erros_timeout=0;
-      // Verifica se o processo filho está pedindo encerramento
-      if(MQ.MQ_Data.funcao == CV_MQFNC_FINAL)
-        {
-        MessageBox("Erro no Corte Voador! Saindo...");
-        gtk_main_quit();
-        return FALSE;
-        }
-
-      if(MQ.MQ_Data.data.di[0]!=erro_ant)
-        {
-        erro_ant = MQ.MQ_Data.data.di[0];
-
-        if(erro_ant & CV_ERRO_CONFIG)
-          {
-          AbrirConfig(NULL, NULL); // Abre a janela de configuração da máquina
-          sprintf(str, "Erro na configuração da máquina! Favor reconfigurar");
-          }
-        else if(erro_ant != CV_ERRO_NENHUM && erro_ant != CV_ERRO_ESCRAVO)
-          {
-          EstadoBotoes((GtkWidget *)(dados), (guint)(BTN_CFG | BTN_INIT)); // Habilita apenas config e init.
-          sprintf(str, "Erro: %s", LerStrErro(erro_ant));
-          }
-        else
-          {
-          EstadoBotoes((GtkWidget *)(dados), (guint)(BTN_CFG | BTN_INIT | BTN_OPER | BTN_MANUAL)); // Habilita tudo.
-          strcpy(str, "Sem erros");
-          }
-
-        // Registra o erro ocorrido
-        Log(str, LOG_TIPO_ERRO);
-
-        MessageBox(str);
-        }
-
-      break;
-
-    case MQ_ERRO_TIMEOUT:
-      if(num_erros_timeout++ > 10) // Se ocorreram mais que 10 erros de comunicação seguidos
-        {
-        // Registra o erro ocorrido
-        Log("Erro entre os processos", LOG_TIPO_ERRO);
-
-        MessageBox("Processo de controle da máquina não está respondendo! Saindo...");
-        gtk_main_quit();
-        return FALSE;
-        }
-    }
-
-  return TRUE;
-}
-
-int MaquinaEspera(int checar_manual)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_STATUS;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    if(MQ.MQ_Data.data.di[0] != CV_ST_ESPERA && (checar_manual ? MQ.MQ_Data.data.di[0] != CV_ST_MANUAL : 1))
-      MessageBox("Existe algum erro na máquina! Reinicialize.");
-    else
-      return 1;
-    }
-
-  return 0;
-}
-
-gint AtualInfoProd(gpointer dados)
-{
-  static int DeveAtualizar = 1; // Faz com que na primeira vez a tela seja atualizada.
-  static long InfoTotal;
-  long InfoProd;
-  float InfoPos;
-  char tmp[20];
-  GtkWidget *lblInfoPos, *lblInfoProd;
-
-  if(DeveAtualizar)
-    InfoTotal = atol(gtk_label_get_text(GTK_LABEL(lookup_widget((GtkWidget *)(dados), "lblMsgTotal"))));
-
-  lblInfoPos = lookup_widget((GtkWidget *)(dados), "lblMsgPos");
-  if(lblInfoPos==NULL)
-    {
-    DeveAtualizar=1;
-    return FALSE;
-    }
-
-  MQ.MQ_Data.funcao = CV_MQFNC_TAM_ATUAL;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    // Carrega o valor atual
-    InfoPos   = atof(gtk_label_get_text(GTK_LABEL(lblInfoPos)));
-
-    // Atualiza o campo se houve alteração desde a última atualização
-    if(MQ.MQ_Data.data.df[0] != InfoPos || DeveAtualizar)
-      {
-      sprintf(tmp, "%.03f", MQ.MQ_Data.data.df[0]);
-      gtk_label_set_text(GTK_LABEL(lblInfoPos), tmp);
-      }
-    }
-
-  MQ.MQ_Data.funcao = CV_MQFNC_QTDPROD;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    // Encontra a referência do objeto e retorna se não existir
-    lblInfoProd  = lookup_widget((GtkWidget *)(dados), "lblMsgProd");
-    if(lblInfoProd==NULL) // Não existe! A janela deve ter sido fechada
-      {
-      DeveAtualizar=1;
-      return FALSE;
-      }
-
-    // Carrega o valor atual
-    InfoProd  = atol(gtk_label_get_text(GTK_LABEL(lblInfoProd)));
-
-    // Atualiza os campos se houve alteração desde a última atualização
-    if(MQ.MQ_Data.data.dl[0] != InfoProd || DeveAtualizar)
-      {
-      // Atualiza a contagem de peças produzidas
-      sprintf(tmp, "%d", MQ.MQ_Data.data.di[0]);
-      gtk_label_set_text(GTK_LABEL(lblInfoProd), tmp);
-
-      // Atualiza o saldo a produzir se não for a primeira vez
-      if(DeveAtualizar == 0)
-        {
-        sprintf(tmp, "%d", InfoTotal - MQ.MQ_Data.data.di[0]);
-        gtk_label_set_text(GTK_LABEL(lookup_widget((GtkWidget *)(dados), "lblMsgSaldo")), tmp);
-        }
-      }
-    }
-
-  DeveAtualizar = 0;
-
-  return TRUE;
-}
-
-void
-cbSairLoop                             (GtkObject       *object,
-                                        gpointer         user_data)
-{
-  *(unsigned int *)(user_data) = 0; // Força saída do loop
-}
-
-int EnviaComando(struct strMQ *MQS, struct strMQD *MQD, void *userdata)
-{
-  int ret = 1;
-  unsigned char msg[50];
-  unsigned int espera=0, i, FicarEmLoop = 1;
-  GtkWidget *wdg = create_wndMsg(), *lbl;
-
-  switch(MQD->funcao)
-    {
-    case CV_MQFNC_CORTAR:
-      strcpy(msg, "Cortando");
-      break;
-
-    case CV_MQFNC_RELENC:
-      strcpy(msg, "Calculando fator entre encoders");
-      break;
-
-    case CV_MQFNC_INIT:
-      strcpy(msg, "Inicializando");
-      break;
-
-    case CV_MQFNC_POSIC:
-      strcpy(msg, "Posicionando");
-      break;
-
-    case CV_MQFNC_CALC_FATOR:
-      strcpy(msg, "Calculando fator de correção");
-      break;
-
-    case CV_MQFNC_PRODUZ:
-      gtk_widget_show_all(lookup_widget(wdg, "frmMsgInfo"));
-
-      gtk_label_set_text(GTK_LABEL(lookup_widget(wdg, "lblMsgProd" )), "0");
-
-      sprintf(msg, "%d", MQD->data.dl[0]);
-      gtk_label_set_text(GTK_LABEL(lookup_widget(wdg, "lblMsgTotal")), msg);
-      gtk_label_set_text(GTK_LABEL(lookup_widget(wdg, "lblMsgSaldo")), msg);
-
-      // Funcao para atualizacao do campos de informação
-      g_timeout_add(100,(GtkFunction)AtualInfoProd, (gpointer)(wdg));
-
-      sprintf(msg, "Produzindo %d peças de %.03f mm", MQD->data.dl[0], MQD->data.df[1]);
-      break;
-    }
-
-  lbl = lookup_widget(wdg, "lblMsg");
-  gtk_label_set_text(GTK_LABEL(lbl), msg);
-
-  g_signal_connect ((gpointer) wdg, "destroy",
-            G_CALLBACK (cbSairLoop),
-            (gpointer)(&FicarEmLoop));
-
-  gtk_window_set_modal(GTK_WINDOW(wdg), 1);
-  gtk_widget_show_now(wdg);
-
-  MQS->MQ_Data.id     = MQD->id;
-  MQS->MQ_Data.ndata  = MQD->ndata;
-  MQS->MQ_Data.funcao = MQD->funcao;
-
-  for(i=0; i<sizeof(MQD->data); i++)
-    MQS->MQ_Data.data.dc[i] = MQD->data.dc[i];
-
-  MQ_Send(MQS);
-
-  while(FicarEmLoop)
-    {
-    gtk_main_iteration_do(FALSE);
-
-    if(espera++>1000)
-      {
-      espera=0;
-
-      MQS->MQ_Data.funcao = CV_MQFNC_STATUS;
-      if(MQ_Transfer(MQS)==MQ_ERRO_NENHUM)
-        {
-        if(MQS->MQ_Data.data.di[0]==CV_ST_ERRO) // Ocorreu um erro
-          {
-          ret = 0;
-          break;
-          }
-        else if(MQS->MQ_Data.data.di[0]==CV_ST_ESPERA) // Operação finalizada
-          break;
-        }
-      }
-    }
-
-  if(!FicarEmLoop) // Saiu forçado do loop! Devemos retornar erro.
-    {
-    // Envia comando para interromper operação atual.
-    MQ.MQ_Data.funcao = CV_MQFNC_PARAR;
-    MQ_Send(&MQ);
-
-    ret = 0;
-    }
-
-  gtk_widget_destroy(wdg);
-
-  return ret;
-}
-
-/*** Fim das funcoes de suporte ***/
-
-void
-CalcRelEnc                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_ESPERA))
-    return;
-
-  Log("Calculando relação entre encoders", LOG_TIPO_CONFIG);
-
-  MQD.funcao = CV_MQFNC_RELENC;
-  EnviaComando(&MQ, &MQD, NULL);
-}
-
-void
-Inicializar                            (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!GetUserPerm(PERM_ACESSO_OPER))
-    {
-    MessageBox("Sem permissão para operar a máquina!");
-    return;
-    }
-
-  Log("Inicializando máquina", LOG_TIPO_TAREFA);
-
-  MQD.funcao = CV_MQFNC_INIT;
-  EnviaComando(&MQ, &MQD, NULL);
-
-  MQ.MQ_Data.funcao = CV_MQFNC_STATUS;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    if(MQ.MQ_Data.data.di[0]==CV_ST_ESPERA)
-      {
-      EstadoBotoes(GTK_WIDGET(button), (guint)(BTN_CFG | BTN_INIT | BTN_OPER | BTN_MANUAL)); // Habilita tudo.
-      MessageBox("Maquina pronta para operar!");
-      }
-    else
-      {
-      EstadoBotoes(GTK_WIDGET(button), (guint)(BTN_CFG | BTN_INIT)); // Desabilita operacao.
-      MessageBox("Erro encontrado enquanto inicializando!");
-      }
-    }
-}
-
-void
-SaiManual                              (GtkObject       *object,
-                                        gpointer         user_data)
-{
-  gtk_grab_remove(GTK_WIDGET(object));
-}
-
-
-void
-PosicManual                            (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  GtkWidget *wdg;
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_MANUAL))
-    return;
-
-  wdg = lookup_widget(GTK_WIDGET(button), "entPosic");
-
-  MQD.funcao = CV_MQFNC_POSIC;
-  MQD.data.df[0] = atof((unsigned char *)(gtk_entry_get_text(GTK_ENTRY(wdg))));
-
-  EnviaComando(&MQ, &MQD, NULL);
-}
-
-gint AtualEnc(gpointer dados)
-{
-  static int DeveAtualizar=1;
-  long ValEnc;
-  char tmp[20];
-  GtkWidget *lbl;
-
-  lbl = lookup_widget((GtkWidget *)(dados), "lblEncMesa");
-  if(lbl==NULL)
-    {
-// Configura maquina para modo de espera
-    MQ.MQ_Data.funcao = CV_MQFNC_MANUAL;
-    MQ.MQ_Data.data.di[0] = 0;
-    MQ_Transfer(&MQ);
-
-    DeveAtualizar=1;
-    return FALSE;
-    }
-
-  MQ.MQ_Data.funcao = CV_MQFNC_LERENC;
-  MQ.MQ_Data.data.dl[0] = CV_ENC_MESA;
-  if(MQ_Transfer(&MQ)==MQ_ERRO_NENHUM)
-    {
-    ValEnc = atol(gtk_label_get_text(GTK_LABEL(lbl)));
-
-    if(MQ.MQ_Data.data.dl[0] != ValEnc || DeveAtualizar)
-      {
-      DeveAtualizar=0;
-      sprintf(tmp, "%d", MQ.MQ_Data.data.dl[0]);
-      gtk_label_set_text(GTK_LABEL(lbl), tmp);
-      }
-    }
-
-  return TRUE;
-}
-
-void UpdateImageBoxes(GtkWidget *ref, char *nome, unsigned long valor)
-{
-  int i = 0;
-  GtkWidget *obj;
-  char nome_obj[20];
-
-  while(1) // Sai apenas quando não encontra o objeto
-    {
-    sprintf(nome_obj, "%s%02d", nome, i);
-    obj = lookup_widget(ref, nome_obj);
-
-    // Acabaram os controles, saindo
-    if(obj == NULL)
-      break;
-
-    gtk_image_set_from_stock(GTK_IMAGE(obj), (valor>>i)&1 ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
-
-    i++; // Próximo controle.
-    }
-}
-
-void UpdateToggleButtons(GtkWidget *ref, char *nome, unsigned long valor)
-{
-  int i = 0;
-  GtkWidget *obj;
-  char nome_obj[20];
-
-  while(1) // Sai apenas quando não encontra o objeto
-    {
-    sprintf(nome_obj, "%s%02d", nome, i);
-    obj = lookup_widget(ref, nome_obj);
-
-    // Acabaram os controles, saindo
-    if(obj == NULL)
-      break;
-
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), (valor>>i)&1);
-
-    i++; // Próximo controle.
-    }
-}
-
 gint AtualIOs(gpointer dados)
 {
   unsigned long val;
@@ -589,120 +150,6 @@ gint AtualIOs(gpointer dados)
   return TRUE;
 }
 
-void
-AbrirManut                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  GtkWidget *wnd;
-
-  if(!GetUserPerm(PERM_ACESSO_MANUT))
-    {
-    MessageBox("Sem permissão para acesso à manutenção!");
-    return;
-    }
-
-  wnd = (GtkWidget *)(create_wndManut());
-
-// Funcao para atualizacao do estado dos I/Os
-  g_timeout_add(1500,(GtkFunction)AtualIOs, (gpointer)(wnd));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
-void
-CalcFatorMesa                          (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_ESPERA))
-    return;
-
-  Log("Calculando fator de correção da mesa", LOG_TIPO_CONFIG);
-
-  MQD.funcao = CV_MQFNC_CALC_FATOR;
-  EnviaComando(&MQ, &MQD, NULL);
-  LerDadosConfig(GTK_WIDGET(button));
-}
-
-void
-cbManualMesaRecua                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_REVERSO;
-  MQ_Transfer(&MQ);
-}
-
-void
-cbManualMesaParar                      (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_DESLIGA;
-  MQ_Transfer(&MQ);
-}
-
-void
-cbManualMesaAvanca                     (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_JOG;
-  MQ.MQ_Data.data.di[0] = CV_JOG_AVANTE;
-  MQ_Transfer(&MQ);
-}
-
-void
-cbManualMesaCortar                     (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  struct strMQD MQD;
-
-  if(!MaquinaEspera(CHECAR_MANUAL))
-    return;
-
-  MQD.funcao = CV_MQFNC_CORTAR;
-  EnviaComando(&MQ, &MQD, NULL);
-}
-
-void
-cbMsgParar                             (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  MQ.MQ_Data.funcao = CV_MQFNC_PARAR;
-// Se enviou o comando para interromper operação, desabilita o botão para não
-// permitir reenvio.
-  if(MQ_Send(&MQ)==MQ_ERRO_NENHUM)
-    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
-}
-
-void
-cbOperacaoManual                       (GtkButton       *button,
-                                        gpointer         user_data)
-{
-  GtkWidget *wnd;
-
-  if(!GetUserPerm(PERM_ACESSO_OPER))
-    {
-    MessageBox("Sem permissão para operar a máquina!");
-    return;
-    }
-
-  wnd = (GtkWidget *)(create_wndManual());
-
-// Configura maquina para operar em modo manual
-  MQ.MQ_Data.funcao = CV_MQFNC_MANUAL;
-  MQ.MQ_Data.data.di[0] = 1;
-  MQ_Transfer(&MQ);
-
-// Funcao para atualizacao do valor dos encoders
-  g_timeout_add(100,(GtkFunction)AtualEnc, (gpointer)(wnd));
-
-  AbrirJanelaModal(wnd);
-  gtk_grab_add(wnd);
-}
-
 #else
 void CarregaComboClientes()
 {
@@ -710,17 +157,7 @@ void CarregaComboClientes()
 
 // Carregamento dos clientes cadastrados no MySQL no ComboBox.
   DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj),0, NULL);
-}
-
-void CarregaComboUsuarios()
-{
-  GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-
-// O primeiro item é para inserção de novo usuário.
-// Carregamento dos usuário cadastrados no MySQL no ComboBox.
-  DB_Execute(&mainDB, 0, "select login from usuarios order by ID");
-  CarregaCombo(GTK_COMBO_BOX(obj),0, "<Novo Usuário>");
+  CarregaCombo(&mainDB, GTK_COMBO_BOX(obj),0, NULL);
 }
 
 void CarregaComboModelos()
@@ -732,7 +169,7 @@ void CarregaComboModelos()
 // Carregamento dos modelos cadastrados no MySQL no ComboBox.
   sprintf(sql, "select nome from modelos where estado='%d' order by ID", MOD_ESTADO_ATIVO);
   DB_Execute(&mainDB, 0, sql);
-  CarregaCombo(GTK_COMBO_BOX(obj), 0, "<Novo Modelo>");
+  CarregaCombo(&mainDB, GTK_COMBO_BOX(obj), 0, "<Novo Modelo>");
 }
 
 void CarregaDadosBanco()
@@ -796,7 +233,6 @@ char *lista_ent[] = {
 int GravarDadosConfig()
 {
   unsigned int i;
-  GtkWidget *obj;
   char **valor_ent;
   struct strMaqParam mp;
   valor_ent = (char **)(malloc(10*sizeof(char[10])));
@@ -804,7 +240,7 @@ int GravarDadosConfig()
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
   for(i=0; lista_ent[i][0]; i++)
-    printf("%d: %s = %s\n" , i, lista_ent[i],      valor_ent[i] );
+    printf("%d: %s = %s\n" , i, lista_ent[i], valor_ent[i] );
 
   mp.perfil.auto_vel       = atol(valor_ent[ 3]);
   mp.perfil.auto_acel      = atof(valor_ent[ 4]);
@@ -838,8 +274,6 @@ void LerDadosConfig()
   char tmp[100];
   unsigned int i;
   struct strMaqParam mp;
-  GtkWidget *obj;
-  GSList *lst;
   char **valor_ent;
 
   // Diminui em 1 o número de campos devido ao elemento vazio no final.
@@ -906,13 +340,10 @@ void LerDadosConfig()
   }
   free(valor_ent);
 
-  if(mainDB.res != NULL) // Somente carrega se há conexão com o DB
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Somente carrega se há conexão com o DB
     {
     // Carrega clientes cadastrados
     CarregaComboClientes();
-
-    // Carrega dados da aba de usuários
-    CarregaComboUsuarios();
 
     // Carrega dados da aba de modelos
     CarregaComboModelos();
@@ -920,6 +351,267 @@ void LerDadosConfig()
 
 // Carrega dados da aba de Banco de Dados
   CarregaDadosBanco();
+}
+
+#define VK_TYPE_WIDGET 0
+#define VK_TYPE_PCHAR  1
+
+typedef struct strVKData VKData;
+
+struct strVKData {
+  int type;
+  union {
+    struct {
+      int        size;
+      char      *buffer;
+      char      *msg;
+      void      (*finish)(VKData *vkd, int ok);
+      void      *user_data;
+    } pchar;
+    GtkWidget   *widget;
+  } obj;
+};
+
+void SairVirtualKeyboard()
+{
+  GtkButton *button;
+  guint signal_id;
+  gulong handler_id;
+
+  // Recebe o ID do sinal do callback
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+
+  // Remove do botao Cancelar
+  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  // Remove do botao OK
+  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  WorkAreaGoPrevious();
+}
+
+void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
+{
+  int pos;
+  GtkEditable *editable;
+  GtkTextBuffer *tb;
+  GtkTextIter cursor;
+  gchar *str = (gchar *)gtk_button_get_label(button);
+
+  // Verifica o label para identificar se foi clicado espaco, backspace ou enter.
+  if        (!strcmp(str, "Enter")) {
+    str = "\n";
+  } else if (!strcmp(str, "Espaço")) {
+    str = " ";
+  } else if (!strcmp(str, "gtk-clear")) {
+    str = NULL;
+  }
+
+  editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  if(gtk_widget_get_visible(GTK_WIDGET(editable))) {
+    if(str != NULL) {
+      pos = gtk_editable_get_position(editable);
+      gtk_editable_insert_text(editable, str, -1, &pos);
+      gtk_editable_set_position(editable, pos);
+    } else if (gtk_editable_get_selection_bounds(editable, &pos, &pos)) {
+      gtk_editable_delete_selection(editable);
+    } else {
+      pos = gtk_editable_get_position(editable);
+      if(pos) {
+        gtk_editable_delete_text(editable, pos-1, pos);
+      }
+    }
+  } else {
+    tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+
+    if(str != NULL) {
+      gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
+    } else {
+      if (gtk_text_buffer_get_has_selection (tb)) {
+        gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
+      } else {
+        gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
+        gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
+      }
+    }
+  }
+}
+
+void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data)
+{
+  char tmp[10], *label;
+  unsigned int i;
+  GtkButton *wdg;
+  gboolean toggled = gtk_toggle_button_get_active(button);
+
+  for(i=1;;i++) { // Loop eterno, finaliza quando acabarem os botoes
+    sprintf(tmp, "btnVK%02d", i);
+    wdg = GTK_BUTTON(gtk_builder_get_object(builder, tmp));
+    if(wdg == NULL) // Acabaram os botoes
+      break; // Sai do loop
+
+    // Se não for uma letra, altera para o que deve ser
+    label = (char *)gtk_button_get_label(wdg);
+    if(!strcmp(label, "Ç")) {
+      strcpy(tmp, "ç");
+    } else if(!strcmp(label, "ç")) {
+      strcpy(tmp, "Ç");
+/*    } else if(!strcmp(label, ".")) {
+      strcpy(tmp, ",");
+    } else if(!strcmp(label, ",")) {
+      strcpy(tmp, ".");*/
+    } else { // Letra, inverte case.
+      sprintf(tmp, "%c", (toggled ? toupper : tolower)(*label));
+    }
+
+    gtk_button_set_label(wdg, tmp);
+  }
+}
+
+void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
+{
+  char *data;
+  GtkTextBuffer *tb;
+  GtkTextIter start, end;
+  VKData *vkdata = (VKData *)user_data;
+  GtkWidget *widget = vkdata->obj.widget;
+
+  if(vkdata->type == VK_TYPE_WIDGET) {
+    if(GTK_IS_ENTRY(widget)) {
+      gtk_entry_set_text(GTK_ENTRY(widget),gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entVirtualKeyboard"))));
+    } else if(GTK_IS_TEXT_VIEW(widget)) {
+      tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+      gtk_text_buffer_get_start_iter(tb, &start);
+      gtk_text_buffer_get_end_iter(tb, &end);
+      data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+
+      gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget)), data, -1);
+    }
+  } else {
+    strncpy(vkdata->obj.pchar.buffer, gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entVirtualKeyboard"))), vkdata->obj.pchar.size);
+    vkdata->obj.pchar.buffer[vkdata->obj.pchar.size] = 0;
+    if(vkdata->obj.pchar.finish != NULL) {
+      (*vkdata->obj.pchar.finish)(vkdata, TRUE);
+    }
+  }
+
+  free(vkdata);
+
+  SairVirtualKeyboard();
+}
+
+void cbVirtualKeyboardCancelar(GtkButton *button, gpointer user_data)
+{
+  VKData *vkdata = (VKData *)user_data;
+
+  if(vkdata->type == VK_TYPE_PCHAR && vkdata->obj.pchar.finish != NULL) {
+    (*vkdata->obj.pchar.finish)(vkdata, FALSE);
+  }
+
+  free(vkdata);
+
+  SairVirtualKeyboard();
+}
+
+void AbrirVirtualKeyboard(VKData *vkdata)
+{
+  VKData *vkd;
+  const char *msg = NULL;
+  char *data, nome_label[100];
+  GtkWidget *obj, *widget = vkdata->obj.widget;
+  GtkEntry *entry;
+  GtkTextBuffer *tb;
+  GtkLabel *lbl = NULL, *lblVK;
+  GtkTextView *textview;
+  GtkTextIter start, end;
+  GtkScrolledWindow *scrollwnd;
+
+  // Lê o texto atual.
+  if(vkdata->type == VK_TYPE_WIDGET) {
+    if(GTK_IS_ENTRY(widget)) {
+      data = (char *)gtk_entry_get_text(GTK_ENTRY(widget));
+    } else if(GTK_IS_TEXT_VIEW(widget)) {
+      tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
+      gtk_text_buffer_get_start_iter(tb, &start);
+      gtk_text_buffer_get_end_iter(tb, &end);
+      data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
+    } else {
+      return; // Objeto nao suportado
+    }
+
+    // Tenta carregar o label relacionado ao campo de texto
+    sprintf(nome_label, "lbl%s", (char *)(gtk_buildable_get_name(GTK_BUILDABLE(widget))+3));
+    lbl   = GTK_LABEL(gtk_builder_get_object(builder, nome_label));
+    if(lbl && GTK_IS_LABEL(lbl)) {
+      msg = gtk_label_get_text(lbl);
+    }
+  } else if(vkdata->type == VK_TYPE_PCHAR) {
+    data = vkdata->obj.pchar.buffer;
+    msg  = vkdata->obj.pchar.msg;
+  } else { // Tipo nao suportado!
+    return;
+  }
+
+  vkd  = (VKData *)malloc(sizeof(VKData));
+  *vkd = *vkdata;
+
+  lblVK = GTK_LABEL(gtk_builder_get_object(builder, "lblVirtualKeyboard"));
+
+  if(msg != NULL) {
+    gtk_label_set_text(lblVK, msg);
+    gtk_widget_set_visible(GTK_WIDGET(lblVK), TRUE );
+  } else {
+    gtk_widget_set_visible(GTK_WIDGET(lblVK), FALSE);
+  }
+
+// Carrega o ponteiro para o botão de confirmar.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
+
+// Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardOK),
+              (gpointer)(vkd));
+
+  // Carrega o ponteiro para o botão de cancelar.
+  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
+
+  // Conexão dos sinais de callback
+  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardCancelar),
+                (gpointer)(vkd));
+
+  // Carrega ponteiro para os campos de edição
+  entry     = GTK_ENTRY          (gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  textview  = GTK_TEXT_VIEW      (gtk_builder_get_object(builder, "txvVirtualKeyboard"));
+  scrollwnd = GTK_SCROLLED_WINDOW(gtk_builder_get_object(builder, "scwVirtualKeyboard"));
+
+  // Carrega o texto e ativa o objeto correspondente
+  if(vkdata->type == VK_TYPE_PCHAR || GTK_IS_ENTRY(widget)) {
+    gtk_entry_set_text(entry, data);
+    if(vkdata->type == VK_TYPE_PCHAR) {
+      gtk_entry_set_visibility(entry, TRUE);
+    } else {
+      gtk_entry_set_visibility(entry, gtk_entry_get_visibility(GTK_ENTRY(widget)));
+    }
+    gtk_widget_set_visible(GTK_WIDGET(entry    ), TRUE );
+    gtk_widget_set_visible(GTK_WIDGET(textview ), FALSE);
+    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), FALSE);
+
+    GtkEditable *editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
+    gtk_editable_set_position(editable, -1);
+//    gtk_widget_grab_focus (GTK_WIDGET(entry    ));
+  } else {
+    gtk_text_buffer_set_text(gtk_text_view_get_buffer(textview), data, -1);
+    gtk_widget_set_visible(GTK_WIDGET(entry    ), FALSE);
+    gtk_widget_set_visible(GTK_WIDGET(textview ), TRUE );
+    gtk_widget_set_visible(GTK_WIDGET(scrollwnd), TRUE );
+//    gtk_widget_grab_focus (GTK_WIDGET(textview ));
+  }
+
+// Exibe a janela.
+  WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
 }
 
 void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
@@ -938,7 +630,7 @@ void cbClienteSelecionado(GtkComboBox *combobox, gpointer user_data)
 void cbRemoverCliente(GtkButton *button, gpointer user_data)
 {
   int id;
-  char sql[100], tmp[10];
+  char sql[100];
   GtkWidget *dialog;
   GtkComboBox *obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbClientes"));
 
@@ -976,319 +668,6 @@ void cbRemoverCliente(GtkButton *button, gpointer user_data)
     }
 
   gtk_widget_destroy (dialog);
-}
-
-void cbLoginUserSelected(GtkComboBox *combobox, gpointer user_data)
-{
-  char *lst_campos[] =
-    {
-      "entNome"    , "nome",
-      "entSenha"   , "senha",
-      "entLembrete", "lembrete",
-      ""           , ""
-    };
-
-  char *lst_botoes[] = { "btnExcluir", "btnPerm", "" };
-
-  if(gtk_combo_box_get_active(combobox)>=0)
-    CarregaCampos(combobox, lst_campos, lst_botoes, "usuarios", "login");
-}
-
-void cbAplicarUsuario(GtkButton *button, gpointer user_data)
-{
-  char sql[400], *nome, *senha, *lembrete, *login;
-  GtkWidget *dialog, *obj, *wnd, *entry;
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "entNome"));
-  nome = (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "entSenha"));
-  senha = Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(obj))));
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "entLembrete"));
-  lembrete = (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, alterar usuário.
-    {
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Aplicar as alterações ao usuário '%s'?",
-              LerComboAtivo(GTK_COMBO_BOX(obj)));
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "update usuarios set nome='%s', senha='%s', lembrete='%s' where login='%s'",
-        nome, senha, lembrete, LerComboAtivo(GTK_COMBO_BOX(obj)));
-      DB_Execute(&mainDB, 0, sql);
-
-      sprintf(sql, "Alterado o usuário %s", LerComboAtivo(GTK_COMBO_BOX(obj)));
-      Log(sql, LOG_TIPO_SISTEMA);
-
-      MessageBox("Usuário alterado com sucesso!");
-      }
-    }
-  else
-    {
-    wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndConfig"));
-    dialog = gtk_dialog_new_with_buttons ("Digite o login do usuário:",
-          GTK_WINDOW(wnd),
-          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR,
-          GTK_STOCK_OK,
-          GTK_RESPONSE_OK,
-          GTK_STOCK_CANCEL,
-          GTK_RESPONSE_CANCEL,
-          NULL);
-
-    // TODO: Ler do banco de dados o tamanho do campo de login.
-    entry = gtk_entry_new_with_max_length(10);
-    gtk_container_add (GTK_CONTAINER (GTK_DIALOG(dialog)->vbox), entry);
-    AbrirJanelaModal(dialog);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
-      {
-      login = (char *)(gtk_entry_get_text(GTK_ENTRY(entry)));
-      sprintf(sql, "select ID from usuarios where login='%s'", login);
-      DB_Execute(&mainDB, 0, sql);
-      if(DB_GetNextRow(&mainDB, 0)>0)
-        {
-        wnd = gtk_message_dialog_new (NULL,
-                  GTK_DIALOG_DESTROY_WITH_PARENT,
-                  GTK_MESSAGE_ERROR,
-                  GTK_BUTTONS_OK,
-                  "O usuário '%s' já existe!",
-                  login);
-
-        gtk_dialog_run(GTK_DIALOG(wnd));
-        gtk_widget_destroy (wnd);
-        }
-      else // O usuário não existe. Realizando inserção.
-        {
-        sprintf(sql, "insert into usuarios (nome, senha, lembrete, login) "
-               "values ('%s', '%s', '%s', '%s')",
-               nome, senha, lembrete, login);
-        DB_Execute(&mainDB, 0, sql);
-
-        CarregaItemCombo(GTK_COMBO_BOX(obj), login);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-        cbLoginUserSelected(GTK_COMBO_BOX(obj), NULL);
-
-        sprintf(sql, "Adicionado o usuário %s", login);
-        Log(sql, LOG_TIPO_SISTEMA);
-
-        MessageBox("Usuário adicionado com sucesso!");
-        }
-      }
-    }
-
-  gtk_widget_destroy (dialog);
-}
-
-void cbExcluirUsuario(GtkButton *button, gpointer user_data)
-{
-  int id;
-  char sql[100], *ativo;
-  GtkWidget *dialog, *obj;
-
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-  if(gtk_combo_box_get_active(GTK_COMBO_BOX(obj)) != 0) // Não é o primeiro item, exclui usuário.
-    {
-    ativo = LerComboAtivo(GTK_COMBO_BOX(obj));
-    sprintf(sql, "select ID from usuarios where login='%s'", ativo);
-    DB_Execute(&mainDB, 0 ,sql);
-    id = atoi(DB_GetData(&mainDB, 0, 0));
-    if(id == idUser) // Tentando remover usuário atual!
-      {
-      sprintf(sql, "O usuário '%s' é o usuário atual, não pode ser excluído!", ativo);
-      MessageBox(sql);
-      return; // Não pode excluir o usuário atual. Retorna!
-      }
-
-    dialog = gtk_message_dialog_new (NULL,
-              GTK_DIALOG_DESTROY_WITH_PARENT,
-              GTK_MESSAGE_QUESTION,
-              GTK_BUTTONS_YES_NO,
-              "Tem certeza que deseja excluir o usuário '%s'?",
-              ativo);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
-      {
-      sprintf(sql, "Removendo usuário %s", ativo);
-      Log(sql, LOG_TIPO_SISTEMA);
-
-      sprintf(sql, "delete from usuarios where login='%s'", ativo);
-      DB_Execute(&mainDB, 0, sql);
-      ExcluiItemCombo(GTK_COMBO_BOX(obj), gtk_combo_box_get_active(GTK_COMBO_BOX(obj)));
-      gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-
-      MessageBox("Usuário removido com sucesso!");
-      }
-
-    gtk_widget_destroy (dialog);
-    }
-}
-
-void SaindoUserPerms(gpointer user_data)
-{
-  guint signal_id;
-  gulong handler_id;
-  GtkWidget *wdg;
-  GtkContainer *container = GTK_CONTAINER(gtk_builder_get_object(builder, "tblPerms"));
-  GList *start, *lst = gtk_container_get_children(container);
-
-  start = lst;
-  while(lst) {
-    gtk_container_remove(container, GTK_WIDGET(lst->data));
-    lst = lst->next;
-  }
-
-  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
-
-  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsOK"));
-  handler_id = g_signal_handler_find((gpointer)wdg, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect((gpointer)wdg, handler_id);
-
-  wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsCancel"));
-  handler_id = g_signal_handler_find((gpointer)wdg, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect((gpointer)wdg, handler_id);
-
-  gtk_grab_remove(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
-  free((int *)(user_data));
-  g_list_free(start);
-}
-
-void cbUserPermsCancel(GtkButton *button, gpointer user_data)
-{
-  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
-  SaindoUserPerms(user_data);
-}
-
-void cbUserPermsAtual(GtkButton *button, gpointer user_data)
-{
-  int i=0, val_perm, inserir = 0;
-  char sql[100];
-  GList *lst = gtk_container_get_children(GTK_CONTAINER(gtk_builder_get_object(builder, "tblPerms")));
-
-  sprintf(sql,"delete from permissoes where ID_User=%d", *(int *)(user_data));
-  DB_Execute(&mainDB, 0, sql);
-
-  while(lst)
-    {
-    if(GTK_IS_ENTRY(lst->data))
-      {
-      inserir = 1;
-      val_perm = atoi(gtk_entry_get_text(GTK_ENTRY(lst->data)));
-      }
-    else if(GTK_IS_CHECK_BUTTON(lst->data))
-      {
-      inserir = 1;
-      val_perm = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(lst->data));
-      }
-
-    if(inserir)
-      {
-      sprintf(sql,"insert into permissoes values (%d, %d, %d)",
-        *(int *)(user_data),
-        *((int *)(user_data)+i+1),
-        val_perm);
-      DB_Execute(&mainDB, 0, sql);
-
-      i++;
-      inserir = 0;
-      }
-
-    lst = lst->next;
-    }
-
-  gtk_widget_hide_all(GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms")));
-  SaindoUserPerms(user_data);
-}
-
-void cbAbrirUserPerms(GtkButton *button, gpointer user_data)
-{
-  char sql[100], tmp[30];
-  int i=0, tam, id_user, val_perm;
-  GtkWidget *wnd, *tbl, *wdg, *combo;
-// Ponteiro para uma lista de IDs para a futura inserção / alteração dos dados no banco.
-  int *ptrIDs;
-
-  wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndUserPerms"));
-  tbl = GTK_WIDGET(gtk_builder_get_object(builder, "tblPerms"));
-
-  combo = GTK_WIDGET(gtk_builder_get_object(builder, "cmbCadUserLogin"));
-  sprintf(sql, "select ID from usuarios where login='%s'", LerComboAtivo(GTK_COMBO_BOX(combo)));
-
-  DB_Execute(&mainDB, 0, sql);
-  DB_GetNextRow(&mainDB, 0);
-
-  id_user = atoi((char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-
-  DB_Execute(&mainDB, 0, "select ID, descricao, valor, tipo from lista_permissoes order by ID");
-  DB_GetNextRow(&mainDB, 0);
-
-  tam = DB_GetCount(&mainDB, 0);
-
-  if(tam>0)
-    {
-    // Aloca o ponteiro para os IDs.
-    // Deve ser desalocado pela função de callback do sinal destroy da janela.
-    ptrIDs = (int *)(malloc(sizeof(int)*(tam+1)));
-    gtk_table_resize(GTK_TABLE(tbl), tam, 2);
-
-// Conexão dos sinais de callback
-    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsOK"));
-    g_signal_connect ((gpointer) wdg, "clicked",
-      G_CALLBACK (cbUserPermsAtual ), (gpointer)(ptrIDs));
-
-    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnUserPermsCancel"));
-    g_signal_connect ((gpointer) wdg, "clicked",
-      G_CALLBACK (cbUserPermsCancel), (gpointer)(ptrIDs));
-
-// A primeira posicao contém o ID do usuário.
-    *ptrIDs = id_user;
-
-    do
-      {
-      *(ptrIDs+tam-i) = atoi((char *)DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-
-      Asc2Utf(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "descricao")), tmp);
-      wdg = gtk_label_new(tmp);
-      gtk_table_attach_defaults(GTK_TABLE(tbl), wdg, 0, 1, i, i+1);
-
-      sprintf(sql, "select valor from permissoes where ID_user=%d and ID_perm=%d", id_user, *(ptrIDs+tam-i));
-      DB_Execute(&mainDB, 1, sql);
-      if(DB_GetNextRow(&mainDB, 1)>0) // Carrega o valor da permissão para este usuário
-        strcpy(tmp, DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "valor")));
-      else // A permissão do usuário não existe. Carrega o valor default da permissão
-        strcpy(tmp, DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "valor")));
-
-      switch(atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "tipo"))))
-        {
-        case PERM_TIPO_BOOL:
-          val_perm = atoi(tmp);
-          wdg      = gtk_check_button_new();
-          gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), val_perm);
-
-          break;
-
-        default:
-        case PERM_TIPO_INT:
-          wdg = gtk_entry_new_with_max_length(5); // Tamanho de um inteiro
-          gtk_entry_set_text(GTK_ENTRY(wdg), tmp);
-
-          break;
-        }
-
-      gtk_table_attach_defaults(GTK_TABLE(tbl), wdg, 1, 2, i, i+1);
-
-      i++;
-      } while(DB_GetNextRow(&mainDB, 0)>0);
-
-    AbrirJanelaModal(wnd);
-    gtk_grab_add(wnd);
-    }
 }
 
 gboolean ChecarModelo(int passo, int tam_max)
@@ -1336,7 +715,7 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
   if(gtk_combo_box_get_active(combobox)<0)
     return; // Sem item ativo.
 
-  if(CarregaCampos(combobox, lst_campos, lst_botoes, "modelos", "nome"))
+  if(CarregaCampos(&mainDB, combobox, lst_campos, lst_botoes, "modelos", "nome"))
     pilotar = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "pilotar")));
   else
     pilotar = 0;
@@ -1354,12 +733,62 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
     }
 }
 
+typedef struct strModData ModData;
+
+struct strModData {
+  char **valores;
+  char **opt_piloto;
+};
+
+void FinalizaInserirModelo(VKData *vkdata, int result)
+{
+  char sql[400];
+  GtkWidget   *wnd;
+  GtkComboBox *obj;
+  ModData *md = (ModData *)vkdata->obj.pchar.user_data;
+
+  if(result == TRUE)
+    {
+    sprintf(sql, "select ID from modelos where nome='%s'", vkdata->obj.pchar.buffer);
+    DB_Execute(&mainDB, 0, sql);
+    if(DB_GetNextRow(&mainDB, 0)>0)
+      {
+      wnd = gtk_message_dialog_new (NULL,
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_ERROR,
+                GTK_BUTTONS_OK,
+                "O modelo '%s' já existe!",
+                vkdata->obj.pchar.buffer);
+
+      gtk_dialog_run(GTK_DIALOG(wnd));
+      gtk_widget_destroy (wnd);
+      }
+    else // O modelo não existe. Realizando inserção.
+      {
+      sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
+             "values ('%s', '%d', '%s', '%s', '%s', '%d')",
+             vkdata->obj.pchar.buffer, BuscaStringLista(md->opt_piloto, md->valores[1], FALSE), md->valores[2], md->valores[3], md->valores[4], MOD_ESTADO_ATIVO);
+      DB_Execute(&mainDB, 0, sql);
+
+      obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbModNome"));
+      CarregaItemCombo(obj, vkdata->obj.pchar.buffer);
+      gtk_combo_box_set_active(obj, 0);
+      cbConfigModeloSelecionado(obj, NULL);
+
+      sprintf(sql, "Adicionado modelo %s", vkdata->obj.pchar.buffer);
+      Log(sql, LOG_TIPO_CONFIG);
+
+      MessageBox("Modelo adicionado com sucesso!");
+      }
+    } else {
+      MessageBox("Operação cancelada!");
+    }
+}
+
 void cbAplicarModelo(GtkButton *button, gpointer user_data)
 {
-  int i;
-  char sql[400], *nome;
-
-  char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
+  char sql[400];
+  static char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
   char *campos[] =
     {
     "cmbModNome",
@@ -1369,8 +798,9 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
     "entModTamMin",
     ""
     };
+  static ModData md = { valores, opt_piloto };
 
-  GtkWidget *dialog, *obj, *wnd, *entry;
+  GtkWidget *dialog, *obj;
 
   if(!LerValoresWidgets(campos, valores))
     return; // Ocorreu algum erro lendo os campos. Retorna.
@@ -1402,61 +832,22 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
 
       MessageBox("Modelo alterado com sucesso!");
       }
+
+    gtk_widget_destroy (dialog);
     }
   else
     {
-    wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
-    dialog = gtk_dialog_new_with_buttons ("Digite o nome do modelo:",
-          GTK_WINDOW(wnd),
-          GTK_DIALOG_DESTROY_WITH_PARENT | GTK_DIALOG_MODAL | GTK_DIALOG_NO_SEPARATOR,
-          GTK_STOCK_OK,
-          GTK_RESPONSE_OK,
-          GTK_STOCK_CANCEL,
-          GTK_RESPONSE_CANCEL,
-          NULL);
+    VKData vkdata;
+    vkdata.type                = VK_TYPE_PCHAR;
+    vkdata.obj.pchar.buffer    = (char *)malloc(21);
+    vkdata.obj.pchar.size      = 20;
+    vkdata.obj.pchar.msg       = "Nome do Modelo";
+    vkdata.obj.pchar.finish    = FinalizaInserirModelo;
+    vkdata.obj.pchar.user_data = &md;
+    vkdata.obj.pchar.buffer[0] = 0;
 
-    // TODO: Ler do banco de dados o tamanho do campo de nome.
-    entry = gtk_entry_new_with_max_length(20);
-    gtk_container_add (GTK_CONTAINER (GTK_DIALOG(dialog)->vbox), entry);
-    AbrirJanelaModal(dialog);
-
-    if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_OK)
-      {
-      nome = (char *)(gtk_entry_get_text(GTK_ENTRY(entry)));
-      sprintf(sql, "select ID from modelos where nome='%s'", nome);
-      DB_Execute(&mainDB, 0, sql);
-      if(DB_GetNextRow(&mainDB, 0)>0)
-        {
-        wnd = gtk_message_dialog_new (NULL,
-                  GTK_DIALOG_DESTROY_WITH_PARENT,
-                  GTK_MESSAGE_ERROR,
-                  GTK_BUTTONS_OK,
-                  "O modelo '%s' já existe!",
-                  nome);
-
-        gtk_dialog_run(GTK_DIALOG(wnd));
-        gtk_widget_destroy (wnd);
-        }
-      else // O modelo não existe. Realizando inserção.
-        {
-        sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
-               "values ('%s', '%d', '%s', '%s', '%s', '%d')",
-               nome, BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], MOD_ESTADO_ATIVO);
-        DB_Execute(&mainDB, 0, sql);
-
-        CarregaItemCombo(GTK_COMBO_BOX(obj), nome);
-        gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);
-        cbConfigModeloSelecionado(GTK_COMBO_BOX(obj), NULL);
-
-        sprintf(sql, "Adicionado modelo %s", nome);
-        Log(sql, LOG_TIPO_CONFIG);
-
-        MessageBox("Modelo adicionado com sucesso!");
-        }
-      }
+    AbrirVirtualKeyboard(&vkdata);
     }
-
-  gtk_widget_destroy (dialog);
 }
 
 void cbRemoverModelo(GtkButton *button, gpointer user_data)
@@ -1494,11 +885,10 @@ void cbRemoverModelo(GtkButton *button, gpointer user_data)
 
 void AbrirConfig(unsigned int pos)
 {
-  GtkWidget *wnd;
-
-  if(mainDB.res != NULL) // Banco de dados conectado!
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
+      WorkAreaGoTo(NTB_ABA_HOME);
       MessageBox("Sem permissão para acesso à configuração!");
       return;
       }
@@ -1521,10 +911,18 @@ void cbConfigOk(GtkButton *button, gpointer user_data)
 //  MQ.MQ_Data.data.di[0] = CV_ERRO_CONFIG;
 //  MQ_Transfer(&MQ);
 
-  Log("Alterada configuração da máquina", LOG_TIPO_CONFIG);
+  WorkAreaGoTo(NTB_ABA_HOME);
+
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
+    if(GetUserPerm(PERM_ACESSO_CONFIG) != PERM_WRITE) {
+      WorkAreaGoTo(NTB_ABA_HOME);
+      MessageBox("Sem permissão para alterar configuração! Nada alterado.");
+      return;
+    }
+
+  Log("Alterada configuracao da maquina", LOG_TIPO_CONFIG);
 
   GravarDadosConfig();
-  WorkAreaGoTo(NTB_ABA_HOME);
 }
 
 void cbConfigVoltar(GtkButton *button, gpointer user_data)
@@ -1534,59 +932,109 @@ void cbConfigVoltar(GtkButton *button, gpointer user_data)
 
 void cbLoginOk(GtkButton *button, gpointer user_data)
 {
-  int pos = 5; // Posição da aba de configuração do banco, iniciando de zero.
-  char sql[100], *lembrete = "";
+  struct strDB *sDB = MSSQL_Connect();
+  int pos = 4; // Posição da aba de configuração do banco, iniciando de zero.
+  char sql[300], *lembrete = "";
+  char senha[20], *tmpPerm;
 
-  if(mainDB.res==NULL) // Banco não conectado!
-    {
+  // Verifica se conectamos no banco SQL Server
+  if(!(sDB && (sDB->status & DB_FLAGS_CONNECTED))) {
+    sDB = &mainDB; // Não conectamos, tenta login local
+    MessageBox("Erro ao conectar ao servidor, tentando conexão local");
+  }
+
+  if(!(sDB->status & DB_FLAGS_CONNECTED)) { // Banco não conectado!
     if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) // Senha correta
       {
       idUser=1; // Grava 1 para indicar que foi logado
 
 // Exibe a janela de configuração na aba de configuração do banco de dados
-      // Cria a janela principal
       AbrirConfig(pos);
 
       return;
       }
     else
       lembrete = LEMBRETE_SENHA_MASTER;
-    }
-  else
-    {
-    sprintf(sql, "select senha, lembrete, ID from usuarios where login='%s'",
+  } else {
+    sprintf(sql, "select O.*, P.PERMISSAO as pPERMISSAO from OPERADOR as O, PERFIL as P where O.PERFIL=P.ID and O.USUARIO='%s'",
       LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
 
-    DB_Execute(&mainDB, 0, sql);
-    if(DB_GetNextRow(&mainDB, 0)>0)
-      if(!strcmp(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "senha")),Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")))))))
-        {
-        // Carrega o ID do usuário que está logando.
-        idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-        Log("Entrada no sistema", LOG_TIPO_SISTEMA);
+    DB_Execute(sDB, 0, sql);
+    if(DB_GetNextRow(sDB, 0)>0) {
+      // Carrega o ID do usuário que está logando.
+      idUser = atoi(DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "ID")));
 
-        // Cria a janela principal
+      strcpy(senha, Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))));
+      if(!strcmp(DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "SENHA")),senha)) {
+        // Oculta a janela de login.
         WorkAreaGoTo(NTB_ABA_HOME);
 
-// Funcao para captura de mensagens do processo do Corte Voador
-//        g_timeout_add(200,(GtkFunction)sync_cv, (gpointer *)(wnd));
+        // Limpa a senha digitada
+        gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")), "");
+
+        // Carrega permissão
+        tmpPerm = DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "pPERMISSAO"));
+
+        if(UserPerm != NULL)
+          free(UserPerm); // Desaloca permissão anterior
+        UserPerm = (char *)malloc(strlen(tmpPerm)+1);
+
+        strcpy(UserPerm, tmpPerm);
+
+        // Se conectou pelo SQL Server, sincronizar usuário e permissões com o MySQL
+        if(sDB->DriverID != NULL && !strcmp(sDB->DriverID, "MSSQL")) {
+          // Primeiro sincroniza os perfis
+          if(MSSQL_Execute(1, "select * from PERFIL", MSSQL_DONT_SYNC) >= 0) {
+            // Exclui registros antigos
+            DB_Execute(&mainDB, 0, "delete from PERFIL");
+
+            // Inclui novos registros
+            while(DB_GetNextRow(sDB, 1) > 0) {
+              sprintf(sql, "insert into PERFIL (ID, NOME, PERMISSAO) values ('%s', '%s', '%s')",
+                  MSSQL_GetData(1, DB_GetFieldNumber(sDB, 1, "ID"       )),
+                  MSSQL_GetData(1, DB_GetFieldNumber(sDB, 1, "NOME"     )),
+                  MSSQL_GetData(1, DB_GetFieldNumber(sDB, 1, "PERMISSAO")));
+              DB_Execute(&mainDB, 0, sql); // Insere perfil
+            }
+          }
+
+          // Agora sincroniza o usuário que acabou de entrar
+          sprintf(sql, "select ID from OPERADOR where ID='%d'", idUser);
+          DB_Execute(&mainDB, 0, sql); // Verifica se usuário já existe
+          if(DB_GetNextRow(&mainDB, 0) > 0) { // Usuario existente! Usar update...
+            sprintf(sql, "update OPERADOR set NOME='%s', USUARIO='%s', SENHA='%s', LEMBRETE='%s', PERFIL='%s' where ID='%d'",
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "NOME"    )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "USUARIO" )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "SENHA"   )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "LEMBRETE")),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "PERFIL"  )), idUser);
+          } else {
+            sprintf(sql, "insert into OPERADOR (ID, NOME, USUARIO, SENHA, LEMBRETE, PERFIL) values ('%s', '%s', '%s', '%s', '%s', '%s')",
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "ID"      )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "NOME"    )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "USUARIO" )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "SENHA"   )),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "LEMBRETE")),
+              MSSQL_GetData(0, DB_GetFieldNumber(sDB, 0, "PERFIL" )));
+          }
+
+          DB_Execute(&mainDB, 0, sql); // Insere/Atualiza registro com os dados atuais
+        }
+
+        Log("Entrada no sistema", LOG_TIPO_SISTEMA);
 
         return;
-        }
-      else // Erro durante login. Gera log informando esta falha.
-        {
-        lembrete = DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "lembrete"));
-
-        // Carrega Id para associar o log a este usuário
-        idUser = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
+      } else { // Erro durante login. Gera log informando esta falha.
+        lembrete = DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "LEMBRETE"));
 
         // Insere o log de erro no login para o usuário selecionado
         Log("Erro durante login", LOG_TIPO_ERRO);
 
         // Volta para zero pois o usuário não logou.
         idUser = 0;
-        }
+      }
     }
+  }
 
   // Se lembrete for nulo, seleciona para texto em branco.
   if(lembrete == NULL)
@@ -1601,16 +1049,17 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
 {
   struct strDB tmpDB;
 
-  tmpDB.server  = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoIP"   )));
-  tmpDB.user    = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoUser" )));
-  tmpDB.passwd  = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoSenha")));
-  tmpDB.nome_db = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoNome" )));
+  tmpDB.DriverID = "MySQL";
+  tmpDB.server   = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoIP"   )));
+  tmpDB.user     = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoUser" )));
+  tmpDB.passwd   = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoSenha")));
+  tmpDB.nome_db  = (char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entBancoNome" )));
 
   if(DB_Init(&tmpDB)) // Se inicializar o banco, precisamos verificar se existem as tabelas.
     {
 // DB_Execute() retorna -1 se ocorrer um erro ou zero no sucesso.
 // Se algum retornar algo diferente de zero existe um erro com o banco!
-    if(DB_Execute(&tmpDB, 0, "select * from usuarios") ||
+    if(DB_Execute(&tmpDB, 0, "select * from OPERADOR") ||
        DB_Execute(&tmpDB, 1, "select * from tarefas" ) ||
        DB_Execute(&tmpDB, 2, "select * from modelos" ) ||
        DB_Execute(&tmpDB, 3, "select * from clientes"))
@@ -1626,43 +1075,133 @@ void cbBancoTestar(GtkButton *button, gpointer user_data)
 
 void cbManutAtualSaida(GtkToggleButton *togglebutton, gpointer user_data)
 {
-  const gchar *nome = gtk_widget_get_name(GTK_WIDGET(togglebutton));
+  const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(togglebutton));
   char nome_img[30];
-  union MB_FCD_Data data;
-  struct MB_Reply rp;
+  union MODBUS_FCD_Data data;
+  struct MODBUS_Reply rp;
 
   data.write_single_coil.output = atoi(&nome[strlen(nome)-2]);
   data.write_single_coil.val    = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(togglebutton));
 
-  rp = MB_Send(&mbdev, MB_FC_WRITE_SINGLE_COIL, &data);
+  rp.ExceptionCode = 0;//MB_Send(&mbdev, MODBUS_FC_WRITE_SINGLE_COIL, &data);
 
   sprintf(nome_img, "imgManutSai%02d", data.write_single_coil.output-1);
   gtk_image_set_from_stock(GTK_IMAGE(gtk_builder_get_object(builder, nome_img)),
       data.write_single_coil.val ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
 
-  if(rp.ExceptionCode != MB_EXCEPTION_NONE)
+  if(rp.ExceptionCode != MODBUS_EXCEPTION_NONE)
     printf("Erro escrevendo saida. Exception Code: %02x\n", rp.ExceptionCode);
+}
+
+extern unsigned int CurrentStatus;
+
+typedef struct strWAList WAList;
+
+struct strWAList {
+  int WorkArea;
+  WAList *next;
+};
+
+WAList *WA_PreviousList = NULL;
+
+WAList * AddWA(WAList **list, int WA)
+{
+  int i = 1;
+  WAList *newWA;
+
+  if(list == NULL) {
+    return NULL;
+  }
+
+  newWA = (WAList *)malloc(sizeof(WAList));
+  newWA->WorkArea = WA;
+  newWA->next     = NULL;
+
+  if(*list == NULL) {
+    *list = newWA;
+  } else {
+    WAList *current = *list;
+    while(current->next != NULL) {
+      i++;
+      current = current->next;
+    }
+
+    current->next = newWA;
+  }
+
+  return newWA;
+}
+
+int RemoveWA(WAList **list)
+{
+  int i = 0;
+  int WA = NTB_ABA_HOME; // Por default retorna a tela anterior como a aba HOME.
+
+  if(list != NULL && *list != NULL) {
+    WAList *current = *list, *previous = NULL;
+    while(current->next != NULL) {
+      i++;
+      previous = current;
+      current = current->next;
+    }
+
+    WA = current->WorkArea;
+    free(current);
+
+    if(previous == NULL) {
+      *list = NULL;
+    } else {
+      previous->next = NULL;
+    }
+  }
+
+  return WA;
 }
 
 void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
 {
-  PreviousWorkArea = CurrentWorkArea;
+  if(CurrentWorkArea != NTB_ABA_NONE) {
+    AddWA(&WA_PreviousList, CurrentWorkArea);
+  }
   CurrentWorkArea  = arg1;
+
+  if(CurrentWorkArea != NTB_ABA_ESPERA && CurrentWorkArea != NTB_ABA_MESSAGEBOX) {
+    atividade++;
+  }
+
+  if(CurrentWorkArea == NTB_ABA_POWERDOWN && !OnPowerDown) {
+    WorkAreaGoPrevious(); // Tela nao faz mais sentido agora, energia restabelecida!
+  } else if((arg1 == NTB_ABA_HOME || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
+    WorkAreaGoTo(NTB_ABA_INDETERMINADO);
+  }
 }
 
 void WorkAreaGoTo(int NewWorkArea)
 {
+  // Se não houve mudança, retorna.
   // Caso estiver na aba de MessageBox, nao permite mudanca.
   // Marca a anterior como a nova e, ao sair do message box, esta nova sera selecionada.
-  if(CurrentWorkArea != NTB_ABA_MESSAGEBOX)
+  if(CurrentWorkArea == NewWorkArea) {
+    return;
+  } else if(CurrentWorkArea != NTB_ABA_MESSAGEBOX || NewWorkArea == NTB_ABA_ESPERA ||
+      (NewWorkArea == NTB_ABA_POWERDOWN && CurrentWorkArea != NTB_ABA_ESPERA)) {
+    // Se estiver indo para a aba HOME, exclui lista de telas anteriores e desmarca tela atual.
+    if(NewWorkArea == NTB_ABA_HOME) {
+      CurrentWorkArea = NTB_ABA_NONE;
+      while(WA_PreviousList != NULL)
+        RemoveWA(&WA_PreviousList);
+    }
+
     gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NewWorkArea);
-  else if(NewWorkArea != NTB_ABA_MESSAGEBOX)
-    PreviousWorkArea = NewWorkArea;
+  } else if(NewWorkArea != NTB_ABA_MESSAGEBOX) {
+    AddWA(&WA_PreviousList, NewWorkArea);
+  }
 }
 
 void WorkAreaGoPrevious()
 {
-  WorkAreaGoTo(PreviousWorkArea);
+  CurrentWorkArea = NTB_ABA_NONE;
+  WorkAreaGoTo(RemoveWA(&WA_PreviousList));
 }
 
 int WorkAreaGet()
@@ -1672,9 +1211,8 @@ int WorkAreaGet()
 
 void cbMessageBoxOk(GtkButton *button, gpointer user_data)
 {
-  CurrentWorkArea = NTB_ABA_HOME;
-  WorkAreaGoPrevious();
   MaqLimparErro();
+  WorkAreaGoPrevious();
 }
 
 void cbGoPrevious(GtkButton *button, gpointer user_data)
@@ -1687,130 +1225,26 @@ void cbGoHome(GtkButton *button, gpointer user_data)
   WorkAreaGoTo(NTB_ABA_HOME);
 }
 
-void SairVirtualKeyboard()
+gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-  GtkButton *button;
-  guint signal_id;
-  gulong handler_id;
+  VKData vkdata;
+  static int ignorar = 0;
 
-  // Recebe o ID do sinal do callback
-  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
-
-  // Remove do botao Cancelar
-  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
-  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect(button, handler_id);
-
-  // Remove do botao OK
-  button = GTK_BUTTON(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
-  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
-  g_signal_handler_disconnect(button, handler_id);
-
-  WorkAreaGoPrevious();
-}
-
-void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
-{
-  GtkTextBuffer *tb;
-  GtkTextIter cursor;
-  gchar *str = (gchar *)gtk_button_get_label(button);
-
-  // Verifica o label para identificar se foi clicado espaco, backspace ou enter.
-  if        (!strcmp(str, "Enter")) {
-    str = "\n";
-  } else if (!strcmp(str, "Espaço")) {
-    str = " ";
-  } else if (!strcmp(str, "gtk-go-back")) {
-    str = NULL;
+  if(WorkAreaGet() == NTB_ABA_VIRTUAL_KB) {
+    gtk_widget_grab_focus(GTK_WIDGET(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
+    return FALSE;
   }
 
-  tb  = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-
-  if(str != NULL) {
-    gtk_text_buffer_insert_at_cursor(tb, str, strlen(str));
-  } else {
-    if (gtk_text_buffer_get_has_selection (tb)) {
-      gtk_text_buffer_delete_selection (tb, TRUE, TRUE);
-    } else {
-      gtk_text_buffer_get_iter_at_mark (tb, &cursor, gtk_text_buffer_get_insert (tb));
-      gtk_text_buffer_backspace (tb, &cursor, TRUE, TRUE);
-    }
-  }
-}
-
-void cbVirtualKeyboardOK(GtkButton *button, gpointer user_data)
-{
-  char *data;
-  GtkTextBuffer *tb;
-  GtkTextIter start, end;
-  GtkWidget *widget = (GtkWidget *)user_data;
-
-  tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-  gtk_text_buffer_get_start_iter(tb, &start);
-  gtk_text_buffer_get_end_iter(tb, &end);
-  data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
-
-  if(GTK_IS_ENTRY(widget)) {
-    gtk_entry_set_text(GTK_ENTRY(widget), data);
-  } else if(GTK_IS_TEXT_VIEW(widget)) {
-    gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget)), data, -1);
-  }
-
-  SairVirtualKeyboard();
-}
-
-void cbVirtualKeyboardCancelar(GtkButton *button, gpointer user_data)
-{
-  SairVirtualKeyboard();
-}
-
-void AbrirVirtualKeyboard(GtkWidget *widget)
-{
-  char *data;
-  GtkWidget *obj;
-  GtkTextBuffer *tb;
-  GtkTextIter start, end;
-
-  // Lê o texto atual.
-  if(GTK_IS_ENTRY(widget)) {
-    data = (char *)gtk_entry_get_text(GTK_ENTRY(widget));
-  } else if(GTK_IS_TEXT_VIEW(widget)) {
-    tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(widget));
-    gtk_text_buffer_get_start_iter(tb, &start);
-    gtk_text_buffer_get_end_iter(tb, &end);
-    data = (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
-  } else {
-    return; // Objeto nao suportado
-  }
-
-// Carrega o ponteiro para o botão de confirmar.
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardOK"));
-
-// Conexão dos sinais de callback
-  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardOK),
-              (gpointer)(widget));
-
-  // Carrega o ponteiro para o botão de cancelar.
-  obj = GTK_WIDGET(gtk_builder_get_object(builder, "btnVirtualKeyboardCancel"));
-
-  // Conexão dos sinais de callback
-  g_signal_connect ((gpointer) obj, "clicked",  G_CALLBACK(cbVirtualKeyboardCancelar),
-                (gpointer)(widget));
-
-// Carrega o texto
-  gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(gtk_builder_get_object(builder, "txvVirtualKeyboard"))), data, -1);
-
-// Exibe a janela.
-  WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
-}
-
-gboolean cbKeyPressed(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
-{
-  if(event->keyval == GDK_F2) {
-    AbrirVirtualKeyboard(gtk_window_get_focus(GTK_WINDOW(widget)));
+  if(!ignorar) {
+    ignorar = 1;
+    vkdata.type = VK_TYPE_WIDGET;
+    vkdata.obj.widget = widget;
+    AbrirVirtualKeyboard(&vkdata);
+    WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
     return TRUE;
   }
 
+  ignorar = 0;
   return FALSE;
 }
 
@@ -1934,35 +1368,111 @@ void AbrirData(GtkEntry *entry, GCallback cb)
   WorkAreaGoTo(NTB_ABA_DATA);
 }
 
-void
-cbManualPerfCortar                      (GtkButton       *button,
-                                        gpointer         user_data)
+// Funcao executada quando for clicado Mudar Senha na tela de Login
+void cbMudarSenha(GtkButton *button, gpointer user_data)
 {
-  MaqPerfCortar();
+  char user[100];
+  // Limpa os campos de texto
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual"   )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaNova"    )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaConfirma")), "");
+
+  // Carrega campo exibindo o usuario sendo alterado
+  sprintf(user, "Alterando senha para o usuário %s",
+      LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblSenhaUsuario")), user);
+
+  WorkAreaGoTo(NTB_ABA_MUDAR_SENHA);
 }
 
-
-void
-cbManualPerfRecua                      (GtkButton       *button,
-                                        gpointer         user_data)
+// Funcao executada quando for aplicada a alteracao de senha
+void cbSenhaAlterar(GtkButton *button, gpointer user_data)
 {
-  MaqPerfRecuar();
+  int i;
+  struct strDB *sDB;
+  char senha[100], sql[100], *SenhaAtual;
+  char *user     = (char*)gtk_label_get_text(GTK_LABEL(gtk_builder_get_object(builder, "lblSenhaUsuario" )));
+  char *lembrete = (char*)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaLembrete")));
+
+  strcpy(senha, gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaNova"))));
+  if(strcmp(senha, gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaConfirma"))))) {
+    MessageBox("Nova senha e confirmação são diferentes!");
+    return;
+  }
+
+  for(i=strlen(user)-1; i>=0; i--) {
+    if(user[i] == ' ') {
+      i++;
+      break;
+    }
+  }
+
+  if(i>0 && (sDB = MSSQL_Connect()) != NULL) {
+    sprintf(sql, "select SENHA from OPERADOR where USUARIO='%s'", user+i);
+    MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
+    DB_GetNextRow(sDB, 0);
+    SenhaAtual = MSSQL_GetData(0, 0);
+    if(SenhaAtual && !strcmp(Crypto((char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual")))), SenhaAtual)) {
+      sprintf(sql, "update OPERADOR set SENHA='%s', LEMBRETE='%s' where USUARIO='%s'", Crypto(senha), lembrete, user+i);
+      MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
+      MessageBox("Senha alterada com sucesso!");
+      sprintf(sql, "Alterada senha do usuario %s", user+i);
+      Log(sql, LOG_TIPO_SISTEMA);
+      WorkAreaGoPrevious();
+    } else {
+      MessageBox("Senha atual inválida!");
+    }
+  }
 }
 
-
-void
-cbManualPerfParar                      (GtkButton       *button,
-                                        gpointer         user_data)
+// Funcao executada quando for cancelada a alteracao de senha
+void cbSenhaCancelar(GtkButton *button, gpointer user_data)
 {
-  MaqPerfParar();
+  WorkAreaGoPrevious();
 }
 
-
-void
-cbManualPerfAvanca                     (GtkButton       *button,
-                                        gpointer         user_data)
+// Funcao executada quando for clicado botao "Calcular Fator de Correcao do Encoder"
+void cbCalcFatorPerfil(GtkButton *button, gpointer user_data)
 {
-  MaqPerfAvancar();
+  // Limpa os campos das medidas
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamMedido" )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamCorreto")), "");
+
+  // Vai para a tela de calculo do fator
+  WorkAreaGoTo(NTB_ABA_CALC_FATOR);
+}
+
+// Funcao executada quando clicar para confirmar alteracao do fator do encoder
+void cbCalcFatorConfirma(GtkButton *button, gpointer user_data)
+{
+  int   NovoFator;
+  char  StringFator[20];
+  int   TamMedido     = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamMedido" ))));
+  int   TamCorreto    = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamCorreto"))));
+  float FatorAnterior = atof(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator"       ))));;
+
+  if(TamCorreto && TamMedido && FatorAnterior) {
+    NovoFator = (int)(((float)(TamCorreto*10000)*FatorAnterior) / TamMedido);
+
+    // Arredonda e depois remove a casa adicional
+    if((NovoFator%10)>5) {
+      NovoFator += 10;
+    }
+    NovoFator /= 10;
+
+    sprintf(StringFator, "%.03f", (float)(NovoFator)/1000);
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator")), StringFator);
+  } else {
+    MessageBox("Parâmetros inválidos!\nAs medidas e o fator atual devem ser diferentes de zero!");
+  }
+
+  WorkAreaGoPrevious();
+}
+
+// Funcao executada quando clicar para cancelar alteracao do fator do encoder
+void cbCalcFatorCancelar(GtkButton *button, gpointer user_data)
+{
+  WorkAreaGoPrevious();
 }
 
 #endif

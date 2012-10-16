@@ -2,36 +2,117 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <net/modbus.h>
-
 #include <gtk/gtk.h>
 
 #include "defines.h"
 #include "maq.h"
 #include "GtkUtils.h"
 
-// Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
-
 /*** Funcoes e variáveis de suporte ***/
 
 extern int idUser; // Indica usuário que logou se for diferente de zero.
-extern int CurrentWorkArea;  // Variavel que armazena a tela atual.
-extern int PreviousWorkArea; // Variavel que armazena a tela anterior.
+
+#define TRF_TEXT_SIZE 10
 
 // Função que salva um log no banco contendo usuário e data que gerou o evento.
-extern void Log(char *evento, int tipo);
+void Log(char *evento, int tipo);
 
 void CarregaListaTarefas(GtkWidget *tvw);
 
+void cbExecTarefa(GtkButton *button, gpointer user_data);
+
 /*** Fim das funcoes e variáveis de suporte ***/
+
+// Estrutura que armazena os dados das tarefas do sistema
+struct strTask {
+  char Produto[51]; // Campo no banco: nvchar(50)
+  unsigned int Tamanho, Qtd, QtdProd, ID, Origem;
+  int Pedido, OrdemProducao, RomNumero, RomItem;
+  struct strTask *Next;
+} *lstTask = NULL;
+
+// Aloca memoria para nova tarefa
+struct strTask * AllocNewTask(void)
+{
+  struct strTask *currTask;
+  static struct strTask *lastTask;
+
+  currTask = (struct strTask *)malloc(sizeof(struct strTask));
+  memset(currTask, 0, sizeof(struct strTask));
+
+  if(lstTask == NULL) {
+    lstTask = currTask;
+  } else {
+    lastTask->Next = currTask;
+  }
+
+  lastTask = currTask;
+
+  return currTask;
+}
+
+// Limpa as tarefas atuais
+void ClearTasks(void)
+{
+  static struct strTask *currTask;
+
+  while(lstTask != NULL) {
+    currTask = lstTask;
+    lstTask = lstTask->Next;
+    free(currTask);
+  }
+}
+
+// Retorna a tarefa indicada pelo indice
+struct strTask * GetTask(unsigned int idx)
+{
+  struct strTask *Task = lstTask;
+
+  while(idx-- && Task != NULL)
+    Task = Task->Next;
+
+  return Task;
+}
+
+// Definições para o log de produção
+#define LOGPROD_START 0x01
+#define LOGPROD_END   0x02
+
+// Função para salvar log na tabela de log de ordem de produção do sistema
+// Além disso, adiciona uma entrada no log de eventos indicando a produção
+void LogProd(struct strTask *Task, int LogMode)
+{
+  static unsigned int QtdProdStart;
+  char sql[500], agora[100], evento[100];
+
+  if(LogMode == LOGPROD_START) {
+    QtdProdStart = Task->QtdProd;
+
+    sprintf(sql, "insert into LOG_ORDEM_PRODUCAO (LINHA, MAQUINA, OPERADOR, PEDIDO, ORDEM_PRODUCAO, ROMANEIO, ITEM, PRODUTO, TAMANHO, MANUAL) values ('%s','%s','%d','%d','%d','%d','%d','%s','%d','%d')",
+        MAQ_LINHA, MAQ_MAQUINA, idUser, Task->Pedido, Task->OrdemProducao, Task->RomNumero, Task->RomItem, Task->Produto, Task->Tamanho, Task->Origem);
+
+    sprintf(evento, "Produzindo %d peca(s) de %d mm", Task->Qtd - Task->QtdProd, Task->Tamanho);
+  } else {
+    sprintf(sql, "update LOG_ORDEM_PRODUCAO set DATA_FINAL='%s', PRODUZIDO='%d' where ID=(select MAX(ID) from LOG_ORDEM_PRODUCAO where LINHA='%s' and MAQUINA='%s')",
+        MSSQL_DateFromTimeT(time(NULL), agora), Task->QtdProd - QtdProdStart, MAQ_LINHA, MAQ_MAQUINA);
+
+    sprintf(evento, "Produzida(s) %d peca(s)", Task->QtdProd - QtdProdStart);
+  }
+
+  MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
+
+  Log(evento, LOG_TIPO_TAREFA);
+
+  MSSQL_Close();
+}
 
 // Timer de producao
 gboolean tmrExec(gpointer data)
 {
   static int qtd, iniciando = 1;
   char tmp[30], sql[300];
-  int qtdprod, status, tam;
+  int qtdprod, status;
+  struct strTask *Task = (struct strTask *)data;
   static GtkLabel *lblSaldo = NULL, *lblProd = NULL;
 
   if(iniciando) {
@@ -41,16 +122,23 @@ gboolean tmrExec(gpointer data)
     lblSaldo = GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo"));
   }
 
-  qtdprod = MaqLerProdQtd();
+  qtdprod = MaqLerProdQtd(); // Retorna quantidade de pecas restantes.
 
-  if(MaqLerModo() == MAQ_MODO_MANUAL) {
+  if((MaqLerEstado() & MAQ_MODO_MASK) == MAQ_MODO_MANUAL) {
     iniciando = 1;
+    MaqConfigModo(MAQ_MODO_MANUAL);
+
+    // Configura o estado da máquina
+    SetMaqStatus(MAQ_STATUS_MANUAL);
 
     // Carrega a quantidade de peças da tarefa
-    qtd = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd")));
+    qtd = Task->Qtd;
 
     // Subtrai o total do numero de pecas restantes para encontrar quantas foram produzidas
     qtdprod = qtd - qtdprod;
+
+    // Atualiza a tarefa com a quantidade produzida
+    Task->QtdProd = qtdprod;
 
 //      if(status == CV_ST_ESPERA)
 //    MessageBox("Tarefa executada sem erros!");
@@ -65,9 +153,13 @@ gboolean tmrExec(gpointer data)
       status = TRF_ESTADO_NOVA;
 
     // Executa a instrução SQL necessária para atualizar o estado da tarefa.
-    sprintf(sql, "update tarefas set estado='%d', QtdProd='%d' where ID='%s'",
-        status, qtdprod, DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID")));
-    DB_Execute(&mainDB, 0, sql);
+    if(Task->Origem == TRF_ORIGEM_MANUAL) {
+      sprintf(sql, "update tarefas set estado='%d', qtdprod='%d' where ID='%d'", status, qtdprod, Task->ID);
+      DB_Execute(&mainDB, 0, sql);
+    }
+
+    // Adiciona log de produção
+    LogProd(Task, LOGPROD_END);
 
     WorkAreaGoTo(NTB_ABA_HOME);
     return FALSE;
@@ -84,9 +176,16 @@ gboolean tmrExec(gpointer data)
 
 void ConfigBotoesTarefa(GtkWidget *wdg, gboolean modo)
 {
+  struct strTask *Task = NULL;
+  char txt_id[10];
+
+  TV_GetSelected(wdg, 0, txt_id);
+  if(txt_id != NULL)
+    Task = GetTask(atoi(txt_id)-1);
+
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecTarefa"   )), modo);
-  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnEditarTarefa" )), modo);
-  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRemoverTarefa")), modo);
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnEditarTarefa" )), modo && Task && (Task->Origem == TRF_ORIGEM_MANUAL));
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRemoverTarefa")), modo && Task && (Task->Origem == TRF_ORIGEM_MANUAL));
 }
 
 void CarregaComboModelosTarefa(GtkComboBox *cmb)
@@ -115,31 +214,119 @@ void CarregaComboModelosTarefa(GtkComboBox *cmb)
   gtk_combo_box_set_active(cmb, 0);
 }
 
+void InsertLocalTask(void)
+{
+  char *tmp;
+  struct strTask *currTask;
+
+  // Aloca memoria para nova tarefa
+  currTask = AllocNewTask();
+
+  currTask->Origem = TRF_ORIGEM_MANUAL;
+
+  // Salva dados da tarefa atual
+  currTask->ID      = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "ID"     )));
+  currTask->Tamanho = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Tamanho")));
+  currTask->Qtd     = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd"    )));
+  currTask->QtdProd = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "QtdProd")));
+
+  // Carrega os dados referentes ao pedido
+  tmp = DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Pedido"));
+  currTask->Pedido        = tmp ? atoi(tmp) : 0;
+
+  currTask->OrdemProducao = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "OrdemProducao")));
+  currTask->RomNumero     = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "RomNumero"    )));
+  currTask->RomItem       = atoi(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "RomItem"      )));
+}
+
 void CarregaListaTarefas(GtkWidget *tvw)
 {
-  int i;
+  int i, TaskIndex = 1;
+  struct strTask *currTask;
   const int tam = 9;
-  char *valores[tam+1], sql[300];
+  struct strDB *mssqlDB;
+  char *valores[tam+1], sql[500];
 
   valores[tam] = NULL;
 
+  // Limpa a lista anterior
+  ClearTasks();
+
+  // Exclui os itens atuais
   TV_Limpar(tvw);
 
-  sprintf(sql, "select t.ID, c.nome, t.Pedido, m.nome, t.qtd, t.qtdprod, t.tamanho, t.data, t.coments from modelos as m, tarefas as t, clientes as c where c.ID = t.ID_Cliente and m.ID = t.ID_Modelo and (t.estado='%d' or t.estado='%d') and m.estado='%d' order by data", TRF_ESTADO_NOVA, TRF_ESTADO_PARCIAL, MOD_ESTADO_ATIVO);
+  // Carrega as tarefas do MySQL
+  sprintf(sql, "select t.ID, c.nome, t.Pedido, m.nome, t.qtd as Qtd, t.qtdprod as QtdProd, t.tamanho as Tamanho, t.data, t.coments, t.OrdemProducao, t.RomNumero, t.RomItem from modelos as m, tarefas as t, clientes as c where c.ID = t.ID_Cliente and m.ID = t.ID_Modelo and (t.estado='%d' or t.estado='%d') and m.estado='%d' order by data",
+      TRF_ESTADO_NOVA, TRF_ESTADO_PARCIAL, MOD_ESTADO_ATIVO);
   DB_Execute(&mainDB, 0, sql);
   while(DB_GetNextRow(&mainDB, 0)>0)
     {
-    for(i = 0; i<tam; i++)
+    valores[0] = (char*)malloc(10);
+    sprintf(valores[0], "%d", TaskIndex++);
+    for(i = 1; i<tam; i++)
       {
       valores[i] = DB_GetData(&mainDB, 0, i);
       if(valores[i] == NULL)
         valores[i] = "";
       }
 
+    // Insere uma nova tarefa a partir do registro atual
+    InsertLocalTask();
+
     TV_Adicionar(tvw, valores);
+    free(valores[0]);
     }
 
-  ConfigBotoesTarefa(tvw, FALSE);
+  // Carrega as tarefas do sistema (SQL Server) se conseguir a conexao.
+  mssqlDB = MSSQL_Connect();
+  if(mssqlDB && (mssqlDB->status == DB_FLAGS_CONNECTED)) {
+    sprintf(sql, "select ORDEM_PRODUCAO, CLIENTE, PEDIDO, TIPO, QUANTIDADE, PRODUZIDO, TAMANHO, DATA_INICIO, MATERIAL_DESCRICAO, ROMANEIO, ITEM, CODIGO from ORDEM_PRODUCAO where LINHA='%s' and MAQUINA='%s' and QUANTIDADE <> PRODUZIDO order by MATERIAL", MAQ_LINHA, MAQ_MAQUINA);
+    MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
+
+    while(DB_GetNextRow(mssqlDB, 0)>0) {
+      valores[0] = (char*)malloc(10);
+      sprintf(valores[0], "%d", TaskIndex++);
+      for(i = 1; i<tam; i++) {
+        valores[i] = MSSQL_GetData(0, i);
+        if(valores[i] == NULL) {
+          valores[i] = "";
+        } else if((i==1 || i==3) && strlen(valores[i]) > TRF_TEXT_SIZE) {
+            valores[i][TRF_TEXT_SIZE] = 0;
+        }
+      }
+
+      // Aloca memoria para nova tarefa
+      currTask = AllocNewTask();
+
+      currTask->Origem = TRF_ORIGEM_ERP;
+
+      // Salva dados da tarefa atual
+      currTask->OrdemProducao = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "ORDEM_PRODUCAO")));
+      currTask->Pedido        = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "PEDIDO"        )));
+      currTask->RomNumero     = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "ROMANEIO"      )));
+      currTask->RomItem       = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "ITEM"          )));
+      currTask->Tamanho       = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "TAMANHO"       )));
+      currTask->Qtd           = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "QUANTIDADE"    )));
+      currTask->QtdProd       = atoi(MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "PRODUZIDO"     )));
+
+      strcpy(currTask->Produto, MSSQL_GetData(0, DB_GetFieldNumber(mssqlDB, 0, "CODIGO")));
+
+      // Adiciona linha da tarefa no GtkTreeView
+      TV_Adicionar(tvw, valores);
+
+      for(i = 0; i<tam; i++) {
+        if(strlen(valores[i]))
+            free(valores[i]);
+      }
+    }
+  } else {
+    strcpy(sql, "Erro ao carregar tarefas do sistema!");
+    MessageBox(sql);
+    Log(sql, LOG_TIPO_SISTEMA);
+  }
+
+  MSSQL_Close();
+  ConfigBotoesTarefa(GTK_WIDGET(tvw), FALSE);
 }
 
 gboolean ChecarTarefa(int qtd, int qtdprod, int tamanho, int passo, int max, int min)
@@ -191,7 +378,7 @@ void IniciarDadosTarefa()
   CarregaComboModelosTarefa(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbTarefaModNome")));
 
   DB_Execute(&mainDB, 0, "select nome from clientes order by ID");
-  CarregaCombo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0, NULL);
+  CarregaCombo(&mainDB, GTK_COMBO_BOX(gtk_builder_get_object(builder, "cbeTarefaCliente")), 0, NULL);
 
   agora = time(NULL);
   strftime (tmp, 100, "%Y-%m-%d %H:%M:%S", localtime(&agora));
@@ -339,6 +526,7 @@ void cbEditarTarefa(GtkButton *button, gpointer user_data)
 {
   int i;
   GtkWidget *obj;
+  struct strTask *Task;
   char **valor, tmp[30], *campos[] = { "lblTarefaNumero", "cbeTarefaCliente", "entTarefaPedido", "cmbTarefaModNome", "entTarefaQtd", "0", "entTarefaTam", "entTarefaData", "txvTarefaComent", "" };
 
   IniciarDadosTarefa();
@@ -355,6 +543,11 @@ void cbEditarTarefa(GtkButton *button, gpointer user_data)
     if(strcmp(campos[i], "0")) // Se campo for diferente de zero devemos considerá-lo.
       {
       TV_GetSelected(obj, i, tmp);
+      if(!i) { // ID da Tarefa
+        Task = GetTask(atoi(tmp)-1);
+        if(Task != NULL)
+          sprintf(tmp, "%d", Task->ID);
+      }
       valor[i] = (char *)(malloc(strlen(tmp)+1));
       strcpy(valor[i], tmp);
       }
@@ -376,6 +569,7 @@ void cbEditarTarefa(GtkButton *button, gpointer user_data)
 
 void cbRemoverTarefa(GtkButton *button, gpointer user_data)
 {
+  struct strTask *Task;
   char sql[100], tmp[10];
   GtkWidget *dialog;
 
@@ -390,7 +584,8 @@ void cbRemoverTarefa(GtkButton *button, gpointer user_data)
 
   if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
     {
-    sprintf(sql, "update tarefas set estado='%d' where ID='%d'", TRF_ESTADO_REMOVIDA, atoi(tmp));
+    Task = GetTask(atoi(tmp)-1);
+    sprintf(sql, "update tarefas set estado='%d' where ID='%d'", TRF_ESTADO_REMOVIDA, Task->ID);
     DB_Execute(&mainDB, 0, sql);
 
     // Recarrega a lista de tarefas.
@@ -461,6 +656,7 @@ void AbrirOper()
 {
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
+    WorkAreaGoTo(NTB_ABA_HOME);
     MessageBox("Sem permissão para operar a máquina!");
     return;
     }
@@ -468,37 +664,115 @@ void AbrirOper()
   CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
 }
 
+void LimparDadosPedido(void)
+{
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoNum"    )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoOP"     )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoRomNum" )), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoRomItem")), "");
+}
+
+void cbConfirmarDadosPedido(GtkButton *button, gpointer user_data)
+{
+  char tmp[50];
+  struct strTask *newTask = (struct strTask *)user_data;
+  static struct strTask *currTask = NULL;
+
+  if(newTask != NULL) { // Tarefa alterada!
+    currTask = newTask;
+
+    // Carrega os dados da tarefa atual nos campos da tela
+    sprintf(tmp, "%d", currTask->Pedido);
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoNum"    )), tmp);
+
+    sprintf(tmp, "%d", currTask->OrdemProducao);
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoOP"     )), tmp);
+
+    sprintf(tmp, "%d", currTask->RomNumero);
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoRomNum" )), tmp);
+
+    sprintf(tmp, "%d", currTask->RomItem);
+    gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoRomItem")), tmp);
+  } else if(currTask != NULL) { // Clicado botao, verifica os dados
+    // Atualiza tarefa
+    currTask->Pedido        = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoNum"    ))));
+    currTask->OrdemProducao = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoOP"     ))));
+    currTask->RomNumero     = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoRomNum" ))));
+    currTask->RomItem       = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entPedidoRomItem"))));
+
+    // Ao menos o pedido deve ser informado...
+    // Claro que muitas vezes sera informado um pedido falso, apenas para poder produzir.
+    // Mas temos que fazer a nossa parte!
+    if(!currTask->Pedido) {
+      MessageBox("Pedido deve ser informado!");
+    } else {
+      // Limpa os dados atuais
+      LimparDadosPedido();
+
+      // Executa a tarefa com os dados atualizados
+      cbExecTarefa(NULL, (gpointer)currTask);
+    }
+  }
+}
+
+void cbCancelarDadosPedido(GtkButton *button, gpointer user_data)
+{
+  WorkAreaGoTo(NTB_ABA_HOME);
+  LimparDadosPedido();
+}
+
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
-  int qtd, qtdprod, status, tam;
+  int qtd, tam, DadosOK = 0;
   GtkWidget *wdg;
+  struct strTask *Task = (struct strTask *)user_data;
   char tmp[30], sql[300];
 
 //  if(!MaquinaEspera(CHECAR_ESPERA))
 //    return;
 
-  if(button == NULL) { // Produzindo pela operacao manual.
-    // Carrega os dados da ultima tarefa adicionada
-    DB_Execute(&mainDB, 0, "select * from tarefas where id = (select max(id) from tarefas)");
-  } else { // Operacao normal
+  if(button != NULL) { // Operacao normal
     // Carrega id da tarefa selecionada
     wdg = GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas"));
     TV_GetSelected(wdg, 0, tmp);
 
     // Carrega os dados da tarefa selecionada
-    sprintf(sql, "select * from tarefas where id = %s", tmp);
+    Task = GetTask(atoi(tmp)-1);
+  } else if(Task == NULL) { // Produzindo pela operacao manual
+    // Carrega os dados da ultima tarefa adicionada
+    DB_Execute(&mainDB, 0, "select * from tarefas where id = (select max(id) from tarefas)");
+    DB_GetNextRow(&mainDB, 0);
+
+    // Limpa lista de tarefas e adiciona a tarefa atual à lista
+    ClearTasks();
+    InsertLocalTask();
+    Task = GetTask(0);
+  } else {
+    DadosOK = 1;
+  }
+
+  // Se for tarefa manual, exibe tela pedindo os dados adicionais
+  if(Task->Origem == TRF_ORIGEM_MANUAL && !DadosOK) {
+    // Passa a tarefa para a tela de dados do pedido.
+    cbConfirmarDadosPedido(NULL, (gpointer)Task);
+
+    WorkAreaGoTo(NTB_ABA_DADOS_PEDIDO);
+
+    return;
+  } else if(Task->Origem == TRF_ORIGEM_MANUAL) { // Tarefa manual. Os dados do pedido podem ter sido alterados, atualizar!
+    sprintf(sql, "update tarefas set Pedido='%d', OrdemProducao='%d', RomNumero='%d', RomItem='%d' where ID='%d'",
+        Task->Pedido, Task->OrdemProducao, Task->RomNumero, Task->RomItem, Task->ID);
     DB_Execute(&mainDB, 0, sql);
   }
-  DB_GetNextRow(&mainDB, 0);
 
-  qtd  = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Qtd"    )));
-  qtd -= atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "QtdProd")));
+  qtd = Task->Qtd - Task->QtdProd;
+  tam = Task->Tamanho;
 
   sprintf(tmp, "%d", qtd);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal")), tmp);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo")), tmp);
 
-  tam = atol(DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, "Tamanho")));
+  sprintf(tmp, "%d", tam);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPos" )), tmp);
 
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd")), "0");
@@ -508,10 +782,13 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
 
   sprintf(sql, "Produzindo %d peças de %d mm", qtd, tam);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), sql);
-  Log(sql, LOG_TIPO_TAREFA);
+  LogProd(Task, LOGPROD_START);
 
   MaqConfigModo(MAQ_MODO_AUTO);
-  g_timeout_add(1000, tmrExec, (gpointer)&qtd);
+  g_timeout_add(1000, tmrExec, (gpointer)Task);
+
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_PRODUZINDO);
 
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecParar" )), TRUE);
   WorkAreaGoTo(NTB_ABA_EXECUTAR);
@@ -519,6 +796,7 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
 
 void cbExecParar(GtkButton *button, gpointer user_data)
 {
+  atividade++;
   MaqConfigModo(MAQ_MODO_MANUAL);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), "Terminando...");
   gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
@@ -526,6 +804,12 @@ void cbExecParar(GtkButton *button, gpointer user_data)
 
 void cbOperarProduzir(GtkButton *button, gpointer user_data)
 {
+  if(!GetUserPerm(PERM_ACESSO_OPER))
+    {
+    MessageBox("Sem permissão para operar a máquina!");
+    return;
+    }
+
   IniciarDadosTarefa();
 
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaQtd")),
@@ -534,11 +818,14 @@ void cbOperarProduzir(GtkButton *button, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaTam")),
       gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarTam"))));
 
-  AplicarTarefa();
-  LimparDadosTarefa();
+  if(AplicarTarefa()) {
+    LimparDadosTarefa();
 
-  // Passando nulos executa ultima tarefa adicionada.
-  cbExecTarefa(NULL, NULL);
+    // Passando nulos executa ultima tarefa adicionada.
+    cbExecTarefa(NULL, NULL);
+  } else {
+    LimparDadosTarefa();
+  }
 }
 
 gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
@@ -551,6 +838,47 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 
   last = *event;
   return TRUE;
+}
+
+void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
+{
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_MANUAL);
+
+  // Configura a máquina para modo manual.
+  MaqConfigModo(MAQ_MODO_MANUAL);
+
+  MaqPerfManual(PERF_AVANCA);
+}
+
+void cbManualMesaRecua(GtkButton *button, gpointer user_data)
+{
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_MANUAL);
+
+  // Configura a máquina para modo manual.
+  MaqConfigModo(MAQ_MODO_MANUAL);
+
+  MaqPerfManual(PERF_RECUA);
+}
+
+void cbManualMesaParar(GtkButton *button, gpointer user_data)
+{
+  // Configura a máquina para modo manual.
+  MaqConfigModo(MAQ_MODO_MANUAL);
+
+  MaqPerfManual(PERF_PARAR);
+}
+
+void cbManualMesaCortar(GtkButton *button, gpointer user_data)
+{
+  // Configura o estado da máquina
+  SetMaqStatus(MAQ_STATUS_MANUAL);
+
+  // Configura a máquina para modo manual.
+  MaqConfigModo(MAQ_MODO_MANUAL);
+
+  MaqCortar();
 }
 
 // defines que permitem selecionar o ponto de referencia para insercao da imagem
@@ -601,11 +929,13 @@ void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, 
 gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
 //  GdkPixbuf *pbtmp;
-  static unsigned int i=0;
+  GtkStyle *style;
+  GtkAllocation allocation;
   static GdkPixbuf *pb = NULL;
   if(pb == NULL) {
+    gtk_widget_get_allocation(widget, &allocation);
     pb = gdk_pixbuf_new_from_file_at_scale("images/bg01.png",
-        widget->allocation.width, widget->allocation.height,
+        allocation.width, allocation.height,
         FALSE, NULL);
 
     LoadIntoPixbuf(pb, "images/maq-desbob.png"      ,  0,                0, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_RIGHT);
@@ -622,8 +952,9 @@ gboolean cbDesenharMaquina(GtkWidget *widget, GdkEventExpose *event, gpointer da
     LoadIntoPixbuf(pb, "images/maq-perf-guia.png"   , -1, PERF_ALTURA_MESA, 1   , 1, LOADPB_REFPOS_DOWN | LOADPB_REFPOS_LEFT);
   }
 
-  gdk_draw_pixbuf(widget->window,
-                  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+  style = gtk_widget_get_style(widget);
+  gdk_draw_pixbuf(gtk_widget_get_window(widget),
+                  style->fg_gc[gtk_widget_get_state(widget)],
                   pb,
                   0, 0, 0, 0, -1, -1,
                   GDK_RGB_DITHER_NONE, 0, 0);

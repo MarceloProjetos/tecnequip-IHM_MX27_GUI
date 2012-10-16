@@ -5,19 +5,28 @@
 #define MAQ_CFG_MAGIC  0x78B2A5F0
 
 // Modos de operacao
+#define MAQ_MODO_MASK   0x0001
 #define MAQ_MODO_MANUAL 0x0000
-#define MAQ_MODO_AUTO   0x8000
+#define MAQ_MODO_AUTO   0x0001
+#define MAQ_MODO_CORTAR 0x0002
+#define MAQ_MODO_LIMPAR 0x0004
 
-// Mascara para desligar os bits que nao pertencem ao modo ou status
-#define MAQ_MASK_MODO   0xF000
-#define MAQ_MASK_STATUS 0x0FFF
+// Flag solicitando sincronizacao dos parametros do CLP com o Inversor
+#define MAQ_MODO_PERF_SYNC 0x0020
 
-// Definicao dos bits de CMD
-#define MAQ_CMD_CORTAR 0x01
-#define MAQ_CMD_AVANCA 0x02
-#define MAQ_CMD_RECUA  0x04
-#define MAQ_CMD_LIMPAR 0x08
-#define MAQ_CMD_SYNC   0x10
+// Flag que libera a maquina para operacao
+#define MAQ_MODO_LIBERA 0x0040
+
+#define MAQ_MODO_MASK_LIBERA  (~(MAQ_MODO_LIBERA | MAQ_MODO_LIMPAR | MAQ_MODO_MASK))
+
+// Flags para controle manual da perfiladeira
+#define MAQ_MODO_PERF_MASK   0x0018
+#define MAQ_MODO_PERF_AVANCA 0x0008
+#define MAQ_MODO_PERF_RECUA  0x0010
+
+#define PERF_PARAR  0
+#define PERF_AVANCA 1
+#define PERF_RECUA  2
 
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01
@@ -26,9 +35,9 @@
 #define MAQ_SYNC_TODOS   (MAQ_SYNC_PERFIL | MAQ_SYNC_ENCODER | MAQ_SYNC_CORTE)
 
 // Registradores do CLP
-#define MAQ_REG_STATUS          0
-#define MAQ_REG_FLAGS           1
-#define MAQ_REG_CMD             2
+#define MAQ_REG_ERROS              0
+#define MAQ_REG_STATUS             1
+#define MAQ_REG_FLAGS              2
 
 #define MAQ_REG_PROD_QTD          30
 #define MAQ_REG_PROD_TAM          31
@@ -41,10 +50,10 @@
 #define MAQ_REG_PERF_MAN_ACEL     15
 #define MAQ_REG_PERF_MAN_DESACEL  16
 #define MAQ_REG_PERF_MAN_VEL      17
-#define MAQ_REG_CRT_FACA          19
 #define MAQ_REG_ENC_FATOR         20
 #define MAQ_REG_ENC_RESOL         21
 #define MAQ_REG_ENC_PERIM         22
+#define MAQ_REG_CRT_FACA          25
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -78,8 +87,8 @@ struct strMaqParam
 
 /*** Fim das estruturas de informacoes da maquina ***/
 
-uint16_t MaqLerStatus (void);
-char    *MaqStrErro(uint16_t status);
+uint16_t MaqLerErros   (void);
+char    *MaqStrErro    (uint16_t status);
 
 uint16_t MaqLerModo    (void);
 uint16_t MaqLerProdQtd (void);
@@ -89,12 +98,6 @@ uint32_t MaqLerSaidas  (void);
 void                      MaqConfigModo   (uint16_t  modo);
 void                      MaqConfigProdQtd(uint16_t quant);
 void                      MaqConfigProdTam(uint16_t   tam);
-void                      MaqPerfParar    ();
-void                      MaqPerfCortar   ();
-void                      MaqLimparErro   ();
-void                      MaqPerfRecuar   ();
-void                      MaqPerfAvancar  ();
-void                      MaqInvParamSync ();
 
 void                      MaqConfigPerfil (struct strMaqParamPerfil pf);
 struct strMaqParamPerfil  MaqLerPerfil    (void);
@@ -105,5 +108,11 @@ struct strMaqParamCorte   MaqLerCorte     (void);
 
 int  MaqLerConfig   (void);
 void MaqGravarConfig(void);
+
+void     MaqLimparErro(void);
+void     MaqLiberar   (uint16_t liberar);
+uint16_t MaqLerEstado (void);
+void     MaqPerfManual(uint16_t cmd);
+void     MaqCortar    (void);
 
 #endif
