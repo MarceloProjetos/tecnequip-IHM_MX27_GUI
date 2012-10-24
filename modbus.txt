@@ -1,0 +1,18 @@
+Programa da IHM: Definição da comunicação pelo ModBus entre a IHM e os clps (POP-7). Registradores vão de 0 a 65535
+
+Definições gerais:
+Para que tenhamos alguns padrões para comunicação no ModBus entre todos os nossos equipamentos, serão definidas algumas faixas a serem utilizadas preferencialmente:
+
+Faixas:
+   0 a  199: Status gerais da máquina, incluindo modo de operação, erro, etc.
+ 200 a  399: Dados referentes a tarefas em produção.
+ 400 a  999: Variáveis de configuração, parâmetros da máquina.
+1000 a 1799: Parâmetros de inversor controlado pelo CLP
+1800 a 4999: Reservado
+
+POP-7 Perfiladeira:
+Inversor -> Aceleração, Desaceleração e Velocidade Máxima
+
+POP-7 Bobinador:
+
+

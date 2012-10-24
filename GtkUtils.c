@@ -44,15 +44,15 @@ void CarregaItemCombo(GtkComboBox *cmb, char *txt)
 	gtk_combo_box_set_wrap_width(cmb,(gtk_tree_model_iter_n_children(GTK_TREE_MODEL(store),NULL)/5) + 1);
 }
 
-void CarregaCombo(GtkComboBox *cmb, guint nsel, char *adicional)
+void CarregaCombo(struct strDB *sDB, GtkComboBox *cmb, guint nsel, char *adicional)
 {
   gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(cmb)));
 
 	if(adicional != NULL)
 		CarregaItemCombo(cmb, adicional);
 
-	while(DB_GetNextRow(&mainDB, nsel)>0)
-		CarregaItemCombo(cmb, DB_GetData(&mainDB, nsel, 0));
+	while(DB_GetNextRow(sDB, nsel)>0)
+		CarregaItemCombo(cmb, DB_GetData(sDB, nsel, 0));
 
 	gtk_combo_box_set_active(cmb, 0);
 }
@@ -67,7 +67,6 @@ char *LerComboAtivo(GtkComboBox *cmb)
 	if(GTK_IS_COMBO_BOX_ENTRY(cmb))
 		return gtk_combo_box_get_active_text(cmb);
 
-	printf("gtk_combo_box_get_active(cmb) = %d\n", gtk_combo_box_get_active(cmb));
 	sprintf(tmp, "%d", gtk_combo_box_get_active(cmb));
 	gtk_tree_model_get_iter_from_string(GTK_TREE_MODEL(store), &iter, tmp);
 	gtk_tree_model_get_value(GTK_TREE_MODEL(store), &iter, 0, &valor);
@@ -75,10 +74,10 @@ char *LerComboAtivo(GtkComboBox *cmb)
 	return (char *)(g_value_get_string(&valor));
 }
 
-gboolean CarregaCampos(GtkComboBox *cmb, char **campos, char **botoes, char *tabela, char *campo_where)
+int CarregaCampos(struct strDB *sDB, GtkComboBox *cmb, char **campos, char **botoes, char *tabela, char *campo_where)
 {
 	GtkWidget *obj;
-	gboolean estado = FALSE;
+	int estado = FALSE;
 	char sql[100];
 	int i;
 
@@ -87,10 +86,14 @@ gboolean CarregaCampos(GtkComboBox *cmb, char **campos, char **botoes, char *tab
 		sprintf(sql, "select * from %s where %s='%s'",
 			tabela, campo_where, LerComboAtivo(cmb));
 
-		DB_Execute(&mainDB, 0, sql);
-		DB_GetNextRow(&mainDB, 0);
+		// Se ocorrer erro na consulta SQL, retorna erro.
+		if(sDB == NULL || DB_Execute(sDB, 0, sql) < 0)
+		  return -1;
 
-		estado = TRUE;
+		// Carrega o registro retornado
+		DB_GetNextRow(sDB, 0);
+
+    estado = TRUE;
 		}
 
 	for(i=0; campos[i][0]!=0; i+=2)
@@ -98,7 +101,7 @@ gboolean CarregaCampos(GtkComboBox *cmb, char **campos, char **botoes, char *tab
 		obj = GTK_WIDGET(gtk_builder_get_object(builder, campos[i]));
 
 		if(estado == TRUE)
-			gtk_entry_set_text(GTK_ENTRY(obj), DB_GetData(&mainDB, 0, DB_GetFieldNumber(&mainDB, 0, campos[i+1])));
+			gtk_entry_set_text(GTK_ENTRY(obj), DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, campos[i+1])));
 		else
 			gtk_entry_set_text(GTK_ENTRY(obj), "");
 		}
@@ -158,42 +161,47 @@ int AchaIndiceCombo(GtkComboBox *cmb, char *valor)
 	return -1;
 }
 
-void GravarValorWidget(GtkWidget *wdg, char *nome, char *valor)
+void GravarValorWidget(char *nome, char *valor)
 {
 	GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, nome));
 	if(obj==NULL)
 		return;
 
-	if     (!strncmp(nome, "ent", 3))
-		gtk_entry_set_text(GTK_ENTRY(obj), valor);
-//	else if(!strncmp(nome, "rbt", 3))
-//		return LerRadioAtual(obj, tmp);
+  if     (!strncmp(nome, "ent", 3))
+    gtk_entry_set_text(GTK_ENTRY(obj), valor);
+  else if(!strncmp(nome, "spb", 3))
+    gtk_spin_button_set_value(GTK_SPIN_BUTTON(obj), atof(valor));
+  else if(!strncmp(nome, "lbl", 3))
+    gtk_label_set_text(GTK_LABEL(obj), valor);
 	else if(!strncmp(nome, "txv", 3))
 		gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(obj)), valor, -1);
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		gtk_combo_box_set_active(GTK_COMBO_BOX(obj), AchaIndiceCombo(GTK_COMBO_BOX(obj), valor));
+  else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), atol(valor));
 }
 
-void GravarValoresWidgets(GtkWidget *wdg, char **lst_wdg, char **lst_val)
+void GravarValoresWidgets(char **lst_wdg, char **lst_val)
 {
 	int i;
 
 	for(i=0; lst_wdg[i][0]; i++)
 		if(strcmp(lst_wdg[i], "0")) // Se for um campo válido, grava o valor.
-		GravarValorWidget(wdg, lst_wdg[i], lst_val[i]);
+		  GravarValorWidget(lst_wdg[i], lst_val[i]);
 }
 
-char * LerValorWidget(GtkWidget *wdg, char *nome)
+char * LerValorWidget(char *nome)
 {
-	char tmp[30];
 	GtkTextIter start, end;
 	GtkTextBuffer *tb;
 	GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, nome));
 	if(obj==NULL)
 		return NULL;
 
-	if     (!strncmp(nome, "ent", 3) || !strncmp(nome, "spb", 3))
-		return (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
+  if     (!strncmp(nome, "ent", 3) || !strncmp(nome, "spb", 3))
+    return (char *)(gtk_entry_get_text(GTK_ENTRY(obj)));
+  else if(!strncmp(nome, "lbl", 3))
+    return (char *)(gtk_label_get_text(GTK_LABEL(obj)));
 	else if(!strncmp(nome, "txv", 3))
 		{
 		tb = gtk_text_view_get_buffer(GTK_TEXT_VIEW(obj));
@@ -201,21 +209,21 @@ char * LerValorWidget(GtkWidget *wdg, char *nome)
 		gtk_text_buffer_get_end_iter(tb, &end);
 		return (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
 		}
-	else if(!strncmp(nome, "rbt", 3))
-		return LerRadioAtual(obj, tmp);
+	else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
+		return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(obj)) ? "1" : "0";
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		return (char *)(LerComboAtivo(GTK_COMBO_BOX(obj)));
 
 	return NULL;
 }
 
-int LerValoresWidgets(GtkWidget *wdg, char **lst_wdg, char **lst_val)
+int LerValoresWidgets(char **lst_wdg, char **lst_val)
 {
 	int i;
 
 	for(i=0; lst_wdg[i][0]; i++)
 		{
-		lst_val[i] = LerValorWidget(wdg, lst_wdg[i]);
+		lst_val[i] = LerValorWidget(lst_wdg[i]);
 		if(lst_val[i] == NULL)
 			return 0;
 		}
@@ -262,7 +270,7 @@ int BuscaStringLista(char *lista[], char *string, gboolean modo_UTF)
 	if(modo_UTF)
 		{
 		string_UTF = (char *)(malloc(strlen(string)*2)); // UTF usa até o dobro.
-		Utf2Asc(string, string_UTF);
+		Utf2Asc((unsigned char *)string, (unsigned char *)string_UTF);
 		}
 	else
 		string_UTF = string;
@@ -275,4 +283,61 @@ int BuscaStringLista(char *lista[], char *string, gboolean modo_UTF)
 		free(string_UTF);
 
 	return i;
+}
+
+void TV_Config(GtkWidget *tvw, char *lst_campos[], GtkTreeModel *model)
+{
+  guint i;
+  GtkCellRenderer *renderer;
+
+  for(i=0; lst_campos[i][0]; i++)
+    {
+    renderer = gtk_cell_renderer_text_new ();
+    gtk_tree_view_insert_column_with_attributes (GTK_TREE_VIEW (tvw),
+            -1, lst_campos[i], renderer, "text", i, NULL);
+    }
+
+  gtk_tree_view_set_model (GTK_TREE_VIEW (tvw), model);
+
+  /* The tree view has acquired its own reference to the
+   *  model, so we can drop ours. That way the model will
+   *  be freed automatically when the tree view is destroyed */
+
+  g_object_unref (model);
+}
+
+void TV_Limpar(GtkWidget *tvw)
+{
+  gtk_list_store_clear(GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(tvw))));
+}
+
+void TV_Adicionar(GtkWidget *tvw, char *lst_valores[])
+{
+  guint i;
+  GtkTreeIter iter;
+  GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(tvw)));
+
+  gtk_list_store_append(store,&iter);
+
+  for(i=0; lst_valores[i]!=NULL; i++)
+    gtk_list_store_set(store, &iter, i, lst_valores[i], -1);
+}
+
+void TV_GetSelected(GtkWidget *tvw, int pos, char *dado)
+{
+  GValue valor = { 0 };
+  GtkTreeModel *model;
+  GtkTreeIter  iter;
+
+  if(gtk_tree_selection_get_selected(gtk_tree_view_get_selection(GTK_TREE_VIEW(tvw)), &model, &iter))
+    {
+    gtk_tree_model_get_value(model, &iter, pos, &valor);
+    if((char *)(g_value_get_string(&valor)) != NULL) {
+      strcpy(dado, (char *)(g_value_get_string(&valor)));
+      g_value_unset(&valor);
+    } else
+      dado[0] = 0;
+    }
+  else
+    dado[0] = 0;
 }
