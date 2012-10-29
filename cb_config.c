@@ -232,8 +232,9 @@ char *lista_ent[] = {
 
 int GravarDadosConfig()
 {
+  MaqConfig *m;
   unsigned int i;
-  char **valor_ent;
+  char **valor_ent, cmdline[1000];
   struct strMaqParam mp;
   valor_ent = (char **)(malloc(10*sizeof(char[10])));
 
@@ -265,6 +266,17 @@ int GravarDadosConfig()
   MaqGravarConfig();
 
   free(valor_ent);
+
+  m = MaqConfig_GetMachine(gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMaquina"))));
+  if(m && m != MaqConfigCurrent) {
+    // Alterando o Hostname
+    sethostname(m->ID, strlen(m->ID));
+    sprintf(cmdline, "./UpdateHostName.sh %s", m->ID);
+    system(cmdline);
+
+    MessageBox("Máquina Alterada! Saindo...");
+    gtk_main_quit();
+  }
 
   return 0;
 }
@@ -351,6 +363,9 @@ void LerDadosConfig()
 
 // Carrega dados da aba de Banco de Dados
   CarregaDadosBanco();
+
+  // Seleciona a maquina configurada
+  gtk_combo_box_set_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMaquina")), MaqConfig_GetActive());
 }
 
 #define VK_TYPE_WIDGET 0

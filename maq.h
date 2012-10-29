@@ -4,6 +4,26 @@
 #define MAQ_ARQ_CONFIG "maq.config"
 #define MAQ_CFG_MAGIC  0x78B2A5F0
 
+typedef struct {
+  char *ID;
+  char *Name;
+  char *Line;
+  char *Machine;
+} MaqConfig;
+
+/*** Definicoes e funcoes relacionados a Configuracao da Maquina ***/
+
+// Variaveis
+extern MaqConfig  MaqConfigList[];
+extern MaqConfig *MaqConfigCurrent;
+
+// Funcoes
+void        MaqConfig_SetMachine(char *ID);
+MaqConfig * MaqConfig_GetMachine(int index);
+int         MaqConfig_GetActive (void);
+
+/*** Fim da Configuracao da Maquina ***/
+
 // Modos de operacao
 #define MAQ_MODO_MASK   0x0001
 #define MAQ_MODO_MANUAL 0x0000

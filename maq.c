@@ -3,6 +3,55 @@
 
 extern void IPC_Update(void);
 
+// Funcoes de parametros de maquinas
+MaqConfig MaqConfigList[] = {
+    { .ID = "IhmColMez" , .Name = "Coluna do Mezanino", .Line = "MZCOL", .Machine = "MZCOL" },
+    { .ID = "IhmVigaMez", .Name = "Viga do Mezanino"  , .Line = "MZVIG", .Machine = "MZVIG" },
+    { .ID = "IhmSigma"  , .Name = "Perfiladeira Sigma", .Line = "PPSIG", .Machine = "PPSIG" },
+    { .ID = NULL        , .Name = NULL                , .Line = NULL   , .Machine = NULL    }
+};
+
+MaqConfig *MaqConfigCurrent = NULL;
+
+void MaqConfig_SetMachine(char *ID)
+{
+  int i;
+
+  MaqConfigCurrent = NULL;
+  for(i=0; MaqConfigList[i].ID != NULL; i++) {
+    if(!strcmp(MaqConfigList[i].ID, ID)) {
+      MaqConfigCurrent = &MaqConfigList[i];
+      break;
+    }
+  }
+}
+
+MaqConfig * MaqConfig_GetMachine(int index)
+{
+  int i;
+
+  for(i=0; MaqConfigList[i].ID != NULL; i++) {
+    if(i == index) {
+      return &MaqConfigList[i];
+    }
+  }
+
+  return NULL;
+}
+
+int MaqConfig_GetActive(void)
+{
+  int i;
+
+  for(i=0; MaqConfigList[i].ID != NULL; i++) {
+    if(MaqConfigCurrent == &MaqConfigList[i]) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
 // Função que retorna checksum de ponteiro
 unsigned long CalcCheckSum(void *ptr, unsigned int tam)
 {

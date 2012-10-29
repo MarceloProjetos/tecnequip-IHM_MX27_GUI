@@ -41,14 +41,23 @@ typedef uint16_t u16;
 // Ativar a linha abaixo para rodar em modo de teste
 #define DEBUG_MODO_TESTE
 
-// Definicao da Linha/Maquina que este programa via rodar
+// Definicao da Linha/Maquina que este programa vai rodar
+// Definicao de mensagem a exibir quando nao existe erro ativo
 #ifndef DEBUG_MODO_TESTE
-#define MAQ_LINHA   "PPSIG"
-#define MAQ_MAQUINA "PPSIG"
-#define MSG_SEM_ERRO "Sem Erros"
+
+#define MAQ_LINHA   (MaqConfigCurrent == NULL ? "TESTE" : MaqConfigCurrent->Line   )
+#define MAQ_MAQUINA (MaqConfigCurrent == NULL ? "TESTE" : MaqConfigCurrent->Machine)
+
+#ifndef DEBUG_PC_NOETH
+#define MSG_SEM_ERRO (MaqConfigCurrent == NULL ? "Máquina Não Identificada" : "Sem Erros")
 #else
-#define MAQ_LINHA    "TESTE"
-#define MAQ_MAQUINA  "TESTE"
+#define MSG_SEM_ERRO "Máquina Desconectada"
+#endif
+
+#else
+
+#define MAQ_LINHA   "TESTE"
+#define MAQ_MAQUINA "TESTE"
 
 #ifndef DEBUG_PC_NOETH
 #define MSG_SEM_ERRO "Máquina em Modo de Teste"
@@ -57,7 +66,6 @@ typedef uint16_t u16;
 #endif
 
 #endif
-
 
 // Senha master do sistema usada quando não há conexão com o BD
 #define SENHA_MASTER          "wFF9jghA.pg"

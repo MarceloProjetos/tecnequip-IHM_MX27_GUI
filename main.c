@@ -1152,19 +1152,17 @@ void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data);
 
 uint32_t IHM_Init(int argc, char *argv[])
 {
+  int i;
+  MaqConfig *m;
   uint32_t ret = 0;
   pthread_t tid;
   GSList *lst;
   GtkWidget *wnd;
+  GtkComboBox *cmb;
   BoardStatus bs;
   char  hostname[BUFSIZ];
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
   char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
-
-  if(!gethostname(hostname, BUFSIZ)) {
-    ret = 8;
-    goto fim_hostname;
-  }
 
   /* init threads */
   g_thread_init (NULL);
@@ -1205,6 +1203,21 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   // Configura a mensagem inicial da maquina
   gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
+
+  if(gethostname(hostname, BUFSIZ) != 0) {
+    ret = 8;
+    goto fim_hostname;
+  }
+
+  MaqConfig_SetMachine(hostname);
+  printf("Maquina: %s\n", MaqConfigCurrent == NULL ? "Nao Identificada" : MaqConfigCurrent->Name);
+
+  cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMaquina"));
+  gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(cmb)));
+
+  for(i=0; (m = MaqConfig_GetMachine(i)) != NULL; i++) {
+    CarregaItemCombo(cmb, m->Name);
+  }
 
   // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main
   fd_rd = msgget(IPC_PRIVATE, IPC_CREAT);
