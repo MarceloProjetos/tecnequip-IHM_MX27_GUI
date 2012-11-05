@@ -33,13 +33,13 @@ typedef uint16_t u16;
 /*** Definições gerais ***/
 
 // Ativar a linha abaixo para rodar o programa em um PC
-#define DEBUG_PC
+//#define DEBUG_PC
 
 // Ativar a linha abaixo para desativar a comunicação pela Ethernet
 //#define DEBUG_PC_NOETH
 
 // Ativar a linha abaixo para rodar em modo de teste
-#define DEBUG_MODO_TESTE
+//#define DEBUG_MODO_TESTE
 
 // Definicao da Linha/Maquina que este programa vai rodar
 // Definicao de mensagem a exibir quando nao existe erro ativo

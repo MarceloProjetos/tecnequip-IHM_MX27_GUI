@@ -215,10 +215,7 @@ int atividade = 0;
 
 gboolean cbBackLightTurnOn(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-#ifndef DEBUG_PC
-  //comm_put(&(struct comm_msg){ COMM_FNC_BL, { 0x1 } });
-#endif
-
+  // TODO: Ligar Backlight
   atividade++;
 
   return TRUE;
@@ -233,9 +230,7 @@ void cbEspera(GtkButton *button, gpointer user_data)
   atividade++;
 
   if(button == NULL) { // Chamado diretamente, limpa estado e desliga backlight
-#ifndef DEBUG_PC
-    //comm_put(&(struct comm_msg){ COMM_FNC_BL, { 0x0 } });
-#endif
+    // TODO: Desligar backlight
     estado_espera = 0;
   } else {
     cbBackLightTurnOn(NULL, NULL, NULL);
@@ -355,31 +350,13 @@ int32_t tcp_socket = -1;
 MODBUS_HANDLER_TX(IHM_MB_TX)
 {
   struct timeval tv;
-  static struct timeval tv_last;
-  static uint32_t primeiro = 1;
 
   uint32_t i, tent = 50;
-  int32_t resp, wait_usec, wait, opts;
+  int32_t resp, opts;
 
 #ifdef DEBUG_PC_NOETH
   return 0;
 #endif
-
-  if(primeiro) {
-    primeiro = 0;
-    gettimeofday(&tv_last, NULL);
-  }
-
-  gettimeofday(&tv, NULL);
-  wait_usec =  tv.tv_usec - tv_last.tv_usec;
-  wait      = (tv.tv_sec  - tv_last.tv_sec) * 1000000;
-
-  if(wait_usec < 0)
-    wait += 1000000;
-  wait += wait_usec;
-
-//  if(wait < 250000 && wait > 0)
-//    usleep(250000 - wait);
 
   gettimeofday(&tv, NULL);
   printf("\n%3d.%04ld - MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
@@ -387,11 +364,7 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
     printf("%02x ", data[i]);
   printf("\n");
 
-#ifndef DEBUG_PC
-  tcp_socket = ihm_connect("192.168.2.237", 502);
-#else
-  tcp_socket = ihm_connect("192.168.0.172", 502);
-#endif
+  tcp_socket = ihm_connect(MaqConfigCurrent == NULL ? "192.168.0.172" : MaqConfigCurrent->ClpAddr, 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
@@ -412,13 +385,12 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
     usleep(10000);
   }
 
+  gettimeofday(&tv, NULL);
   if(resp<=0) {
     size = 0;
-    gettimeofday(&tv, NULL);
     printf("%3d.%04ld - Tempo para resposta esgotado...\n", (int)tv.tv_sec, (long)tv.tv_usec);
   } else {
     size = resp;
-    gettimeofday(&tv, NULL);
     printf("%3d.%04ld - Retorno de MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
     for(i=0; i<size; i++)
       printf("%02x ", data[i]);
@@ -426,8 +398,6 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
   }
 
   close(tcp_socket);
-
-  tv_last = tv;
 
   return size;
 }
@@ -613,6 +583,20 @@ void Board_GetAD(BoardStatus *bs, int channel)
       break;
     }
   }
+#else
+  switch(channel) {
+  case BOARD_AD_VBAT:
+    bs->BatteryVoltage  = 4;
+    break;
+
+  case BOARD_AD_VIN:
+    bs->ExternalVoltage = 24;
+    break;
+
+  case BOARD_AD_TEMP:
+    bs->Temperature     = 25;
+    break;
+  }
 #endif
 }
 
@@ -727,15 +711,14 @@ void IPC_Update(void)
 {
   struct strIPCMQ_Message rcv;
 
-#ifndef DEBUG_PC
   char *BattStatusDesc[] = { "Pré-Carga", "Carga Completa", "Carregando", "ERRO" };
   int i;
   char tmp[25];
   BoardStatus bs;
-  GtkProgressBar *pgbVIN, *pgbVBAT;
-  GtkImage       *imgBatt = NULL;
-  GdkPixbuf      *pbBatt[6];
-  GtkLabel       *lbl, *lblVINOK, *lblBatt;
+  static GtkProgressBar *pgbVIN, *pgbVBAT;
+  static GtkImage       *imgBatt = NULL;
+  static GdkPixbuf      *pbBatt[6];
+  static GtkLabel       *lbl, *lblVINOK, *lblBatt;
 
   if(imgBatt == NULL) {
     pgbVIN   = GTK_PROGRESS_BAR(gtk_builder_get_object(builder, "pgbVIN"       ));
@@ -752,7 +735,6 @@ void IPC_Update(void)
     }
     pbBatt[i] = gdk_pixbuf_new_from_file("images/ihm-battery-full.png" , NULL);
   }
-#endif
 
   while(IPCMQ_Main_Receber(&rcv, 0) >= 0) {
     switch(rcv.mtype) {
@@ -768,27 +750,25 @@ void IPC_Update(void)
       break;
 
     case IPCMQ_FNC_BATT:
-#ifndef DEBUG_PC
       if(rcv.data.batt_level < 0) {
         rcv.data.batt_level = 0;
       } else {
         rcv.data.batt_level++;
       }
       gtk_image_set_from_pixbuf(imgBatt, pbBatt[rcv.data.batt_level]);
-#endif
+
       *(int *)rcv.res = 0;
       break;
 
     case IPCMQ_FNC_STATUS:
-#ifndef DEBUG_PC
       bs = rcv.data.bs;
 
       sprintf(tmp, "%.01f °C", bs.Temperature);
       if(strcmp(tmp, gtk_label_get_text(lbl)))
         gtk_label_set_text(lbl, tmp);
 
-      // Bateria com tensao inferior a 3V, sistema deve desligar!
-      if(bs.BatteryVoltage < 3 && bs.ExternalVoltage < 8)
+      // Sem energia e bateria com tensao < 3V, sistema deve desligar!
+      if(!bs.HasExternalPower && bs.BatteryVoltage < 3)
         gtk_main_quit();
 
       if((WorkAreaGet() == NTB_ABA_MANUT)) {
@@ -804,7 +784,7 @@ void IPC_Update(void)
 
         gtk_label_set_text(lblVINOK, bs.HasExternalPower ? "Sim" : "Não");
       }
-#endif
+
       *(int *)rcv.res = 0;
       break;
 
@@ -996,7 +976,6 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
 void * ihm_update(void *args)
 {
-#ifndef DEBUG_PC
   BoardStatus bs, *newbs =(BoardStatus *)args;
   uint32_t ciclos = 0;
   int32_t  batt_level, curr_batt_level = -2;
@@ -1004,7 +983,6 @@ void * ihm_update(void *args)
   uint32_t ChangedBS = 0, LedState = 0;
 
   bs = *newbs;
-#endif
 
   struct strIPCMQ_Message ipc_msg;
 
@@ -1014,7 +992,6 @@ void * ihm_update(void *args)
   while (1) {
     usleep(500);
     /*** Loop de checagem de mensagens vindas da CPU LPC2109 ***/
-#ifndef DEBUG_PC
     Board_Update(newbs);
 
     if(newbs->Temperature      != bs.Temperature      ||
@@ -1103,7 +1080,6 @@ void * ihm_update(void *args)
         IPCMQ_Threads_Enviar(&ipc_msg);
       }
     }
-#endif
 
     /*** Fim do loop para atualizacao da imagem da bateria ***/
 
@@ -1112,10 +1088,8 @@ void * ihm_update(void *args)
       switch(ipc_msg.mtype) {
       case IPCMQ_FNC_POWER:
         printf("Resposta: %d\n", ipc_msg.data.power.status);
-#ifndef DEBUG_PC
         if(ipc_msg.data.power.status == 1) // Escolhido permanecer ligado
           StayON = 1;
-#endif
 
         OnPowerDown = 0;
 
@@ -1127,11 +1101,7 @@ void * ihm_update(void *args)
         break;
 
       case IPCMQ_FNC_MODBUS:
-#ifndef DEBUG_PC
         if(Board_HasExternalPower(&bs)) {
-#else
-        if(1) {
-#endif
           ipc_msg.data.modbus_reply = Modbus_RTU_Send(&mbdev, 0,
                                            ipc_msg.data.modbus_query.function_code,
                                            &ipc_msg.data.modbus_query.data);
@@ -1201,9 +1171,6 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Atualiza o estado inicial do CapsLock como desativado
   cbVirtualKeyboardCapsLock(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "tgbCapsLock")), NULL);
 
-  // Configura a mensagem inicial da maquina
-  gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
-
   if(gethostname(hostname, BUFSIZ) != 0) {
     ret = 8;
     goto fim_hostname;
@@ -1211,6 +1178,9 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   MaqConfig_SetMachine(hostname);
   printf("Maquina: %s\n", MaqConfigCurrent == NULL ? "Nao Identificada" : MaqConfigCurrent->Name);
+
+  // Configura a mensagem inicial da maquina
+  gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
 
   cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMaquina"));
   gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(cmb)));
@@ -1234,10 +1204,8 @@ uint32_t IHM_Init(int argc, char *argv[])
     goto fim_fila_wr;
   }
 
-#ifndef DEBUG_PC
   // Inicializa a placa
   Board_Init(&bs);
-#endif
 
   // Inicializacao do ModBus
   mbdev.identification.Id = 0x02;

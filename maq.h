@@ -7,8 +7,11 @@
 typedef struct {
   char *ID;
   char *Name;
+
   char *Line;
   char *Machine;
+
+  char *ClpAddr;
 } MaqConfig;
 
 /*** Definicoes e funcoes relacionados a Configuracao da Maquina ***/

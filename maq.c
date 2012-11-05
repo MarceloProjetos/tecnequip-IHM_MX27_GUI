@@ -5,10 +5,30 @@ extern void IPC_Update(void);
 
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
-    { .ID = "IhmColMez" , .Name = "Coluna do Mezanino", .Line = "MZCOL", .Machine = "MZCOL" },
-    { .ID = "IhmVigaMez", .Name = "Viga do Mezanino"  , .Line = "MZVIG", .Machine = "MZVIG" },
-    { .ID = "IhmSigma"  , .Name = "Perfiladeira Sigma", .Line = "PPSIG", .Machine = "PPSIG" },
-    { .ID = NULL        , .Name = NULL                , .Line = NULL   , .Machine = NULL    }
+    { // Coluna do Mezanino
+        .ID      = "IhmColMez",
+        .Name    = "Coluna do Mezanino",
+        .Line    = "MZCOL",
+        .Machine = "MZCOL",
+        .ClpAddr = "192.168.2.239"
+    },
+    { // Viga do Mezanino
+        .ID      = "IhmVigaMez",
+        .Name    = "Viga do Mezanino",
+        .Line    = "MZVIG",
+        .Machine = "MZVIG",
+        .ClpAddr = "192.168.2.241"
+    },
+    { // Viga Sigma
+        .ID      = "IhmSigma",
+        .Name    = "Perfiladeira Sigma",
+        .Line    = "PPSIG",
+        .Machine = "PPSIG",
+        .ClpAddr = "192.168.2.237"
+    },
+    { // Final
+        .ID = NULL
+    }
 };
 
 MaqConfig *MaqConfigCurrent = NULL;
