@@ -161,7 +161,7 @@ gboolean tmrExec(gpointer data)
     // Adiciona log de produção
     LogProd(Task, LOGPROD_END);
 
-    WorkAreaGoTo(NTB_ABA_HOME);
+    WorkAreaGoTo(MaqConfigCurrent->AbaHome);
     return FALSE;
   } else {
     sprintf(tmp, "%d", qtd - qtdprod);
@@ -656,7 +656,7 @@ void AbrirOper()
 {
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
-    WorkAreaGoTo(NTB_ABA_HOME);
+    WorkAreaGoTo(MaqConfigCurrent->AbaHome);
     MessageBox("Sem permissão para operar a máquina!");
     return;
     }
@@ -717,7 +717,7 @@ void cbConfirmarDadosPedido(GtkButton *button, gpointer user_data)
 
 void cbCancelarDadosPedido(GtkButton *button, gpointer user_data)
 {
-  WorkAreaGoTo(NTB_ABA_HOME);
+  WorkAreaGoTo(MaqConfigCurrent->AbaHome);
   LimparDadosPedido();
 }
 
@@ -834,7 +834,7 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 
 // Se soltou o botao antes de 500 ms do clique, interpreta o clique e abre tela de manutencao
   if(event->type == GDK_BUTTON_RELEASE && (event->time - last.time) < 500)
-    WorkAreaGoTo(NTB_ABA_MANUT);
+    WorkAreaGoTo(MaqConfigCurrent->AbaManut);
 
   last = *event;
   return TRUE;

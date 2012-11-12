@@ -7,17 +7,6 @@
 #include "defines.h"
 #include "GtkUtils.h"
 
-/*** Funcoes e variáveis de suporte ***/
-
-extern int idUser; // Indica usuário que logou se for diferente de zero.
-extern int CurrentWorkArea;  // Variavel que armazena a tela atual.
-extern int PreviousWorkArea; // Variavel que armazena a tela anterior.
-
-// Função que salva um log no banco contendo usuário e data que gerou o evento.
-extern void Log(char *evento, int tipo);
-
-/*** Fim das funcoes e variáveis de suporte ***/
-
 // função que carrega a lista de eventos em um TreeView
 void CarregaListaLogs(GtkWidget *tvw)
 {
@@ -99,7 +88,7 @@ void AbrirLog()
 
   if(!GetUserPerm(PERM_ACESSO_LOGS))
     {
-    WorkAreaGoTo(NTB_ABA_HOME);
+    WorkAreaGoTo(MaqConfigCurrent->AbaHome);
     MessageBox("Sem permissão para acesso aos registros!");
     return;
     }
@@ -119,5 +108,5 @@ void AbrirLog()
 
 void cbLogVoltar(GtkButton *button, gpointer user_data)
 {
-  WorkAreaGoTo(NTB_ABA_HOME);
+  WorkAreaGoTo(MaqConfigCurrent->AbaHome);
 }

@@ -3,45 +3,266 @@
 
 extern void IPC_Update(void);
 
+// Funcoes de inicializacao das maquinas
+int Banho_Init(void); // Inicializacao do banho
+
+// Funcoes de tratamento de erro das maquinas
+void Banho_Erro(int erro); // Tratamento de erro do banho
+
+// Listas de Erro das Maquinas
+char *ErrorListDefault[] = {
+    "Erro na comunicacao",
+    "Emergencia Acionada",
+    "Falta de fase",
+    "Erro na unidade hidraulica",
+    "Erro no inversor",
+    "Erro no desbobinador",
+    "Erro de comunicacao - Inversor",
+    "Erro no Corte do Perfil",
+//      "Baixa pressao de ar",
+    ""
+};
+
+char *ErrorListBanho[] = {
+    "Erro na comunicacao",
+    "Emergencia Acionada",
+    "Falta de Fase",
+    "Erro no Termico da Bomba",
+    "Erro no Comando da Bomba",
+    "Erro no Fluxostato",
+    "Erro no Esguicho 1",
+    "Erro no Esguicho 2",
+    "Erro no Esguicho 3",
+    "Erro no Esguicho 4",
+    "Erro na Resistencia 1",
+    "Erro na Resistencia 2",
+    ""
+};
+
+// Mapas de I/O das Maquinas
+MaqIOMap MaqDefaultIOMap = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
+      { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
+      { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Recua piloto"    , "images/ihm-manut-piloto-recuar.png"  },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+MaqIOMap MaqBanhoIOMap = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"    },
+      { "Fluxostato"                      , "images/ihm-ent-.png"              },
+      { "Térmico Bomba Circ."             , "images/ihm-ent-hidr-termico.png"  },
+      { "Erro no Esguicho 1"              , "images/ihm-ent-inversor-erro.png" },
+      { "Erro no Esguicho 2"              , "images/ihm-ent-inversor-erro.png" },
+      { "Erro no Esguicho 3"              , "images/ihm-ent-inversor-erro.png" },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Bomba de Circ.\nLigada"          , "images/ihm-ent-.png"              },
+      { "Resistência 1\nLigada"           , "images/ihm-ent-.png"              },
+      { "Resistência 2\nLigada"           , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"    },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Termostato"                      , "images/ihm-ent-.png"              },
+  },
+
+  .Output  = {
+      { "Ligar Bomba Circ."  , "images/ihm-manut-hidr-ligar.png" },
+      { "Ligar Resistência 1", "images/ihm-manut-.png"           },
+      { "Ligar Resistência 2", "images/ihm-manut-.png"           },
+      { "Ligar Esguicho 1"   , "images/ihm-manut-.png"           },
+      { "Reset Esguicho 1"   , "images/ihm-manut-.png"           },
+      { "Ligar Esguicho 2"   , "images/ihm-manut-.png"           },
+      { "Reset Esguicho 2"   , "images/ihm-manut-.png"           },
+      { "Ligar Esguicho 3"   , "images/ihm-manut-.png"           },
+      { "Reset Esguicho 3"   , "images/ihm-manut-.png"           },
+      { "Reservado"          , "images/ihm-manut-.png"           },
+      { "Reservado"          , "images/ihm-manut-.png"           },
+      { "Ventilador Secagem" , "images/ihm-manut-.png"           },
+      { "Sirene"             , "images/ihm-manut-.png"           },
+      { "Aviso Sonoro Erro"  , "images/ihm-manut-.png"           },
+      { "Parar Linha"        , "images/ihm-manut-.png"           },
+      { "Aviso Pintura"      , "images/ihm-manut-.png"           },
+  },
+};
+
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
     { // Coluna do Mezanino
-        .ID      = "IhmColMez",
-        .Name    = "Coluna do Mezanino",
-        .Line    = "MZCOL",
-        .Machine = "MZCOL",
-        .ClpAddr = "192.168.2.239"
+        .ID        = "IhmColMez",
+        .Name      = "Coluna do Mezanino",
+        .Line      = "MZCOL",
+        .Machine   = "MZCOL",
+        .ClpAddr   = "192.168.2.239",
+        .AbaHome   = NTB_ABA_HOME,
+        .AbaManut  = NTB_ABA_MANUT,
+        .UseLogin  = TRUE,
+        .UseIndet  = TRUE,
+        .IOMap     = &MaqDefaultIOMap,
+        .fncOnInit   = NULL,
+        .fncOnError  = NULL,
+        .ErrorList = ErrorListDefault,
     },
     { // Viga do Mezanino
-        .ID      = "IhmVigaMez",
-        .Name    = "Viga do Mezanino",
-        .Line    = "MZVIG",
-        .Machine = "MZVIG",
-        .ClpAddr = "192.168.2.241"
+        .ID        = "IhmVigaMez",
+        .Name      = "Viga do Mezanino",
+        .Line      = "MZVIG",
+        .Machine   = "MZVIG",
+        .ClpAddr   = "192.168.2.241",
+        .AbaHome   = NTB_ABA_HOME,
+        .AbaManut  = NTB_ABA_MANUT,
+        .UseLogin  = TRUE,
+        .UseIndet  = TRUE,
+        .IOMap     = &MaqDefaultIOMap,
+        .fncOnInit   = NULL,
+        .fncOnError  = NULL,
+        .ErrorList = ErrorListDefault,
     },
     { // Viga Sigma
-        .ID      = "IhmSigma",
-        .Name    = "Perfiladeira Sigma",
-        .Line    = "PPSIG",
-        .Machine = "PPSIG",
-        .ClpAddr = "192.168.2.237"
+        .ID        = "IhmSigma",
+        .Name      = "Perfiladeira Sigma",
+        .Line      = "PPSIG",
+        .Machine   = "PPSIG",
+        .ClpAddr   = "192.168.2.237",
+        .AbaHome   = NTB_ABA_HOME,
+        .AbaManut  = NTB_ABA_MANUT,
+        .UseLogin  = TRUE,
+        .UseIndet  = TRUE,
+        .IOMap     = &MaqDefaultIOMap,
+        .fncOnInit   = NULL,
+        .fncOnError  = NULL,
+        .ErrorList = ErrorListDefault,
+    },
+    { // Banho
+        .ID        = "IhmBanho",
+        .Name      = "Banho",
+        .Line      = "TESTE",
+        .Machine   = "TESTE",
+        .ClpAddr   = "192.168.2.235",
+//        .ClpAddr   = "192.168.2.124",
+        .AbaHome   = NTB_ABA_HOME_BANHO,
+        .AbaManut  = NTB_ABA_MANUT,
+        .UseLogin  = FALSE,
+        .UseIndet  = FALSE,
+        .IOMap     = &MaqBanhoIOMap,
+        .fncOnInit   = Banho_Init,
+        .fncOnError  = Banho_Erro,
+        .ErrorList = ErrorListBanho,
     },
     { // Final
         .ID = NULL
     }
 };
 
-MaqConfig *MaqConfigCurrent = NULL;
+MaqConfig MaqConfigDefault = {
+    .ID        = "IhmTeste",
+    .Name      = "Maquina de Teste",
+    .Line      = "TESTE",
+    .Machine   = "TESTE",
+    .ClpAddr   = "192.168.0.172",
+    .AbaHome   = NTB_ABA_HOME,
+    .AbaManut  = NTB_ABA_MANUT,
+    .UseLogin  = TRUE,
+    .UseIndet  = TRUE,
+    .IOMap     = &MaqDefaultIOMap,
+    .fncOnInit   = NULL,
+    .fncOnError  = NULL,
+    .ErrorList = ErrorListDefault,
+};
+
+MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
+
+extern GtkBuilder *builder;
 
 void MaqConfig_SetMachine(char *ID)
 {
   int i;
+  char tmp[100];
+  GtkWidget *wdg;
+  GtkImage  *img;
 
-  MaqConfigCurrent = NULL;
+  // Procura a maquina
+  MaqConfigCurrent = &MaqConfigDefault;
   for(i=0; MaqConfigList[i].ID != NULL; i++) {
     if(!strcmp(MaqConfigList[i].ID, ID)) {
       MaqConfigCurrent = &MaqConfigList[i];
       break;
+    }
+  }
+
+  // Agora configura as entradas e saidas da tela de manutencao
+
+  // Loop de entradas, finaliza quando acabar objetos ou atingir limite
+  for(i = 0; i < MAQ_INPUT_MAX; i++) {
+    sprintf(tmp, "lblManutEnt%02d", i);
+    wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+    if(wdg == NULL) // Acabaram as entradas
+      break; // Sai do loop
+
+    gtk_label_set_label(GTK_LABEL(wdg), MaqConfigCurrent->IOMap->Input[i].NameIO);
+
+    sprintf(tmp, "imgManutEnt%02d", i);
+    img = GTK_IMAGE(gtk_builder_get_object(builder, tmp));
+    if(img) {
+      gtk_image_set_from_file(img, MaqConfigCurrent->IOMap->Input[i].NameFile);
+    }
+  }
+
+  // Loop de saidas, finaliza quando acabar objetos ou atingir limite
+  for(i = 0; i < MAQ_OUTPUT_MAX; i++) {
+    sprintf(tmp, "lblManutSai%02d", i);
+    wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+    if(wdg == NULL) // Acabaram as saidas
+      break; // Sai do loop
+
+    gtk_label_set_label(GTK_LABEL(wdg), MaqConfigCurrent->IOMap->Output[i].NameIO);
+
+    sprintf(tmp, "imgManutSai%02d", i);
+    img = GTK_IMAGE(gtk_builder_get_object(builder, tmp));
+    if(img) {
+      gtk_image_set_from_file(img, MaqConfigCurrent->IOMap->Output[i].NameFile);
     }
   }
 }
@@ -56,7 +277,7 @@ MaqConfig * MaqConfig_GetMachine(int index)
     }
   }
 
-  return NULL;
+  return &MaqConfigDefault;
 }
 
 int MaqConfig_GetActive(void)
@@ -70,6 +291,22 @@ int MaqConfig_GetActive(void)
   }
 
   return -1;
+}
+
+int MaqInit(void)
+{
+  if(MaqConfigCurrent == NULL) return 0;
+
+  if(MaqConfigCurrent->fncOnInit != NULL)
+    return (*MaqConfigCurrent->fncOnInit)();
+
+  return 1;
+}
+
+void MaqError(int error)
+{
+  if(MaqConfigCurrent && MaqConfigCurrent->fncOnError != NULL)
+    (*MaqConfigCurrent->fncOnError)(error);
 }
 
 // Função que retorna checksum de ponteiro
@@ -276,26 +513,18 @@ int MaqLerConfig(void)
 
 char *MaqStrErro(uint16_t erro)
 {
-  uint32_t i;
-  char *msg_erro[] = {
-      "Erro na comunicacao",
-      "Emergencia Acionada",
-      "Falta de fase",
-      "Erro na unidade hidraulica",
-      "Erro no inversor",
-      "Erro no desbobinador",
-      "Erro de comunicacao - Inversor",
-      "Erro no Corte do Perfil",
-//      "Baixa pressao de ar",
-  };
+  uint32_t i, size;
 
-  if(!erro) // Sem erro, retorna string nula
+  if(!erro || MaqConfigCurrent == NULL) // Sem erro ou maquina nula, retorna string nula
     return NULL;
+
+  // Busca fim da lista de erros
+  for(size = 0; MaqConfigCurrent->ErrorList[size][0]; size++);
 
   for(i=0; !((erro>>i)&1); i++); // Busca primeiro bit ligado
 
-  if(i < ARRAY_SIZE(msg_erro)) {
-    return msg_erro[i];
+  if(i < size) {
+    return MaqConfigCurrent->ErrorList[i];
   } else {
     return "Erro indefinido!";
   }

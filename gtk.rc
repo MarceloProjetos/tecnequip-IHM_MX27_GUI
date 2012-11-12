@@ -1,7 +1,22 @@
 gtk-icon-theme-name="IHM27"
+
 style "font"
 {
 font_name = "Arial 16"
 }
+
+style "Espera"
+{
+font_name = "Arial 32"
+}
+
 widget_class "*" style "font"
 gtk-font-name = "Arial 16" 
+
+style "gtk-calendar-banho"
+{
+font_name = "Arial 12"
+}
+
+widget "*cldBanhoData*" style "gtk-calendar-banho"
+widget "*btEspera*" style "Espera"

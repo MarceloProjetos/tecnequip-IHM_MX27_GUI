@@ -456,6 +456,11 @@ void SetMaqStatus(unsigned int NewStatus)
   char data[100], sql[500];
   static time_t t = 0;
 
+  // Se nao devemos usar o estado indeterminado, consideramos como maquina parada.
+  if(!MaqConfigCurrent->UseIndet && NewStatus == MAQ_STATUS_INDETERMINADO) {
+    NewStatus = MAQ_STATUS_PARADA;
+  }
+
   printf("Configurando status. CurrentStatus=%d, NewStatus=%d\n", CurrentStatus, NewStatus);
 
   LastStatusChange = time(NULL);
@@ -519,7 +524,7 @@ void SetMaqStatus(unsigned int NewStatus)
     Log(sql, LOG_TIPO_SISTEMA);
 
     MSSQL_Close();
-  } else if(WorkAreaGet() == NTB_ABA_HOME || WorkAreaGet() == NTB_ABA_TAREFA) {
+  } else if(WorkAreaGet() == MaqConfigCurrent->AbaHome || WorkAreaGet() == NTB_ABA_TAREFA) {
     WorkAreaGoTo(NTB_ABA_INDETERMINADO); // Atingiu timeout em tela home ou tarefa, podemos mudar para a tela de definição de parada
   }
 
@@ -555,67 +560,70 @@ int Board_HasExternalPower(BoardStatus *bs)
 
 void Board_GetAD(BoardStatus *bs, int channel)
 {
-#ifndef DEBUG_PC
   int   ret;
   float result;
 
-  if(channel < 0 || bs == NULL || bs->par == NULL)
+  if(channel < 0 || bs == NULL)
     return;
 
-  memset(bs->par, 0, sizeof(struct twl4030_madc_user_parms));
-  bs->par->channel = channel;
+  if(bs->dev >= 0 && bs->par != NULL) {
+    memset(bs->par, 0, sizeof(struct twl4030_madc_user_parms));
+    bs->par->channel = channel;
 
-  ret    = ioctl(bs->dev, TWL4030_MADC_IOCX_ADC_RAW_READ, bs->par);
-  result = ((unsigned int)bs->par->result) / 1024.f; // 10 bit ADC -> 1024
+    ret    = ioctl(bs->dev, TWL4030_MADC_IOCX_ADC_RAW_READ, bs->par);
+    result = ((unsigned int)bs->par->result) / 1024.f; // 10 bit ADC -> 1024
 
-  if (ret == 0 && bs->par->status != -1) {
+    if (ret == 0 && bs->par->status != -1) {
+      switch(channel) {
+      case BOARD_AD_VBAT:
+        bs->BatteryVoltage  = result * 6.0;
+        break;
+
+      case BOARD_AD_VIN:
+        bs->ExternalVoltage = result * 0.0;
+        break;
+
+      case BOARD_AD_TEMP:
+        bs->Temperature     = result * 0.0;
+        break;
+      }
+    }
+  } else {
     switch(channel) {
     case BOARD_AD_VBAT:
-      bs->BatteryVoltage  = result * 6.0;
+      bs->BatteryVoltage  = 4;
       break;
 
     case BOARD_AD_VIN:
-      bs->ExternalVoltage = result * 0.0;
+      bs->ExternalVoltage = 24;
       break;
 
     case BOARD_AD_TEMP:
-      bs->Temperature     = result * 0.0;
+      bs->Temperature     = 25;
       break;
     }
   }
-#else
-  switch(channel) {
-  case BOARD_AD_VBAT:
-    bs->BatteryVoltage  = 4;
-    break;
-
-  case BOARD_AD_VIN:
-    bs->ExternalVoltage = 24;
-    break;
-
-  case BOARD_AD_TEMP:
-    bs->Temperature     = 25;
-    break;
-  }
-#endif
 }
 
-void Board_Led(int TurnOn)
+void Board_Led(BoardStatus *bs, int TurnOn)
 {
-#ifndef DEBUG_PC
-  io_write(TurnOn ? BOARD_ADDR_GPIO_CLEAR : BOARD_ADDR_GPIO_SET, 0x40000000);
-#endif
+  if(bs != NULL && bs->dev >= 0) {
+    io_write(TurnOn ? BOARD_ADDR_GPIO_CLEAR : BOARD_ADDR_GPIO_SET, 0x40000000);
+  }
 }
 
 void Board_GetPowerState(BoardStatus *bs)
 {
   if(bs == NULL) return;
 
-#ifndef DEBUG_PC
   int ps;
 
   // Leitura dos GPIOs
-  ps = (io_read(BOARD_ADDR_GPIO_READ) >> 28)&7;
+  if(bs->dev >= 0) {
+    ps = (io_read(BOARD_ADDR_GPIO_READ) >> 28)&7;
+  } else {
+    ps = 1; // 001, ou seja, bateria carregada e com alimentacao externa
+  }
 
   // GPIO 158 indica se existe VIN. Nivel baixo = VIN OK
   bs->HasExternalPower = !((ps>>2)&1);
@@ -628,10 +636,6 @@ void Board_GetPowerState(BoardStatus *bs)
   bs->BatteryState = ps&3;
   if(!bs->BatteryState) // Precharge
     bs->BatteryState = BOARD_BATT_CHARGING;
-#else
-  bs->HasExternalPower = 1;
-  bs->BatteryState     = BOARD_BATT_FULL;
-#endif
 }
 
 void Board_Update(BoardStatus *bs)
@@ -650,15 +654,13 @@ void Board_Init(BoardStatus *bs)
 
   memset(bs, 0, sizeof(BoardStatus));
 
-#ifndef DEBUG_PC
   bs->dev = open("/dev/twl4030-madc", O_RDWR | O_NONBLOCK);
   if(bs->dev >= 0) {
     bs->par = malloc(sizeof(struct twl4030_madc_user_parms));
-  }
 
-  io_write(BOARD_ADDR_GPIO_ENABLE  , io_read(BOARD_ADDR_GPIO_ENABLE  ) | 0x01000100);
-  io_write(BOARD_ADDR_GPIO_ENABLE+4, io_read(BOARD_ADDR_GPIO_ENABLE+4) | 0x00000100);
-#endif
+    io_write(BOARD_ADDR_GPIO_ENABLE  , io_read(BOARD_ADDR_GPIO_ENABLE  ) | 0x01000100);
+    io_write(BOARD_ADDR_GPIO_ENABLE+4, io_read(BOARD_ADDR_GPIO_ENABLE+4) | 0x00000100);
+  }
 
   Board_Update(bs);
 }
@@ -771,7 +773,7 @@ void IPC_Update(void)
       if(!bs.HasExternalPower && bs.BatteryVoltage < 3)
         gtk_main_quit();
 
-      if((WorkAreaGet() == NTB_ABA_MANUT)) {
+      if((WorkAreaGet() == MaqConfigCurrent->AbaManut)) {
         gtk_progress_bar_set_fraction(pgbVIN , bs.ExternalVoltage/35);
         sprintf(tmp, "%.02f Volts", bs.ExternalVoltage);
         gtk_progress_bar_set_text(pgbVIN , tmp);
@@ -834,22 +836,28 @@ gboolean tmrGtkUpdate(gpointer data)
 
       // Leitura do estado dos CLPs, exibindo mensagem de erro caso houver
       current_status = MaqLerErros();
-      if(last_status != current_status && current_status) { // houve mudanca e com erro
-        MaqLiberar(0);
-        msg_error = MaqStrErro(current_status);
-        Log(msg_error, LOG_TIPO_ERRO);
-        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);
-        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
-        WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
-      } else if (last_status != current_status) {
-        MaqLiberar(1);
-        gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
+      if(last_status != current_status) {
+        if(current_status) { // houve mudanca e com erro
+          MaqLiberar(0);
+          msg_error = MaqStrErro(current_status);
+          Log(msg_error, LOG_TIPO_ERRO);
+          gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);
+          gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
+          WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
+        } else {
+          MaqLiberar(1);
+          gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
+        }
+
+        MaqError(current_status);
+
+        last_status = current_status;
       }
-      last_status = current_status;
 
       // Se status não for indeterminado, parada ou produzindo e atingiu o tempo limite, entra em estado indeterminado
       if(CurrentStatus != MAQ_STATUS_INDETERMINADO && CurrentStatus != MAQ_STATUS_PARADA &&
-         CurrentStatus != MAQ_STATUS_PRODUZINDO && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT) {
+         CurrentStatus != MAQ_STATUS_PRODUZINDO && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT &&
+         MaqConfigCurrent->UseIndet) {
         SetMaqStatus(MAQ_STATUS_INDETERMINADO);
       }
 
@@ -869,7 +877,7 @@ gboolean tmrGtkUpdate(gpointer data)
       if(strcmp(tmp, gtk_label_get_text(lbl)))
         gtk_label_set_label(lbl, tmp);
     } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      if(WorkAreaGet() == NTB_ABA_MANUT) {
+      if(WorkAreaGet() == MaqConfigCurrent->AbaManut) {
         val = MaqLerSaidas();
         for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as saidas
           sprintf(tmp, "tglManutSai%02d", i);
@@ -881,12 +889,12 @@ gboolean tmrGtkUpdate(gpointer data)
         }
       }
     } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      if(WorkAreaGet() == NTB_ABA_MANUT) {
-        val = MaqLerEntradas();
+      if(WorkAreaGet() == MaqConfigCurrent->AbaManut) {
+        val = MaqLerEntradas() ^ MaqConfigCurrent->IOMap->InputMask;
         for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
           sprintf(tmp, "imgStatusEnt%02d", i);
           wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
-          if(wdg == NULL) // Acabaram as saidas
+          if(wdg == NULL) // Acabaram as entradas
             break; // Sai do loop
 
           gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
@@ -921,6 +929,10 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
   const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(button));
 
   idx = nome[strlen(nome)-1]-'0';
+  if(idx == NTB_ABA_MANUT) {
+    idx = MaqConfigCurrent->AbaManut;
+  }
+
   WorkAreaGoTo(idx);
 
   switch(idx) {
@@ -1040,12 +1052,12 @@ void * ihm_update(void *args)
       ciclos = 0;
 
       if(bs.BatteryState == BOARD_BATT_ERROR) {
-        Board_Led(LedState == 1 || LedState == 3);
+        Board_Led(&bs, LedState == 1 || LedState == 3);
         if(LedState++ > 7)
           LedState = 0;
       } else {
         LedState = !LedState;
-        Board_Led(LedState);
+        Board_Led(&bs, LedState);
       }
 
       // Verifica o estado atual da bateria: carregando, cheia ou com erro.
@@ -1177,7 +1189,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   }
 
   MaqConfig_SetMachine(hostname);
-  printf("Maquina: %s\n", MaqConfigCurrent == NULL ? "Nao Identificada" : MaqConfigCurrent->Name);
+  printf("Maquina: %s\n", MaqConfigCurrent->Name);
 
   // Configura a mensagem inicial da maquina
   gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
@@ -1185,7 +1197,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMaquina"));
   gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(cmb)));
 
-  for(i=0; (m = MaqConfig_GetMachine(i)) != NULL; i++) {
+  for(i=0; (m = MaqConfig_GetMachine(i)) != &MaqConfigDefault; i++) {
     CarregaItemCombo(cmb, m->Name);
   }
 
@@ -1236,9 +1248,6 @@ uint32_t IHM_Init(int argc, char *argv[])
     mainDB.nome_db  = "cv_integrado";
     }
 
-  WorkAreaGoTo(NTB_ABA_LOGIN);
-  gtk_widget_show_all(wnd);
-
   // Iniciando os timers
   g_timeout_add(   500, tmrGtkUpdate, (gpointer)(&bs));
   g_timeout_add(  1000, tmrPowerDown, (gpointer)(&bs));
@@ -1268,7 +1277,16 @@ uint32_t IHM_Init(int argc, char *argv[])
   if(!MaqLerErros())
     MaqLiberar(1);
 
-  gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
+  gtk_widget_show_all(wnd);
+  if(MaqConfigCurrent->UseLogin) {
+    WorkAreaGoTo(NTB_ABA_LOGIN);
+  } else {
+    WorkAreaGoTo(MaqConfigCurrent->AbaHome);
+  }
+
+  if(MaqInit()) {
+    gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
+  }
 
   // Configura o estado final da máquina para PARADA pois ela está sendo desligada.
   SetMaqStatus(MAQ_STATUS_PARADA);

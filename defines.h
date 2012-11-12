@@ -32,9 +32,6 @@ typedef uint16_t u16;
 
 /*** Definições gerais ***/
 
-// Ativar a linha abaixo para rodar o programa em um PC
-//#define DEBUG_PC
-
 // Ativar a linha abaixo para desativar a comunicação pela Ethernet
 //#define DEBUG_PC_NOETH
 
@@ -45,11 +42,11 @@ typedef uint16_t u16;
 // Definicao de mensagem a exibir quando nao existe erro ativo
 #ifndef DEBUG_MODO_TESTE
 
-#define MAQ_LINHA   (MaqConfigCurrent == NULL ? "TESTE" : MaqConfigCurrent->Line   )
-#define MAQ_MAQUINA (MaqConfigCurrent == NULL ? "TESTE" : MaqConfigCurrent->Machine)
+#define MAQ_LINHA   (MaqConfigCurrent->Line   )
+#define MAQ_MAQUINA (MaqConfigCurrent->Machine)
 
 #ifndef DEBUG_PC_NOETH
-#define MSG_SEM_ERRO (MaqConfigCurrent == NULL ? "Máquina Não Identificada" : "Sem Erros")
+#define MSG_SEM_ERRO (MaqConfigCurrent == &MaqConfigDefault ? "Máquina Não Identificada" : "Sem Erros")
 #else
 #define MSG_SEM_ERRO "Máquina Desconectada"
 #endif
@@ -146,6 +143,7 @@ typedef uint16_t u16;
 #define NTB_ABA_MUDAR_SENHA   17
 #define NTB_ABA_CALC_FATOR    18
 #define NTB_ABA_POWERDOWN     19
+#define NTB_ABA_HOME_BANHO    20
 #define NTB_ABA_NONE          99
 
 // Modos de corte da peça

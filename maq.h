@@ -1,23 +1,51 @@
 #ifndef MAQ_H
 #define MAQ_H
 
+#define MAQ_INPUT_MAX  19
+#define MAQ_OUTPUT_MAX 16
+
 #define MAQ_ARQ_CONFIG "maq.config"
 #define MAQ_CFG_MAGIC  0x78B2A5F0
 
 typedef struct {
-  char *ID;
-  char *Name;
+  char *NameIO;
+  char *NameFile;
+} MaqIO;
 
-  char *Line;
-  char *Machine;
+typedef struct {
+  int    InputMask;
+  MaqIO Input [MAQ_INPUT_MAX ];
+  MaqIO Output[MAQ_OUTPUT_MAX];
+} MaqIOMap;
 
-  char *ClpAddr;
+typedef struct {
+  char      *ID;
+  char      *Name;
+
+  char      *Line;
+  char      *Machine;
+
+  char      *ClpAddr;
+
+  int        AbaHome;
+  int        AbaManut;
+
+  int        UseLogin;
+  int        UseIndet;
+
+  MaqIOMap  *IOMap;
+
+  char     **ErrorList;
+
+  int      (*fncOnInit )(void);
+  void     (*fncOnError)(int error);
 } MaqConfig;
 
 /*** Definicoes e funcoes relacionados a Configuracao da Maquina ***/
 
 // Variaveis
 extern MaqConfig  MaqConfigList[];
+extern MaqConfig  MaqConfigDefault;
 extern MaqConfig *MaqConfigCurrent;
 
 // Funcoes
@@ -110,15 +138,22 @@ struct strMaqParam
 
 /*** Fim das estruturas de informacoes da maquina ***/
 
+int      MaqInit       (void);
+void     MaqError      (int error);
+
 uint16_t MaqLerErros   (void);
 char    *MaqStrErro    (uint16_t status);
 
 uint16_t MaqLerModo    (void);
+uint16_t MaqLerFlags   (void);
+
 uint16_t MaqLerProdQtd (void);
 uint32_t MaqLerEntradas(void);
 uint32_t MaqLerSaidas  (void);
 
 void                      MaqConfigModo   (uint16_t  modo);
+void                      MaqConfigFlags  (uint16_t flags);
+
 void                      MaqConfigProdQtd(uint16_t quant);
 void                      MaqConfigProdTam(uint16_t   tam);
 

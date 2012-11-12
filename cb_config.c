@@ -903,7 +903,7 @@ void AbrirConfig(unsigned int pos)
   if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
-      WorkAreaGoTo(NTB_ABA_HOME);
+      WorkAreaGoTo(MaqConfigCurrent->AbaHome);
       MessageBox("Sem permissão para acesso à configuração!");
       return;
       }
@@ -926,11 +926,11 @@ void cbConfigOk(GtkButton *button, gpointer user_data)
 //  MQ.MQ_Data.data.di[0] = CV_ERRO_CONFIG;
 //  MQ_Transfer(&MQ);
 
-  WorkAreaGoTo(NTB_ABA_HOME);
+  WorkAreaGoTo(MaqConfigCurrent->AbaHome);
 
   if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
     if(GetUserPerm(PERM_ACESSO_CONFIG) != PERM_WRITE) {
-      WorkAreaGoTo(NTB_ABA_HOME);
+      WorkAreaGoTo(MaqConfigCurrent->AbaHome);
       MessageBox("Sem permissão para alterar configuração! Nada alterado.");
       return;
     }
@@ -942,7 +942,7 @@ void cbConfigOk(GtkButton *button, gpointer user_data)
 
 void cbConfigVoltar(GtkButton *button, gpointer user_data)
 {
-  WorkAreaGoTo(NTB_ABA_HOME);
+  WorkAreaGoTo(MaqConfigCurrent->AbaHome);
 }
 
 void cbLoginOk(GtkButton *button, gpointer user_data)
@@ -982,7 +982,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
       strcpy(senha, Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))));
       if(!strcmp(DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "SENHA")),senha)) {
         // Oculta a janela de login.
-        WorkAreaGoTo(NTB_ABA_HOME);
+        WorkAreaGoTo(MaqConfigCurrent->AbaHome);
 
         // Limpa a senha digitada
         gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha")), "");
@@ -1150,7 +1150,7 @@ WAList * AddWA(WAList **list, int WA)
 int RemoveWA(WAList **list)
 {
   int i = 0;
-  int WA = NTB_ABA_HOME; // Por default retorna a tela anterior como a aba HOME.
+  int WA = MaqConfigCurrent->AbaHome; // Por default retorna a tela anterior como a aba HOME.
 
   if(list != NULL && *list != NULL) {
     WAList *current = *list, *previous = NULL;
@@ -1175,6 +1175,8 @@ int RemoveWA(WAList **list)
 
 void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint arg1, gpointer user_data)
 {
+  int ExibirBarra = 0;
+
   if(CurrentWorkArea != NTB_ABA_NONE) {
     AddWA(&WA_PreviousList, CurrentWorkArea);
   }
@@ -1184,10 +1186,19 @@ void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint ar
     atividade++;
   }
 
+  if(CurrentWorkArea == MaqConfigCurrent->AbaHome) {
+    ExibirBarra = 1;
+  }
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "hbxNotificationArea")), ExibirBarra);
+
   if(CurrentWorkArea == NTB_ABA_POWERDOWN && !OnPowerDown) {
     WorkAreaGoPrevious(); // Tela nao faz mais sentido agora, energia restabelecida!
-  } else if((arg1 == NTB_ABA_HOME || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
-    WorkAreaGoTo(NTB_ABA_INDETERMINADO);
+  } else if((arg1 == MaqConfigCurrent->AbaHome || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
+    if(MaqConfigCurrent->UseIndet) {
+      WorkAreaGoTo(NTB_ABA_INDETERMINADO);
+    } else {
+      SetMaqStatus(MAQ_STATUS_PARADA);
+    }
   }
 }
 
@@ -1201,7 +1212,7 @@ void WorkAreaGoTo(int NewWorkArea)
   } else if(CurrentWorkArea != NTB_ABA_MESSAGEBOX || NewWorkArea == NTB_ABA_ESPERA ||
       (NewWorkArea == NTB_ABA_POWERDOWN && CurrentWorkArea != NTB_ABA_ESPERA)) {
     // Se estiver indo para a aba HOME, exclui lista de telas anteriores e desmarca tela atual.
-    if(NewWorkArea == NTB_ABA_HOME) {
+    if(NewWorkArea == MaqConfigCurrent->AbaHome) {
       CurrentWorkArea = NTB_ABA_NONE;
       while(WA_PreviousList != NULL)
         RemoveWA(&WA_PreviousList);
@@ -1237,7 +1248,12 @@ void cbGoPrevious(GtkButton *button, gpointer user_data)
 
 void cbGoHome(GtkButton *button, gpointer user_data)
 {
-  WorkAreaGoTo(NTB_ABA_HOME);
+  WorkAreaGoTo(MaqConfigCurrent->AbaHome);
+}
+
+void cbGoManut(GtkButton *button, gpointer user_data)
+{
+  WorkAreaGoTo(MaqConfigCurrent->AbaManut);
 }
 
 gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
