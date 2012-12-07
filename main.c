@@ -876,6 +876,62 @@ gboolean tmrGtkUpdate(gpointer data)
           timeptr->tm_min);
       if(strcmp(tmp, gtk_label_get_text(lbl)))
         gtk_label_set_label(lbl, tmp);
+    } else if(ciclos == 1) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+      if(WorkAreaGet() == MaqConfigCurrent->AbaManut && !MaqInvSyncOK()) {
+        int        val;
+        char       buf[10];
+        static int CurrentInfo = 0;
+
+        switch(CurrentInfo++) {
+        case 0:
+          val = MaqLerInvTensao();
+          sprintf(buf, "%d", val);
+          gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTensao")), buf);
+//          break;
+
+//        case 1:
+          val = MaqLerInvCorrente();
+          sprintf(buf, "%.01f", ((float)val)/10);
+          gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvCorrente")), buf);
+//          break;
+
+//        case 2:
+          val = MaqLerInvTorque();
+          sprintf(buf, "%d", val);
+          gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTorque")), buf);
+          break;
+
+        case 1:
+//        case 3:
+          val = MaqLerInvInput();
+          for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
+            sprintf(tmp, "imgManutInvEnt%02d", i);
+            wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+            if(wdg == NULL) // Acabaram as entradas
+              break; // Sai do loop
+
+            gtk_image_set_from_stock(GTK_IMAGE(wdg), (val>>i)&1 ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
+          }
+//          break;
+
+//        case 4:
+          val = MaqLerInvOutput();
+          for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
+            sprintf(tmp, "imgManutInvSai%02d", i);
+            wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
+            if(wdg == NULL) // Acabaram as entradas
+              break; // Sai do loop
+
+            gtk_image_set_from_stock(GTK_IMAGE(wdg), (val>>i)&1 ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
+          }
+          break;
+
+        default:
+          MaqInvSync();
+          CurrentInfo = 0;
+          break;
+        }
+      }
     } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       if(WorkAreaGet() == MaqConfigCurrent->AbaManut) {
         val = MaqLerSaidas();

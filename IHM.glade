@@ -1534,7 +1534,7 @@ Nível Inferior</property>
                           </object>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai03">
+                          <object class="GtkToggleButton" id="tglManutSai01">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1576,7 +1576,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai07">
+                          <object class="GtkToggleButton" id="tglManutSai08">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1618,7 +1618,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai11">
+                          <object class="GtkToggleButton" id="tglManutSai09">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1662,7 +1662,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai06">
+                          <object class="GtkToggleButton" id="tglManutSai10">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1706,7 +1706,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai10">
+                          <object class="GtkToggleButton" id="tglManutSai11">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1750,7 +1750,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai05">
+                          <object class="GtkToggleButton" id="tglManutSai02">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1792,7 +1792,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai04">
+                          <object class="GtkToggleButton" id="tglManutSai03">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1834,7 +1834,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai09">
+                          <object class="GtkToggleButton" id="tglManutSai04">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1876,7 +1876,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai08">
+                          <object class="GtkToggleButton" id="tglManutSai05">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1920,7 +1920,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai02">
+                          <object class="GtkToggleButton" id="tglManutSai06">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -1964,7 +1964,7 @@ Nível Inferior</property>
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkToggleButton" id="tglManutSai01">
+                          <object class="GtkToggleButton" id="tglManutSai07">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
@@ -2088,6 +2088,7 @@ Nível Inferior</property>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
+                                        <property name="x_options">GTK_FILL</property>
                                         <property name="y_options"></property>
                                       </packing>
                                     </child>
@@ -2108,6 +2109,7 @@ Nível Inferior</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
+                                        <property name="x_options">GTK_FILL</property>
                                         <property name="y_options"></property>
                                       </packing>
                                     </child>
@@ -2188,6 +2190,7 @@ Nível Inferior</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">2</property>
                                         <property name="bottom_attach">3</property>
+                                        <property name="x_options">GTK_FILL</property>
                                         <property name="y_options"></property>
                                       </packing>
                                     </child>
@@ -2420,7 +2423,7 @@ Nível Inferior</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="xalign">0</property>
-                                        <property name="label" translatable="yes">Avançar</property>
+                                        <property name="label" translatable="yes">1</property>
                                         <property name="justify">center</property>
                                       </object>
                                       <packing>
@@ -2433,7 +2436,7 @@ Nível Inferior</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="xalign">0</property>
-                                        <property name="label" translatable="yes">Recuar</property>
+                                        <property name="label" translatable="yes">2</property>
                                         <property name="justify">center</property>
                                       </object>
                                       <packing>
@@ -2463,7 +2466,7 @@ Nível Inferior</property>
                                         <property name="visible">True</property>
                                         <property name="can_focus">False</property>
                                         <property name="xalign">0</property>
-                                        <property name="label" translatable="yes">Desl. Mesa</property>
+                                        <property name="label" translatable="yes">4</property>
                                         <property name="justify">center</property>
                                       </object>
                                       <packing>

@@ -65,6 +65,9 @@ int         MaqConfig_GetActive (void);
 // Flag solicitando sincronizacao dos parametros do CLP com o Inversor
 #define MAQ_MODO_PERF_SYNC 0x0020
 
+// Flag solicitando sincronizacao do status do inversor com o CLP
+#define MAQ_MODO_INV_SYNC  0x0080
+
 // Flag que libera a maquina para operacao
 #define MAQ_MODO_LIBERA 0x0040
 
@@ -89,6 +92,12 @@ int         MaqConfig_GetActive (void);
 #define MAQ_REG_ERROS              0
 #define MAQ_REG_STATUS             1
 #define MAQ_REG_FLAGS              2
+
+#define MAQ_REG_INV_TENSAO         5
+#define MAQ_REG_INV_CORRENTE       6
+#define MAQ_REG_INV_TORQUE         7
+#define MAQ_REG_INV_INPUT          8
+#define MAQ_REG_INV_OUTPUT         9
 
 #define MAQ_REG_PROD_QTD          30
 #define MAQ_REG_PROD_TAM          31
@@ -172,5 +181,14 @@ void     MaqLiberar   (uint16_t liberar);
 uint16_t MaqLerEstado (void);
 void     MaqPerfManual(uint16_t cmd);
 void     MaqCortar    (void);
+
+uint16_t MaqInvSyncOK     (void);
+void     MaqInvSync       (void);
+
+uint16_t MaqLerInvTensao  (void);
+uint16_t MaqLerInvCorrente(void);
+uint16_t MaqLerInvTorque  (void);
+uint16_t MaqLerInvInput   (void);
+uint16_t MaqLerInvOutput  (void);
 
 #endif

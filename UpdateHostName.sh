@@ -14,3 +14,5 @@ echo $1 > /etc/hostname
 
 hostname $1
 
+touch hostname_changed
+

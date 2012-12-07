@@ -84,15 +84,149 @@ MaqIOMap MaqDefaultIOMap = {
   },
 };
 
+// Mapa de I/O da Coluna de Mezanino
+MaqIOMap MaqIOMapColunaMezanino = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
+      { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
+      { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+// Mapa de I/O da Viga de Mezanino
+MaqIOMap MaqIOMapVigaMezanino = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
+      { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Cortar Canto"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Sensor de Canto\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Canto\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Térmico - Canto"                 , "images/ihm-ent-hidr-termico.png"    },
+      { "Freio acionado"                  , "images/ihm-manut-motor-freio.png"   },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
+      { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Avança canto"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua canto"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Ventagem canto"  , "images/ihm-manut-hidr-ligar.png"     },
+      { "Ligar canto"     , "images/ihm-manut-hidr-ligar.png"     },
+  },
+};
+
+// Mapa de I/O do Sigma
+MaqIOMap MaqIOMapSigma = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Térmico - Canto"                 , "images/ihm-ent-hidr-termico.png"    },
+      { "Cortar Canto"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Sensor de Canto\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Canto\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Freio acionado"                  , "images/ihm-manut-motor-freio.png"   },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Ligar canto"     , "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança canto"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua canto"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Ventagem canto"  , "images/ihm-manut-hidr-ligar.png"     },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
 MaqIOMap MaqBanhoIOMap = {
   .InputMask  = 0,
   .Input  = {
       { "Emergência"                      , "images/ihm-ent-emergencia.png"    },
       { "Fluxostato"                      , "images/ihm-ent-.png"              },
       { "Térmico Bomba Circ."             , "images/ihm-ent-hidr-termico.png"  },
-      { "Erro no Esguicho 1"              , "images/ihm-ent-inversor-erro.png" },
-      { "Erro no Esguicho 2"              , "images/ihm-ent-inversor-erro.png" },
-      { "Erro no Esguicho 3"              , "images/ihm-ent-inversor-erro.png" },
+      { "Esguicho 1 OK"                   , "images/ihm-ent-inversor-erro.png" },
+      { "Esguicho 2 OK"                   , "images/ihm-ent-inversor-erro.png" },
+      { "Esguicho 3 OK"                   , "images/ihm-ent-inversor-erro.png" },
       { "Reservado"                       , "images/ihm-ent-.png"              },
       { "Reservado"                       , "images/ihm-ent-.png"              },
       { "Reservado"                       , "images/ihm-ent-.png"              },
@@ -131,65 +265,64 @@ MaqIOMap MaqBanhoIOMap = {
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
     { // Coluna do Mezanino
-        .ID        = "IhmColMez",
-        .Name      = "Coluna do Mezanino",
-        .Line      = "MZCOL",
-        .Machine   = "MZCOL",
-        .ClpAddr   = "192.168.2.239",
-        .AbaHome   = NTB_ABA_HOME,
-        .AbaManut  = NTB_ABA_MANUT,
-        .UseLogin  = TRUE,
-        .UseIndet  = TRUE,
-        .IOMap     = &MaqDefaultIOMap,
-        .fncOnInit   = NULL,
-        .fncOnError  = NULL,
-        .ErrorList = ErrorListDefault,
+        .ID         = "IhmColMez",
+        .Name       = "Coluna do Mezanino",
+        .Line       = "MZCOL",
+        .Machine    = "MZCOL",
+        .ClpAddr    = "192.168.2.239",
+        .AbaHome    = NTB_ABA_HOME,
+        .AbaManut   = NTB_ABA_MANUT,
+        .UseLogin   = TRUE,
+        .UseIndet   = TRUE,
+        .IOMap      = &MaqIOMapColunaMezanino,
+        .fncOnInit  = NULL,
+        .fncOnError = NULL,
+        .ErrorList  = ErrorListDefault,
     },
     { // Viga do Mezanino
-        .ID        = "IhmVigaMez",
-        .Name      = "Viga do Mezanino",
-        .Line      = "MZVIG",
-        .Machine   = "MZVIG",
-        .ClpAddr   = "192.168.2.241",
-        .AbaHome   = NTB_ABA_HOME,
-        .AbaManut  = NTB_ABA_MANUT,
-        .UseLogin  = TRUE,
-        .UseIndet  = TRUE,
-        .IOMap     = &MaqDefaultIOMap,
-        .fncOnInit   = NULL,
-        .fncOnError  = NULL,
-        .ErrorList = ErrorListDefault,
+        .ID         = "IhmVigaMez",
+        .Name       = "Viga do Mezanino",
+        .Line       = "MZVIG",
+        .Machine    = "MZVIG",
+        .ClpAddr    = "192.168.2.241",
+        .AbaHome    = NTB_ABA_HOME,
+        .AbaManut   = NTB_ABA_MANUT,
+        .UseLogin   = TRUE,
+        .UseIndet   = TRUE,
+        .IOMap      = &MaqIOMapVigaMezanino,
+        .fncOnInit  = NULL,
+        .fncOnError = NULL,
+        .ErrorList  = ErrorListDefault,
     },
     { // Viga Sigma
-        .ID        = "IhmSigma",
-        .Name      = "Perfiladeira Sigma",
-        .Line      = "PPSIG",
-        .Machine   = "PPSIG",
-        .ClpAddr   = "192.168.2.237",
-        .AbaHome   = NTB_ABA_HOME,
-        .AbaManut  = NTB_ABA_MANUT,
-        .UseLogin  = TRUE,
-        .UseIndet  = TRUE,
-        .IOMap     = &MaqDefaultIOMap,
-        .fncOnInit   = NULL,
-        .fncOnError  = NULL,
-        .ErrorList = ErrorListDefault,
+        .ID         = "IhmSigma",
+        .Name       = "Perfiladeira Sigma",
+        .Line       = "PPSIG",
+        .Machine    = "PPSIG",
+        .ClpAddr    = "192.168.2.237",
+        .AbaHome    = NTB_ABA_HOME,
+        .AbaManut   = NTB_ABA_MANUT,
+        .UseLogin   = TRUE,
+        .UseIndet   = TRUE,
+        .IOMap      = &MaqIOMapSigma,
+        .fncOnInit  = NULL,
+        .fncOnError = NULL,
+        .ErrorList  = ErrorListDefault,
     },
     { // Banho
-        .ID        = "IhmBanho",
-        .Name      = "Banho",
-        .Line      = "TESTE",
-        .Machine   = "TESTE",
-        .ClpAddr   = "192.168.2.235",
-//        .ClpAddr   = "192.168.2.124",
-        .AbaHome   = NTB_ABA_HOME_BANHO,
-        .AbaManut  = NTB_ABA_MANUT,
-        .UseLogin  = FALSE,
-        .UseIndet  = FALSE,
-        .IOMap     = &MaqBanhoIOMap,
-        .fncOnInit   = Banho_Init,
-        .fncOnError  = Banho_Erro,
-        .ErrorList = ErrorListBanho,
+        .ID         = "IhmBanho",
+        .Name       = "Banho",
+        .Line       = "BANHO",
+        .Machine    = "BANHO",
+        .ClpAddr    = "192.168.2.235",
+        .AbaHome    = NTB_ABA_HOME_BANHO,
+        .AbaManut   = NTB_ABA_MANUT,
+        .UseLogin   = FALSE,
+        .UseIndet   = FALSE,
+        .IOMap      = &MaqBanhoIOMap,
+        .fncOnInit  = Banho_Init,
+        .fncOnError = Banho_Erro,
+        .ErrorList  = ErrorListBanho,
     },
     { // Final
         .ID = NULL
@@ -197,19 +330,19 @@ MaqConfig MaqConfigList[] = {
 };
 
 MaqConfig MaqConfigDefault = {
-    .ID        = "IhmTeste",
-    .Name      = "Maquina de Teste",
-    .Line      = "TESTE",
-    .Machine   = "TESTE",
-    .ClpAddr   = "192.168.0.172",
-    .AbaHome   = NTB_ABA_HOME,
-    .AbaManut  = NTB_ABA_MANUT,
-    .UseLogin  = TRUE,
-    .UseIndet  = TRUE,
-    .IOMap     = &MaqDefaultIOMap,
-    .fncOnInit   = NULL,
-    .fncOnError  = NULL,
-    .ErrorList = ErrorListDefault,
+    .ID         = "IhmTeste",
+    .Name       = "Maquina de Teste",
+    .Line       = "TESTE",
+    .Machine    = "TESTE",
+    .ClpAddr    = "192.168.0.254",
+    .AbaHome    = NTB_ABA_HOME,
+    .AbaManut   = NTB_ABA_MANUT,
+    .UseLogin   = TRUE,
+    .UseIndet   = TRUE,
+    .IOMap      = &MaqDefaultIOMap,
+    .fncOnInit  = NULL,
+    .fncOnError = NULL,
+    .ErrorList  = ErrorListDefault,
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -619,6 +752,71 @@ uint32_t MaqLerSaidas(void)
   buf = rp.modbus_reply.reply.read_coils.data;
   val = ((uint32_t)(buf[1]) << 8) | buf[0];
   printf("output: %04x\n", val);
+
+  return val;
+}
+
+uint16_t MaqInvSyncOK(void)
+{
+  uint16_t SyncOK = (MaqLerFlags() & MAQ_MODO_INV_SYNC) != 0;
+  printf("SyncOK: %d\n", SyncOK);
+
+  return SyncOK;
+}
+
+void MaqInvSync(void)
+{
+  uint16_t flags = MaqLerFlags();
+  flags |= MAQ_MODO_INV_SYNC;
+  MaqConfigFlags(flags);
+}
+
+uint16_t MaqLerInvTensao(void)
+{
+  static uint16_t val = 0;
+
+  val = MaqLerRegistrador(MAQ_REG_INV_TENSAO, val);
+  printf("Inversor - Tensao: %d\n", val);
+
+  return val;
+}
+
+uint16_t MaqLerInvCorrente(void)
+{
+  static uint16_t val = 0;
+
+  val = MaqLerRegistrador(MAQ_REG_INV_CORRENTE, val);
+  printf("Inversor - Corrente: %d\n", val);
+
+  return val;
+}
+
+uint16_t MaqLerInvTorque(void)
+{
+  static uint16_t val = 0;
+
+  val = MaqLerRegistrador(MAQ_REG_INV_TORQUE, val);
+  printf("Inversor - Torque: %d\n", val);
+
+  return val;
+}
+
+uint16_t MaqLerInvInput(void)
+{
+  static uint16_t val = 0;
+
+  val = MaqLerRegistrador(MAQ_REG_INV_INPUT, val);
+  printf("Inversor - Input: %d\n", val);
+
+  return val;
+}
+
+uint16_t MaqLerInvOutput(void)
+{
+  static uint16_t val = 0;
+
+  val = MaqLerRegistrador(MAQ_REG_INV_OUTPUT, val);
+  printf("Inversor - Output: %d\n", val);
 
   return val;
 }
