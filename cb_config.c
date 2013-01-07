@@ -1399,6 +1399,50 @@ void AbrirData(GtkEntry *entry, GCallback cb)
   WorkAreaGoTo(NTB_ABA_DATA);
 }
 
+// Aplicar alteracao de Data/Hora do sistema
+void cbAplicarDataHora(GtkButton *button, gpointer user_data)
+{
+  guint y, m, d, hora, min;
+  char tmp[100];
+  guint signal_id;
+  gulong handler_id;
+
+  // Exclui o callback do botao
+  signal_id = g_signal_lookup("clicked", GTK_TYPE_BUTTON);
+  handler_id = g_signal_handler_find(button, G_SIGNAL_MATCH_ID, signal_id, 0, NULL, NULL, NULL);
+  g_signal_handler_disconnect(button, handler_id);
+
+  gtk_calendar_get_date(GTK_CALENDAR(gtk_builder_get_object(builder, "cldData")), &y, &m, &d);
+  hora = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataHora"  ))));
+  min  = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entDataMinuto"))));
+
+  sprintf(tmp, "date %02d%02d%02d%02d%04d.00", m+1, d, hora, min, y);
+  system(tmp);
+
+  WorkAreaGoPrevious();
+}
+
+// Alterar Data/Hora do sistema
+void cbMudarDataHora(GtkButton *button, gpointer user_data)
+{
+  time_t t;
+  struct tm *now;
+  char tmp[100];
+  GtkEntry *entry;
+
+  time(&t);
+  now = localtime(&t);
+  sprintf(tmp, "%d-%02d-%02d %02d:%02d:00", 1900 + now->tm_year,
+      now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min);
+
+  entry = GTK_ENTRY(gtk_entry_new());
+  gtk_entry_set_text(entry, tmp);
+
+  AbrirData(entry, G_CALLBACK (cbAplicarDataHora));
+
+  gtk_widget_destroy(GTK_WIDGET(entry));
+}
+
 // Funcao executada quando for clicado Mudar Senha na tela de Login
 void cbMudarSenha(GtkButton *button, gpointer user_data)
 {

@@ -152,6 +152,16 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-connect</property>
   </object>
+  <object class="GtkImage" id="imgDesligar">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-quit</property>
+  </object>
+  <object class="GtkImage" id="imgMudarDataHora">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-preferences</property>
+  </object>
   <object class="GtkImage" id="imgQuitCancel">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -2937,7 +2947,20 @@ Nível Inferior</property>
                             <property name="can_focus">False</property>
                             <property name="homogeneous">True</property>
                             <child>
-                              <placeholder/>
+                              <object class="GtkButton" id="btnMudarDataHora">
+                                <property name="label" translatable="yes">Acertar Data/Hora</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="image">imgMudarDataHora</property>
+                                <signal name="clicked" handler="cbMudarDataHora" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">0</property>
+                              </packing>
                             </child>
                             <child>
                               <object class="GtkButton" id="btnDebugModBus">
@@ -2956,7 +2979,20 @@ Nível Inferior</property>
                               </packing>
                             </child>
                             <child>
-                              <placeholder/>
+                              <object class="GtkButton" id="btnDesligar">
+                                <property name="label" translatable="yes">Desligar</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="image">imgDesligar</property>
+                                <signal name="clicked" handler="cbDesligar" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">False</property>
+                                <property name="position">2</property>
+                              </packing>
                             </child>
                           </object>
                           <packing>

@@ -1038,6 +1038,16 @@ void cbLogoff(GtkButton *button, gpointer user_data)
   WorkAreaGoTo(NTB_ABA_LOGIN);
 }
 
+// Desligar a IHM
+void cbDesligar(GtkButton *button, gpointer user_data)
+{
+  if(MaqConfigCurrent->UseLogin) {
+    cbLogoff(NULL, NULL);
+  }
+
+  gtk_main_quit();
+}
+
 /****************************************************************************
  * Thread de comunicacao com o LPC2109 (Power Management) e CLPs (ModBus)
  ***************************************************************************/

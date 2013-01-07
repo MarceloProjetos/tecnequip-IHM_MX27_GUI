@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <iconv.h>
 #include <sys/ioctl.h>
+#include <time.h>
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
