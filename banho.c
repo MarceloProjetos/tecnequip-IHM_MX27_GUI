@@ -58,8 +58,8 @@ void MaqConfigEsguichoCentral(uint16_t estado)
 }
 
 // Hora para Ligar / Desligar
-#define BANHO_START  5
-#define BANHO_STOP  22
+#define BANHO_START  6
+#define BANHO_STOP  17
 
 // 12 posicoes, 1 para cada mes.
 unsigned int scheduler_table   [12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
