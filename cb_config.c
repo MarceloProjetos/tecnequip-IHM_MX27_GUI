@@ -227,6 +227,7 @@ char *lista_ent[] = {
     "entCorteFaca",
     "spbConfigPerfReducao",
     "spbConfigPerfDiamRolo",
+    "entConfigDiagonalDistancia",
     ""
 };
 
@@ -236,7 +237,7 @@ int GravarDadosConfig()
   unsigned int i;
   char **valor_ent, cmdline[1000];
   struct strMaqParam mp;
-  valor_ent = (char **)(malloc(10*sizeof(char[10])));
+  valor_ent = (char **)(malloc(13*sizeof(char[10])));
 
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
@@ -261,6 +262,9 @@ int GravarDadosConfig()
   mp.corte.tam_faca    = atol(valor_ent[9]);
   MaqConfigCorte(mp.corte);
 
+  mp.custom.diagonal.dist_prensa_corte = atol(valor_ent[12]);
+  MaqConfigCustom(mp.custom);
+
   GravaDadosBanco();
 
   MaqGravarConfig();
@@ -284,7 +288,7 @@ int GravarDadosConfig()
 void LerDadosConfig()
 {
   char tmp[100];
-  unsigned int i;
+  unsigned int i, idx = 0;
   struct strMaqParam mp;
   char **valor_ent;
 
@@ -295,54 +299,59 @@ void LerDadosConfig()
   mp.perfil  = MaqLerPerfil ();
   mp.encoder = MaqLerEncoder();
   mp.corte   = MaqLerCorte  ();
-
-  sprintf(tmp, "%f", mp.encoder.fator);
-  valor_ent[1] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[1], tmp);
-
-  sprintf(tmp, "%d", mp.encoder.precisao);
-  valor_ent[2] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[2], tmp);
+  mp.custom  = MaqLerCustom ();
 
   sprintf(tmp, "%d", mp.encoder.perimetro);
-  valor_ent[0] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[0], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%f", mp.encoder.fator);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.encoder.precisao);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.perfil.auto_vel);
-  valor_ent[3] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[3], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%f", mp.perfil.auto_acel);
-  valor_ent[4] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[4], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%f", mp.perfil.auto_desacel);
-  valor_ent[5] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[5], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.perfil.manual_vel);
-  valor_ent[6] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[6], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%f", mp.perfil.manual_acel);
-  valor_ent[7] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[7], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%f", mp.perfil.manual_desacel);
-  valor_ent[8] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[8], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.corte.tam_faca);
-  valor_ent[9] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[9], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%f", mp.perfil.fator);
-  valor_ent[10] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[10], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.perfil.diam_rolo);
-  valor_ent[11] = (char *)malloc(sizeof(tmp)+1);
-  strcpy(valor_ent[11], tmp);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.diagonal.dist_prensa_corte);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
 
   GravarValoresWidgets(lista_ent, valor_ent);
 
@@ -415,10 +424,15 @@ void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
   GtkEditable *editable;
   GtkTextBuffer *tb;
   GtkTextIter cursor;
+  gboolean editable_is_visible;
   gchar *str = (gchar *)gtk_button_get_label(button);
+
+  editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
+  editable_is_visible = gtk_widget_get_visible(GTK_WIDGET(editable));
 
   // Verifica o label para identificar se foi clicado espaco, backspace ou enter.
   if        (!strcmp(str, "Enter")) {
+    if(editable_is_visible) return; // ENTER desativado para entry
     str = "\n";
   } else if (!strcmp(str, "Espaço")) {
     str = " ";
@@ -426,8 +440,7 @@ void cbVirtualKeyboardKeyPress(GtkButton *button, gpointer user_data)
     str = NULL;
   }
 
-  editable = GTK_EDITABLE(gtk_builder_get_object(builder, "entVirtualKeyboard"));
-  if(gtk_widget_get_visible(GTK_WIDGET(editable))) {
+  if(editable_is_visible) {
     if(str != NULL) {
       pos = gtk_editable_get_position(editable);
       gtk_editable_insert_text(editable, str, -1, &pos);
@@ -908,6 +921,9 @@ void AbrirConfig(unsigned int pos)
       return;
       }
 
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "btnConfigMais")),
+      MaqConfigCurrent->AbaConfigMais != 0);
+
   WorkAreaGoTo(NTB_ABA_CONFIG);
 
 // Se pos != 0, foi chamada a janela forçadamente e portanto esta ação não pode ser cancelada!
@@ -917,6 +933,17 @@ void AbrirConfig(unsigned int pos)
   }
 
   LerDadosConfig();
+}
+
+void cbConfigGeralMais(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbConfigGeral")),
+      MaqConfigCurrent->AbaConfigMais);
+}
+
+void cbConfigGeralVoltar(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbConfigGeral")), 0);
 }
 
 void cbConfigOk(GtkButton *button, gpointer user_data)

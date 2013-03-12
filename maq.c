@@ -4,10 +4,14 @@
 extern void IPC_Update(void);
 
 // Funcoes de inicializacao das maquinas
-int Banho_Init(void); // Inicializacao do banho
+int Banho_Init   (void); // Inicializacao do banho
+int Diagonal_Init(void); // Inicializacao da Diagonal/Travessa
 
 // Funcoes de tratamento de erro das maquinas
 void Banho_Erro(int erro); // Tratamento de erro do banho
+
+// Funcoes de mudanca de modo das maquinas: manual <=> auto
+void Diagonal_Auto(int ativo); // Diagonal/Travessa
 
 // Listas de Erro das Maquinas
 char *ErrorListDefault[] = {
@@ -19,6 +23,7 @@ char *ErrorListDefault[] = {
     "Erro no desbobinador",
     "Erro de comunicacao - Inversor",
     "Erro no Corte do Perfil",
+    "Erro no Tamanho da Peca",
 //      "Baixa pressao de ar",
     ""
 };
@@ -80,6 +85,51 @@ MaqIOMap MaqDefaultIOMap = {
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+// Mapa de I/O da Diagonal / Travessa
+MaqIOMap MaqIOMapDiagonal = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico\nHidráulica Corte"       , "images/ihm-ent-hidr-termico.png"    },
+      { "Térmico\nHidráulica Mesa"        , "images/ihm-ent-hidr-termico.png"    },
+      { "Erro no Servo"                   , "images/ihm-ent-inversor-erro.png"    },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Fim da Mesa\nLado Direito"       , "images/ihm-ent-corte-superior.png"  },
+      { "Fim da Mesa\nLado Esquerdo"      , "images/ihm-ent-corte-inferior.png"  },
+      { "Referência - Mesa"               , "images/ihm-ent-piloto-superior.png" },
+      { "Mesa Posicionada"                , "images/ihm-ent-inversor-posic.png"  },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Sensor de Prensa\nNível Superior", "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Prensa\nNível Inferior", "images/ihm-ent-corte-inferior.png"  },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Hidráulica Corte", "images/ihm-manut-hidr-ligar.png"     },
+      { "Hidráulica Mesa" , "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Ventagem corte"  , "images/ihm-manut-.png"               },
+      { "Avança prensa"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Recua prensa"    , "images/ihm-manut-piloto-recuar.png"  },
+      { "Ventagem prensa" , "images/ihm-manut-.png"               },
+      { "Posicionar Mesa" , "images/ihm-manut-motor-freio.png"    },
+      { "Zerar enc. Mesa" , "images/ihm-manut-encoder-zerar.png"  },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Reservado Servo" , "images/ihm-manut-"                   },
+      { "Zerar enc. Servo", "images/ihm-manut-encoder-zerar.png"  },
+      { "Reservado Servo" , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
   },
 };
@@ -264,65 +314,90 @@ MaqIOMap MaqBanhoIOMap = {
 
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
+    { // Diagonal e Travessa
+        .ID            = "IhmDiagTrav",
+        .Name          = "Diagonal / Travessa",
+        .Line          = "TESTE",
+        .Machine       = "TESTE",
+        .ClpAddr       = "192.168.2.243",
+        .AbaHome       = NTB_ABA_HOME,
+        .AbaManut      = NTB_ABA_MANUT,
+        .AbaConfigMais = NTB_ABA_CONFIG_DIAGONAL,
+        .UseLogin      = TRUE,
+        .UseIndet      = TRUE,
+        .IOMap         = &MaqIOMapDiagonal,
+        .fncOnInit     = Diagonal_Init,
+        .fncOnError    = NULL,
+        .fncOnAuto     = Diagonal_Auto,
+        .ErrorList     = ErrorListDefault,
+    },
     { // Coluna do Mezanino
-        .ID         = "IhmColMez",
-        .Name       = "Coluna do Mezanino",
-        .Line       = "MZCOL",
-        .Machine    = "MZCOL",
-        .ClpAddr    = "192.168.2.239",
-        .AbaHome    = NTB_ABA_HOME,
-        .AbaManut   = NTB_ABA_MANUT,
-        .UseLogin   = TRUE,
-        .UseIndet   = TRUE,
-        .IOMap      = &MaqIOMapColunaMezanino,
-        .fncOnInit  = NULL,
-        .fncOnError = NULL,
-        .ErrorList  = ErrorListDefault,
+        .ID            = "IhmColMez",
+        .Name          = "Coluna do Mezanino",
+        .Line          = "MZCOL",
+        .Machine       = "MZCOL",
+        .ClpAddr       = "192.168.2.239",
+        .AbaHome       = NTB_ABA_HOME,
+        .AbaManut      = NTB_ABA_MANUT,
+        .AbaConfigMais = 0,
+        .UseLogin      = TRUE,
+        .UseIndet      = TRUE,
+        .IOMap         = &MaqIOMapColunaMezanino,
+        .fncOnInit     = NULL,
+        .fncOnError    = NULL,
+        .fncOnAuto     = NULL,
+        .ErrorList     = ErrorListDefault,
     },
     { // Viga do Mezanino
-        .ID         = "IhmVigaMez",
-        .Name       = "Viga do Mezanino",
-        .Line       = "MZVIG",
-        .Machine    = "MZVIG",
-        .ClpAddr    = "192.168.2.241",
-        .AbaHome    = NTB_ABA_HOME,
-        .AbaManut   = NTB_ABA_MANUT,
-        .UseLogin   = TRUE,
-        .UseIndet   = TRUE,
-        .IOMap      = &MaqIOMapVigaMezanino,
-        .fncOnInit  = NULL,
-        .fncOnError = NULL,
-        .ErrorList  = ErrorListDefault,
+        .ID            = "IhmVigaMez",
+        .Name          = "Viga do Mezanino",
+        .Line          = "MZVIG",
+        .Machine       = "MZVIG",
+        .ClpAddr       = "192.168.2.241",
+        .AbaHome       = NTB_ABA_HOME,
+        .AbaManut      = NTB_ABA_MANUT,
+        .AbaConfigMais = 0,
+        .UseLogin      = TRUE,
+        .UseIndet      = TRUE,
+        .IOMap         = &MaqIOMapVigaMezanino,
+        .fncOnInit     = NULL,
+        .fncOnError    = NULL,
+        .fncOnAuto     = NULL,
+        .ErrorList     = ErrorListDefault,
     },
     { // Viga Sigma
-        .ID         = "IhmSigma",
-        .Name       = "Perfiladeira Sigma",
-        .Line       = "PPSIG",
-        .Machine    = "PPSIG",
-        .ClpAddr    = "192.168.2.237",
-        .AbaHome    = NTB_ABA_HOME,
-        .AbaManut   = NTB_ABA_MANUT,
-        .UseLogin   = TRUE,
-        .UseIndet   = TRUE,
-        .IOMap      = &MaqIOMapSigma,
-        .fncOnInit  = NULL,
-        .fncOnError = NULL,
-        .ErrorList  = ErrorListDefault,
+        .ID            = "IhmSigma",
+        .Name          = "Perfiladeira Sigma",
+        .Line          = "PPSIG",
+        .Machine       = "PPSIG",
+        .ClpAddr       = "192.168.2.237",
+        .AbaHome       = NTB_ABA_HOME,
+        .AbaManut      = NTB_ABA_MANUT,
+        .AbaConfigMais = 0,
+        .UseLogin      = TRUE,
+        .UseIndet      = TRUE,
+        .IOMap         = &MaqIOMapSigma,
+        .fncOnInit     = NULL,
+        .fncOnError    = NULL,
+        .fncOnAuto     = NULL,
+        .ErrorList     = ErrorListDefault,
     },
     { // Banho
-        .ID         = "IhmBanho",
-        .Name       = "Banho",
-        .Line       = "BANHO",
-        .Machine    = "BANHO",
-        .ClpAddr    = "192.168.2.235",
-        .AbaHome    = NTB_ABA_HOME_BANHO,
-        .AbaManut   = NTB_ABA_MANUT,
-        .UseLogin   = FALSE,
-        .UseIndet   = FALSE,
-        .IOMap      = &MaqBanhoIOMap,
-        .fncOnInit  = Banho_Init,
-        .fncOnError = Banho_Erro,
-        .ErrorList  = ErrorListBanho,
+        .ID            = "IhmBanho",
+        .Name          = "Banho",
+        .Line          = "BANHO",
+        .Machine       = "BANHO",
+        .ClpAddr       = "192.168.2.235",
+        .AbaHome       = NTB_ABA_HOME_BANHO,
+        .AbaManut      = NTB_ABA_MANUT,
+        .AbaConfigMais = 0,
+        .UseLogin      = FALSE,
+        .UseIndet      = FALSE,
+        .IOMap         = &MaqBanhoIOMap,
+        .fncOnInit     = Banho_Init,
+        .fncOnError    = Banho_Erro,
+        .fncOnAuto     = NULL,
+        .ErrorList     = ErrorListBanho,
     },
     { // Final
         .ID = NULL
@@ -330,19 +405,21 @@ MaqConfig MaqConfigList[] = {
 };
 
 MaqConfig MaqConfigDefault = {
-    .ID         = "IhmTeste",
-    .Name       = "Maquina de Teste",
-    .Line       = "TESTE",
-    .Machine    = "TESTE",
-    .ClpAddr    = "192.168.0.102",
-    .AbaHome    = NTB_ABA_HOME,
-    .AbaManut   = NTB_ABA_MANUT,
-    .UseLogin   = TRUE,
-    .UseIndet   = TRUE,
-    .IOMap      = &MaqDefaultIOMap,
-    .fncOnInit  = NULL,
-    .fncOnError = NULL,
-    .ErrorList  = ErrorListDefault,
+    .ID            = "IhmTeste",
+    .Name          = "Maquina de Teste",
+    .Line          = "TESTE",
+    .Machine       = "TESTE",
+    .ClpAddr       = "192.168.2.243",
+    .AbaHome       = NTB_ABA_HOME,
+    .AbaManut      = NTB_ABA_MANUT,
+    .AbaConfigMais = 0,
+    .UseLogin      = TRUE,
+    .UseIndet      = TRUE,
+    .IOMap         = &MaqDefaultIOMap,
+    .fncOnInit     = NULL,
+    .fncOnError    = NULL,
+    .fncOnAuto     = NULL,
+    .ErrorList     = ErrorListDefault,
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -440,6 +517,12 @@ void MaqError(int error)
 {
   if(MaqConfigCurrent && MaqConfigCurrent->fncOnError != NULL)
     (*MaqConfigCurrent->fncOnError)(error);
+}
+
+void MaqAuto(int ativo)
+{
+  if(MaqConfigCurrent && MaqConfigCurrent->fncOnAuto != NULL)
+    (*MaqConfigCurrent->fncOnAuto)(ativo);
 }
 
 // Função que retorna checksum de ponteiro
@@ -549,15 +632,15 @@ int MaqSync(unsigned int mask)
       rel_motor_perfil = (unsigned long)((maq_param.perfil.fator * 1000000) / ((float)(3.14159 * maq_param.perfil.diam_rolo)));
     }
 
-    printf("rel_motor_perfil...............: %ld\n", rel_motor_perfil);
-    printf("maq_param.perfil.fator.........: %f\n" , maq_param.perfil.fator);
-    printf("maq_param.perfil.diam_rolo.....: %d\n" , maq_param.perfil.diam_rolo);
-    printf("maq_param.perfil.auto_vel......: %d\n" , maq_param.perfil.auto_vel);
-    printf("maq_param.perfil.auto_acel.....: %f\n" , maq_param.perfil.auto_acel);
-    printf("maq_param.perfil.auto_desacel..: %f\n" , maq_param.perfil.auto_desacel);
-    printf("maq_param.perfil.manual_vel....: %d\n" , maq_param.perfil.manual_vel);
-    printf("maq_param.perfil.manual_acel...: %f\n" , maq_param.perfil.manual_acel);
-    printf("maq_param.perfil.manual_desacel: %f\n" , maq_param.perfil.manual_desacel);
+    printf("rel_motor_perfil...........................: %ld\n", rel_motor_perfil);
+    printf("maq_param.perfil.fator.....................: %f\n" , maq_param.perfil.fator);
+    printf("maq_param.perfil.diam_rolo.................: %d\n" , maq_param.perfil.diam_rolo);
+    printf("maq_param.perfil.auto_vel..................: %d\n" , maq_param.perfil.auto_vel);
+    printf("maq_param.perfil.auto_acel.................: %f\n" , maq_param.perfil.auto_acel);
+    printf("maq_param.perfil.auto_desacel..............: %f\n" , maq_param.perfil.auto_desacel);
+    printf("maq_param.perfil.manual_vel................: %d\n" , maq_param.perfil.manual_vel);
+    printf("maq_param.perfil.manual_acel...............: %f\n" , maq_param.perfil.manual_acel);
+    printf("maq_param.perfil.manual_desacel............: %f\n" , maq_param.perfil.manual_desacel);
 
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_VEL    ,                maq_param.perfil.auto_vel           );
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_ACEL   , (unsigned int)(maq_param.perfil.auto_acel     *100));
@@ -573,9 +656,9 @@ int MaqSync(unsigned int mask)
   }
 
   if(mask & MAQ_SYNC_ENCODER) {
-    printf("maq_param.encoder.fator....: %f\n", maq_param.encoder.fator);
-    printf("maq_param.encoder.perimetro: %d\n", maq_param.encoder.perimetro);
-    printf("maq_param.encoder.precisao.: %d\n", maq_param.encoder.precisao);
+    printf("maq_param.encoder.fator....................: %f\n", maq_param.encoder.fator);
+    printf("maq_param.encoder.perimetro................: %d\n", maq_param.encoder.perimetro);
+    printf("maq_param.encoder.precisao.................: %d\n", maq_param.encoder.precisao);
 
     MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator*1000));
     MaqGravarRegistrador(MAQ_REG_ENC_RESOL,                maq_param.encoder.precisao   );
@@ -583,63 +666,225 @@ int MaqSync(unsigned int mask)
   }
 
   if(mask & MAQ_SYNC_CORTE) {
-    printf("maq_param.corte.tam_faca...: %d\n", maq_param.corte.tam_faca);
+    printf("maq_param.corte.tam_faca...................: %d\n", maq_param.corte.tam_faca);
 
     MaqGravarRegistrador(MAQ_REG_CRT_FACA, maq_param.corte.tam_faca);
+  }
+
+  if(mask & MAQ_SYNC_CUSTOM) {
+    switch(MaqConfigCurrent->AbaConfigMais) {
+    case NTB_ABA_CONFIG_DIAGONAL:
+      printf("maq_param.custom.diagonal.dist_prensa_corte: %d\n", maq_param.custom.diagonal.dist_prensa_corte);
+
+      MaqGravarRegistrador(MAQ_REG_DIAG_DISTANCIA, maq_param.custom.diagonal.dist_prensa_corte);
+      break;
+    }
   }
 
   return 1;
 }
 
-// Funcao que grava a estrutura de configuracao no disco
-void MaqGravarConfig(void)
+struct strParamDB {
+  char         *grupo;
+  char         *nome;
+  unsigned int *ValInt;
+  float        *ValFloat;
+} ParamDB[] = {
+    { "Encoder", "FatorCorr"  , NULL                        , &maq_param.encoder.fator         },
+    { "Encoder", "Perimetro"  , &maq_param.encoder.perimetro, NULL                             },
+    { "Encoder", "Precisao"   , &maq_param.encoder.precisao , NULL                             },
+    { "Corte"  , "TamFaca"    , &maq_param.corte.tam_faca   , NULL                             },
+    { "Perfil" , "AutoVel"    , &maq_param.perfil.auto_vel  , NULL                             },
+    { "Perfil" , "AutoAcel"   , NULL                        , &maq_param.perfil.auto_acel      },
+    { "Perfil" , "AutoDesacel", NULL                        , &maq_param.perfil.auto_desacel   },
+    { "Perfil" , "ManVel"     , &maq_param.perfil.manual_vel, NULL                             },
+    { "Perfil" , "ManAcel"    , NULL                        , &maq_param.perfil.manual_acel    },
+    { "Perfil" , "ManDesacel" , NULL                        , &maq_param.perfil.manual_desacel },
+    { "Perfil" , "FatorMaq"   , NULL                        , &maq_param.perfil.fator          },
+    { "Perfil" , "DiamRolo"   , &maq_param.perfil.diam_rolo , NULL                             },
+    { NULL     , NULL         , NULL                        , NULL                             },
+};
+
+struct strParamDB ParamDB_Diagonal[] = {
+    { "Diagonal", "DistPrensaCorte", &maq_param.custom.diagonal.dist_prensa_corte, NULL        },
+    { NULL      , NULL             , NULL                                        , NULL        },
+};
+
+struct strCustomParamDB {
+  int AbaConfigMais;
+  struct strParamDB *ParamDB;
+} CustomParamDB[] = {
+    { NTB_ABA_CONFIG_DIAGONAL, ParamDB_Diagonal },
+    { 0                      , NULL             },
+};
+
+extern struct strDB mainDB;
+
+#define PARAMDB_MASK_SQLSERVER 1
+#define PARAMDB_MASK_MYSQL     2
+
+int ParamDB_Load(struct strParamDB *ParamDB)
 {
-  long fd = open(MAQ_ARQ_CONFIG, O_WRONLY | O_CREAT, 0666);
-  unsigned long checksum, magico = MAQ_CFG_MAGIC;
+  float        ValFloat;
+  unsigned int ValInt;
 
-  if(fd<0)
-    return;
+  char sql[300];
+  int i, ret = 1;
+  struct strDB *sDB = MSSQL_Connect();
 
-// Grava o número mágico para identificação do arquivo
-  write(fd, &magico, sizeof(magico));
+  for(i=0; ParamDB[i].nome != NULL; i++) {
+    sprintf(sql, "select VALOR_INT, VALOR_FLOAT from PARAMETRO where LINHA='%s' and MAQUINA='%s' and GRUPO='%s' and PARAMETRO='%s'",
+        MAQ_LINHA, MAQ_MAQUINA, ParamDB[i].grupo, ParamDB[i].nome);
 
-// Grava os dados
-  write(fd, &maq_param, sizeof(maq_param));
+    ValInt   = 0;
+    ValFloat = 0;
 
-// Calcula e grava o checksum dos dados
-  checksum = CalcCheckSum((void *)(&maq_param), sizeof(maq_param));
-  write(fd, &checksum, sizeof(checksum));
+    if(MSSQL_Execute(0, sql, MSSQL_DONT_SYNC) < 0) {
+      if(DB_Execute(&mainDB, 3, sql) < 0) {
+        ret = 0;
+      } else {
+        if(DB_GetNextRow(&mainDB, 3) > 0) {
+          ValInt   = atoi(DB_GetData(&mainDB, 3, 0));
+          ValFloat = atof(DB_GetData(&mainDB, 3, 1));
+        }
+      }
+    } else {
+      DB_GetNextRow(sDB, 0);
+      ValInt   = atoi(MSSQL_GetData(0, 0));
+      ValFloat = atof(MSSQL_GetData(0, 1));
+    }
 
-  close(fd);
+    if(ParamDB[i].ValInt != NULL) {
+      *ParamDB[i].ValInt = ValInt;
+    }
+
+    if(ParamDB[i].ValFloat != NULL) {
+      *ParamDB[i].ValFloat = ValFloat;
+    }
+  }
+
+  MSSQL_Close();
+
+  return ret;
 }
 
-// Funcao que le a estrutura de configuracao do disco
+int ParamDB_Save(struct strParamDB *ParamDB, unsigned int mask)
+{
+  int i, ret = 1, erro_insert;
+  char sql[300], val[20], *campo_val = "";
+
+  for(i=0; ParamDB[i].nome != NULL; i++) {
+    if(ParamDB[i].ValInt != NULL) {
+      campo_val = "VALOR_INT";
+      sprintf(val, "%u", *ParamDB[i].ValInt);
+    }
+
+    if(ParamDB[i].ValFloat != NULL) {
+      char *pos_comma;
+      campo_val = "VALOR_FLOAT";
+      sprintf(val, "%f", *ParamDB[i].ValFloat);
+      pos_comma = strchr(val, ',');
+      if(pos_comma != NULL) *pos_comma = '.';
+    }
+
+    erro_insert = 0;
+
+    sprintf(sql, "insert into PARAMETRO (LINHA, MAQUINA, GRUPO, PARAMETRO, %s) values ('%s', '%s', '%s', '%s', '%s')",
+        campo_val, MAQ_LINHA, MAQ_MAQUINA, ParamDB[i].grupo, ParamDB[i].nome, val);
+
+    if(!(mask & PARAMDB_MASK_SQLSERVER) || MSSQL_Execute(0, sql, MSSQL_DONT_SYNC) < 0)
+      erro_insert++;
+
+    if(!(mask & PARAMDB_MASK_MYSQL) || DB_Execute(&mainDB, 3, sql) < 0)
+      erro_insert++;
+
+    if(erro_insert == 2) // Erro no SQL Server e MySQL
+      ret = 0; // indica erro mas continua, os outros parametros podem ser salvos
+  }
+
+  return ret;
+}
+
+// Funcao que grava a estrutura de configuracao no BD
+int MaqGravarConfig(void)
+{
+  int i, mask = 0, ret = 1;
+  char sql[300];
+
+  sprintf(sql, "delete from PARAMETRO where LINHA='%s' and MAQUINA='%s'",
+      MAQ_LINHA, MAQ_MAQUINA);
+
+  if(MSSQL_Execute(0, sql, MSSQL_DONT_SYNC) >= 0) {
+    mask |= PARAMDB_MASK_SQLSERVER;
+  }
+
+  if(DB_Execute(&mainDB, 3, sql) >= 0) {
+    mask |= PARAMDB_MASK_MYSQL;
+  }
+
+  for(i=0; CustomParamDB[i].ParamDB != NULL; i++) {
+    if(CustomParamDB[i].AbaConfigMais == MaqConfigCurrent->AbaConfigMais) {
+      ret = ParamDB_Save(CustomParamDB[i].ParamDB, mask);
+      break;
+    }
+  }
+
+  return ret && ParamDB_Save(ParamDB, mask);
+}
+
+// Funcao que le a estrutura de configuracao do disco / BD
 int MaqLerConfig(void)
 {
+  int i;
   struct strMaqParam maq_tmp;
   long fd = open(MAQ_ARQ_CONFIG, O_RDONLY), ret=0;
   unsigned long val;
 
-  if(fd<0)
-    return ret;
+  if(fd<0) { // Se arquivo nao existe, parametros devem estar no SQL SERVER
+    ret = 1;
 
-  read(fd, &val, sizeof(val));
-  if(val == MAQ_CFG_MAGIC)
-    {
-    read(fd, &maq_tmp, sizeof(maq_tmp));
-
-    read(fd, &val, sizeof(val));
-    if(val == CalcCheckSum((void *)(&maq_tmp), sizeof(maq_tmp)))
-      {
-      memcpy(&maq_param, &maq_tmp, sizeof(maq_tmp));
-
-// Grava o resultado da funcao que sincroniza os dados em ret.
-// Assim a funcao retorna OK se os dados foram efetivamente gravados.
-      ret = MaqSync(MAQ_SYNC_TODOS);
+    for(i=0; CustomParamDB[i].ParamDB != NULL; i++) {
+      if(CustomParamDB[i].AbaConfigMais == MaqConfigCurrent->AbaConfigMais) {
+        ret = ParamDB_Load(CustomParamDB[i].ParamDB);
+        break;
       }
     }
 
-  close(fd);
+    ret = ret && ParamDB_Load(ParamDB);
+
+    // Grava o resultado da funcao que sincroniza os dados em ret.
+    // Assim a funcao retorna OK se os dados foram efetivamente gravados.
+    if(ret) {
+      ret = MaqSync(MAQ_SYNC_TODOS);
+    }
+  } else {
+    read(fd, &val, sizeof(val));
+    if(val == MAQ_CFG_MAGIC)
+      {
+      read(fd, &maq_tmp, 48);
+
+      read(fd, &val, sizeof(val));
+      if(val == CalcCheckSum((void *)(&maq_tmp), 48))
+        {
+        memcpy(&maq_param, &maq_tmp, 48);
+
+// Grava o resultado da funcao que sincroniza os dados em ret.
+// Assim a funcao retorna OK se os dados foram efetivamente gravados.
+        ret = MaqSync(MAQ_SYNC_TODOS);
+        }
+      }
+
+    close(fd);
+
+    if(ret) {
+      // Parametros lidos corretamente do arquivo.
+      // Gravamos no banco para passar a utilizar os parametros de la.
+      // Se gravou corretamente, apagamos o arquivo.
+      if(MaqGravarConfig()) {
+        unlink(MAQ_ARQ_CONFIG);
+      }
+    }
+  }
 
   return ret;
 }
@@ -843,6 +1088,8 @@ void MaqConfigModo(uint16_t modo)
   printf("modo = %d\n", modo);
 
   MaqConfigFlags((flags & ~MAQ_MODO_MASK) | modo);
+
+  MaqAuto(modo == MAQ_MODO_AUTO);
 }
 
 void MaqLiberar(uint16_t liberar)
@@ -926,4 +1173,16 @@ void MaqConfigCorte(struct strMaqParamCorte corte)
 struct strMaqParamCorte MaqLerCorte()
 {
   return maq_param.corte;
+}
+
+void MaqConfigCustom(struct strMaqParamCustom custom)
+{
+  maq_param.custom = custom;
+
+  MaqSync(MAQ_SYNC_CUSTOM);
+}
+
+struct strMaqParamCustom MaqLerCustom(void)
+{
+  return maq_param.custom;
 }

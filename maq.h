@@ -29,6 +29,7 @@ typedef struct {
 
   int        AbaHome;
   int        AbaManut;
+  int        AbaConfigMais;
 
   int        UseLogin;
   int        UseIndet;
@@ -38,7 +39,8 @@ typedef struct {
   char     **ErrorList;
 
   int      (*fncOnInit )(void);
-  void     (*fncOnError)(int error);
+  void     (*fncOnError)(int );
+  void     (*fncOnAuto )(int );
 } MaqConfig;
 
 /*** Definicoes e funcoes relacionados a Configuracao da Maquina ***/
@@ -86,7 +88,8 @@ int         MaqConfig_GetActive (void);
 #define MAQ_SYNC_PERFIL  0x01
 #define MAQ_SYNC_ENCODER 0x02
 #define MAQ_SYNC_CORTE   0x04
-#define MAQ_SYNC_TODOS   (MAQ_SYNC_PERFIL | MAQ_SYNC_ENCODER | MAQ_SYNC_CORTE)
+#define MAQ_SYNC_CUSTOM  0x08
+#define MAQ_SYNC_TODOS   (MAQ_SYNC_PERFIL | MAQ_SYNC_ENCODER | MAQ_SYNC_CORTE | MAQ_SYNC_CUSTOM)
 
 // Registradores do CLP
 #define MAQ_REG_ERROS              0
@@ -114,6 +117,8 @@ int         MaqConfig_GetActive (void);
 #define MAQ_REG_ENC_RESOL         21
 #define MAQ_REG_ENC_PERIM         22
 #define MAQ_REG_CRT_FACA          25
+
+#define MAQ_REG_DIAG_DISTANCIA    24
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -143,12 +148,20 @@ struct strMaqParam
     float fator; // Relacao de transmissao da maquina.
     unsigned int diam_rolo; // Diametro primitivo do rolo da perfiladeira
     } perfil;
+
+    // Parametros especificos das maquinas, nao sendo utilizados por todas
+    struct strMaqParamCustom {
+      struct { // Parametros especificos da Diagonal / Travessa
+        unsigned int dist_prensa_corte;
+      } diagonal;
+    } custom;
 } maq_param;
 
 /*** Fim das estruturas de informacoes da maquina ***/
 
 int      MaqInit       (void);
 void     MaqError      (int error);
+void     MaqAuto       (int ativo);
 
 uint16_t MaqLerErros   (void);
 char    *MaqStrErro    (uint16_t status);
@@ -159,6 +172,9 @@ uint16_t MaqLerFlags   (void);
 uint16_t MaqLerProdQtd (void);
 uint32_t MaqLerEntradas(void);
 uint32_t MaqLerSaidas  (void);
+
+uint16_t MaqLerRegistrador   (uint16_t reg, uint16_t default_value);
+void     MaqGravarRegistrador(uint16_t reg, uint16_t val);
 
 void                      MaqConfigModo   (uint16_t  modo);
 void                      MaqConfigFlags  (uint16_t flags);
@@ -172,9 +188,11 @@ void                      MaqConfigEncoder(struct strMaqParamEncoder enc);
 struct strMaqParamEncoder MaqLerEncoder   (void);
 void                      MaqConfigCorte  (struct strMaqParamCorte corte);
 struct strMaqParamCorte   MaqLerCorte     (void);
+void                      MaqConfigCustom (struct strMaqParamCustom custom);
+struct strMaqParamCustom  MaqLerCustom    (void);
 
-int  MaqLerConfig   (void);
-void MaqGravarConfig(void);
+int MaqLerConfig   (void);
+int MaqGravarConfig(void);
 
 void     MaqLimparErro(void);
 void     MaqLiberar   (uint16_t liberar);

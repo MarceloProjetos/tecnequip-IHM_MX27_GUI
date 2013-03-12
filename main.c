@@ -364,7 +364,7 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
     printf("%02x ", data[i]);
   printf("\n");
 
-  tcp_socket = ihm_connect(MaqConfigCurrent == NULL ? "192.168.0.172" : MaqConfigCurrent->ClpAddr, 502);
+  tcp_socket = ihm_connect(MaqConfigCurrent == NULL ? "192.168.0.102" : MaqConfigCurrent->ClpAddr, 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
@@ -1200,7 +1200,7 @@ void cbVirtualKeyboardCapsLock(GtkToggleButton *button, gpointer user_data);
 
 uint32_t IHM_Init(int argc, char *argv[])
 {
-  int i;
+  int i, dbok;
   MaqConfig *m;
   uint32_t ret = 0;
   pthread_t tid;
@@ -1292,12 +1292,6 @@ uint32_t IHM_Init(int argc, char *argv[])
   mbdev.mode              = MODBUS_MODE_TCP_MASTER;
   mbdev.TX                = IHM_MB_TX;
 
-  if(!MaqLerConfig()) {
-    printf("Erro carregando configuracao\n");
-    ret = 7;
-    goto fim_config;
-  }
-
   // Limpa a estrutura do banco, zerando ponteiros, etc...
   DB_Clear(&mainDB);
 
@@ -1314,6 +1308,13 @@ uint32_t IHM_Init(int argc, char *argv[])
     mainDB.nome_db  = "cv_integrado";
     }
 
+  dbok = DB_Init(&mainDB);
+  if(dbok && !MaqLerConfig()) {
+    printf("Erro carregando configuracao\n");
+    ret = 7;
+    goto fim_config;
+  }
+
   // Iniciando os timers
   g_timeout_add(   500, tmrGtkUpdate, (gpointer)(&bs));
   g_timeout_add(  1000, tmrPowerDown, (gpointer)(&bs));
@@ -1321,7 +1322,7 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   pthread_create (&tid, NULL, ihm_update, (void *)(&bs));
 
-  if(DB_Init(&mainDB)) { // Se inicializar o banco, entra no loop do GTK.
+  if(dbok) { // Se inicializar o banco, entra no loop do GTK.
     // Carregamento no ComboBox dos usuários cadastrados no MySQL.
     LoadComboUsers();
   } else {
@@ -1357,13 +1358,13 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Configura o estado final da máquina para PARADA pois ela está sendo desligada.
   SetMaqStatus(MAQ_STATUS_PARADA);
 
-  DB_Close(&mainDB);
-
 // A partir deste ponto iniciam os desligamentos. Em caso de erro na inicializacao, o programa
 // salta para o label correspondente a etapa que falhou para desfazer o que ja havia sido feito
 
 fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
+
+  DB_Close(&mainDB);
 
   msgctl(fd_wr, IPC_RMID, NULL);
 
