@@ -19,28 +19,29 @@ typedef struct {
 } MaqIOMap;
 
 typedef struct {
-  char      *ID;
-  char      *Name;
+  char          *ID;
+  char          *Name;
 
-  char      *Line;
-  char      *Machine;
+  char          *Line;
+  char          *Machine;
 
-  char      *ClpAddr;
+  char          *ClpAddr;
 
-  int        AbaHome;
-  int        AbaManut;
-  int        AbaConfigMais;
+  int            AbaHome;
+  int            AbaManut;
+  int            AbaConfigMais;
 
-  int        UseLogin;
-  int        UseIndet;
+  int            UseLogin;
+  int            UseIndet;
 
-  MaqIOMap  *IOMap;
+  MaqIOMap      *IOMap;
 
-  char     **ErrorList;
+  char         **ErrorList;
+  unsigned int   Alertas;
 
-  int      (*fncOnInit )(void);
-  void     (*fncOnError)(int );
-  void     (*fncOnAuto )(int );
+  int         ( *fncOnInit )(void);
+  void        ( *fncOnError)(int );
+  void        ( *fncOnAuto )(int );
 } MaqConfig;
 
 /*** Definicoes e funcoes relacionados a Configuracao da Maquina ***/

@@ -24,6 +24,7 @@ char *ErrorListDefault[] = {
     "Erro de comunicacao - Inversor",
     "Erro no Corte do Perfil",
     "Erro no Tamanho da Peca",
+    "Erro no Posicionamento",
 //      "Baixa pressao de ar",
     ""
 };
@@ -317,8 +318,8 @@ MaqConfig MaqConfigList[] = {
     { // Diagonal e Travessa
         .ID            = "IhmDiagTrav",
         .Name          = "Diagonal / Travessa",
-        .Line          = "TESTE",
-        .Machine       = "TESTE",
+        .Line          = "TRDIA",
+        .Machine       = "TRDIA",
         .ClpAddr       = "192.168.2.243",
         .AbaHome       = NTB_ABA_HOME,
         .AbaManut      = NTB_ABA_MANUT,
@@ -330,6 +331,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnError    = NULL,
         .fncOnAuto     = Diagonal_Auto,
         .ErrorList     = ErrorListDefault,
+        .Alertas       = (1UL << 9), // Erro de Posicionamento
     },
     { // Coluna do Mezanino
         .ID            = "IhmColMez",
@@ -347,6 +349,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnError    = NULL,
         .fncOnAuto     = NULL,
         .ErrorList     = ErrorListDefault,
+        .Alertas       = 0,
     },
     { // Viga do Mezanino
         .ID            = "IhmVigaMez",
@@ -364,6 +367,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnError    = NULL,
         .fncOnAuto     = NULL,
         .ErrorList     = ErrorListDefault,
+        .Alertas       = 0,
     },
     { // Viga Sigma
         .ID            = "IhmSigma",
@@ -381,6 +385,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnError    = NULL,
         .fncOnAuto     = NULL,
         .ErrorList     = ErrorListDefault,
+        .Alertas       = 0,
     },
     { // Banho
         .ID            = "IhmBanho",
@@ -398,6 +403,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnError    = Banho_Erro,
         .fncOnAuto     = NULL,
         .ErrorList     = ErrorListBanho,
+        .Alertas       = 0,
     },
     { // Final
         .ID = NULL
@@ -409,7 +415,7 @@ MaqConfig MaqConfigDefault = {
     .Name          = "Maquina de Teste",
     .Line          = "TESTE",
     .Machine       = "TESTE",
-    .ClpAddr       = "192.168.2.243",
+    .ClpAddr       = "192.168.0.102",
     .AbaHome       = NTB_ABA_HOME,
     .AbaManut      = NTB_ABA_MANUT,
     .AbaConfigMais = 0,
@@ -420,6 +426,7 @@ MaqConfig MaqConfigDefault = {
     .fncOnError    = NULL,
     .fncOnAuto     = NULL,
     .ErrorList     = ErrorListDefault,
+    .Alertas       = 0,
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;

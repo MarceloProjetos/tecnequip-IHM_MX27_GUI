@@ -838,7 +838,11 @@ gboolean tmrGtkUpdate(gpointer data)
       current_status = MaqLerErros();
       if(last_status != current_status) {
         if(current_status) { // houve mudanca e com erro
-          MaqLiberar(0);
+          // Se o erro não for apenas um alerta, desativa a máquina.
+          if(current_status & ~(MaqConfigCurrent->Alertas)) {
+            MaqLiberar(0);
+          }
+
           msg_error = MaqStrErro(current_status);
           Log(msg_error, LOG_TIPO_ERRO);
           gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);

@@ -12,6 +12,8 @@ static const char ARQ_FILA_PECAS[] = "diagonal.cfg";
 
 static unsigned int FilaPecas[MAX_FILA_PECAS+1];
 
+static int FilaGravada = 0;
+
 unsigned long CalcCheckSum(void *ptr, unsigned int tam);
 
 void FilaPecas_Ler(void)
@@ -73,30 +75,28 @@ int Diagonal_Init(void)
   }
 
   FilaPecas_Gravar();
+  FilaGravada = 1;
 
   return 1;
 }
 
 void Diagonal_Auto(int ativo)
 {
-  static int UltimoAtivo = 0;
   unsigned long val;
   long fd;
 
-  if(!ativo && UltimoAtivo) {
-    FilaPecas_Ler();
+  if(!FilaGravada) return;
 
-    fd = open(ARQ_FILA_PECAS, O_WRONLY | O_CREAT, 0666);
-    if(fd >= 0) {
-      val = MAQ_CFG_MAGIC;
-      write(fd, &val, sizeof(val));
-      write(fd, &FilaPecas, sizeof(FilaPecas));
-      val = CalcCheckSum((void *)(&FilaPecas), sizeof(FilaPecas));
-      write(fd, &val, sizeof(val));
+  FilaPecas_Ler();
 
-      close(fd);
-    }
+  fd = open(ARQ_FILA_PECAS, O_WRONLY | O_CREAT, 0666);
+  if(fd >= 0) {
+    val = MAQ_CFG_MAGIC;
+    write(fd, &val, sizeof(val));
+    write(fd, &FilaPecas, sizeof(FilaPecas));
+    val = CalcCheckSum((void *)(&FilaPecas), sizeof(FilaPecas));
+    write(fd, &val, sizeof(val));
+
+    close(fd);
   }
-
-  UltimoAtivo = ativo;
 }
