@@ -728,8 +728,10 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
   struct strTask *Task = (struct strTask *)user_data;
   char tmp[30], sql[300];
 
-//  if(!MaquinaEspera(CHECAR_ESPERA))
-//    return;
+  if(MaqConfigCurrent->NeedMaqInit && !(MaqLerEstado() & MAQ_STATUS_INITOK)) {
+    MessageBox("Máquina não inicializada!");
+    return;
+  }
 
   if(button != NULL) { // Operacao normal
     // Carrega id da tarefa selecionada
@@ -804,6 +806,9 @@ void cbExecParar(GtkButton *button, gpointer user_data)
 
 void cbOperarProduzir(GtkButton *button, gpointer user_data)
 {
+  char *ObjQtd = MaqConfigCurrent->MaqModeCV ? "entCVOperarQtd" : "entOperarQtd";
+  char *ObjTam = MaqConfigCurrent->MaqModeCV ? "entCVOperarTam" : "entOperarTam";
+
   if(!GetUserPerm(PERM_ACESSO_OPER))
     {
     MessageBox("Sem permissão para operar a máquina!");
@@ -813,10 +818,10 @@ void cbOperarProduzir(GtkButton *button, gpointer user_data)
   IniciarDadosTarefa();
 
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaQtd")),
-      gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarQtd"))));
+      gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, ObjQtd))));
 
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entTarefaTam")),
-      gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entOperarTam"))));
+      gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, ObjTam))));
 
   if(AplicarTarefa()) {
     LimparDadosTarefa();
@@ -840,7 +845,7 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
   return TRUE;
 }
 
-void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
+void OperarManual(unsigned int operacao)
 {
   // Configura o estado da máquina
   SetMaqStatus(MAQ_STATUS_MANUAL);
@@ -848,37 +853,58 @@ void cbManualMesaAvanca(GtkButton *button, gpointer user_data)
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
 
-  MaqPerfManual(PERF_AVANCA);
+  switch(operacao) {
+    case OPER_PERF_AVANCA:
+    case OPER_PERF_RECUA:
+    case OPER_PERF_PARAR:
+      MaqPerfManual(operacao);
+      break;
+
+    case OPER_MESA_AVANCA:
+    case OPER_MESA_RECUA:
+    case OPER_MESA_PARAR:
+      MaqMesaManual(operacao);
+      break;
+
+    case OPER_CORTAR:
+      MaqCortar();
+      break;
+  }
 }
 
-void cbManualMesaRecua(GtkButton *button, gpointer user_data)
+void cbManualPerfAvancar(GtkButton *button, gpointer user_data)
 {
-  // Configura o estado da máquina
-  SetMaqStatus(MAQ_STATUS_MANUAL);
+  OperarManual(OPER_PERF_AVANCA);
+}
 
-  // Configura a máquina para modo manual.
-  MaqConfigModo(MAQ_MODO_MANUAL);
+void cbManualPerfRecuar(GtkButton *button, gpointer user_data)
+{
+  OperarManual(OPER_PERF_RECUA);
+}
 
-  MaqPerfManual(PERF_RECUA);
+void cbManualPerfParar(GtkButton *button, gpointer user_data)
+{
+  OperarManual(OPER_PERF_PARAR);
+}
+
+void cbManualMesaAvancar(GtkButton *button, gpointer user_data)
+{
+  OperarManual(OPER_MESA_AVANCA);
+}
+
+void cbManualMesaRecuar(GtkButton *button, gpointer user_data)
+{
+  OperarManual(OPER_MESA_RECUA);
 }
 
 void cbManualMesaParar(GtkButton *button, gpointer user_data)
 {
-  // Configura a máquina para modo manual.
-  MaqConfigModo(MAQ_MODO_MANUAL);
-
-  MaqPerfManual(PERF_PARAR);
+  OperarManual(OPER_MESA_PARAR);
 }
 
-void cbManualMesaCortar(GtkButton *button, gpointer user_data)
+void cbManualCortar(GtkButton *button, gpointer user_data)
 {
-  // Configura o estado da máquina
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-
-  // Configura a máquina para modo manual.
-  MaqConfigModo(MAQ_MODO_MANUAL);
-
-  MaqCortar();
+  OperarManual(OPER_CORTAR);
 }
 
 // defines que permitem selecionar o ponto de referencia para insercao da imagem

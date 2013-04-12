@@ -1,7 +1,9 @@
 #include "defines.h"
 #include "maq.h"
 
+#ifndef DEBUG_PC_NOETH
 extern void IPC_Update(void);
+#endif
 
 // Funcoes de inicializacao das maquinas
 int Banho_Init   (void); // Inicializacao do banho
@@ -9,6 +11,7 @@ int Diagonal_Init(void); // Inicializacao da Diagonal/Travessa
 
 // Funcoes de tratamento de erro das maquinas
 void Banho_Erro(int erro); // Tratamento de erro do banho
+void ColN_Erro (int erro); // Tratamento de erro da Coluna N
 
 // Funcoes de mudanca de modo das maquinas: manual <=> auto
 void Diagonal_Auto(int ativo); // Diagonal/Travessa
@@ -42,6 +45,21 @@ char *ErrorListBanho[] = {
     "Erro no Esguicho 4",
     "Erro na Resistencia 1",
     "Erro na Resistencia 2",
+    ""
+};
+
+char *ErrorListColunaN[] = {
+    "Erro na comunicacao",
+    "Emergencia Acionada",
+    "Falta de fase",
+    "Erro na unidade hidraulica",
+    "Erro no inversor",
+    "Erro no servo",
+    "Erro de comunicacao - Inversor",
+    "Erro de comunicacao - Servo",
+    "Erro no Posicionamento",
+    "Erro no Corte do Perfil",
+    "Maquina Desativada",
     ""
 };
 
@@ -315,6 +333,26 @@ MaqIOMap MaqBanhoIOMap = {
 
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
+    { // Coluna N
+        .ID            = "IhmColN",
+        .Name          = "Coluna N",
+        .Line          = "TESTE",
+        .Machine       = "TESTE",
+        .ClpAddr       = "192.168.2.245",
+        .AbaHome       = NTB_ABA_HOME,
+        .AbaManut      = NTB_ABA_MANUT,
+        .AbaConfigMais = NTB_ABA_CONFIG_COLN,
+        .UseLogin      = TRUE,
+        .UseIndet      = TRUE,
+        .NeedMaqInit   = TRUE,
+        .MaqModeCV     = TRUE,
+        .IOMap         = &MaqDefaultIOMap,
+        .fncOnInit     = NULL,
+        .fncOnError    = ColN_Erro,
+        .fncOnAuto     = NULL,
+        .ErrorList     = ErrorListColunaN,
+        .Alertas       = (3UL << 8), // Erro de Posicionamento e Corte
+    },
     { // Diagonal e Travessa
         .ID            = "IhmDiagTrav",
         .Name          = "Diagonal / Travessa",
@@ -326,6 +364,8 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais = NTB_ABA_CONFIG_DIAGONAL,
         .UseLogin      = TRUE,
         .UseIndet      = TRUE,
+        .NeedMaqInit   = FALSE,
+        .MaqModeCV     = FALSE,
         .IOMap         = &MaqIOMapDiagonal,
         .fncOnInit     = Diagonal_Init,
         .fncOnError    = NULL,
@@ -344,6 +384,8 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais = 0,
         .UseLogin      = TRUE,
         .UseIndet      = TRUE,
+        .NeedMaqInit   = FALSE,
+        .MaqModeCV     = FALSE,
         .IOMap         = &MaqIOMapColunaMezanino,
         .fncOnInit     = NULL,
         .fncOnError    = NULL,
@@ -362,6 +404,8 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais = 0,
         .UseLogin      = TRUE,
         .UseIndet      = TRUE,
+        .NeedMaqInit   = FALSE,
+        .MaqModeCV     = FALSE,
         .IOMap         = &MaqIOMapVigaMezanino,
         .fncOnInit     = NULL,
         .fncOnError    = NULL,
@@ -380,6 +424,8 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais = 0,
         .UseLogin      = TRUE,
         .UseIndet      = TRUE,
+        .NeedMaqInit   = FALSE,
+        .MaqModeCV     = FALSE,
         .IOMap         = &MaqIOMapSigma,
         .fncOnInit     = NULL,
         .fncOnError    = NULL,
@@ -398,6 +444,8 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais = 0,
         .UseLogin      = FALSE,
         .UseIndet      = FALSE,
+        .NeedMaqInit   = FALSE,
+        .MaqModeCV     = FALSE,
         .IOMap         = &MaqBanhoIOMap,
         .fncOnInit     = Banho_Init,
         .fncOnError    = Banho_Erro,
@@ -418,12 +466,14 @@ MaqConfig MaqConfigDefault = {
     .ClpAddr       = "192.168.0.102",
     .AbaHome       = NTB_ABA_HOME,
     .AbaManut      = NTB_ABA_MANUT,
-    .AbaConfigMais = 0,
+    .AbaConfigMais = NTB_ABA_CONFIG_COLN,
     .UseLogin      = TRUE,
     .UseIndet      = TRUE,
+    .NeedMaqInit   = TRUE,
+    .MaqModeCV     = TRUE,
     .IOMap         = &MaqDefaultIOMap,
     .fncOnInit     = NULL,
-    .fncOnError    = NULL,
+    .fncOnError    = ColN_Erro,
     .fncOnAuto     = NULL,
     .ErrorList     = ErrorListDefault,
     .Alertas       = 0,
@@ -629,7 +679,7 @@ void MaqConfigFlags(uint16_t flags)
 // Funcao que sincroniza a estrutura de parametros com o clp
 int MaqSync(unsigned int mask)
 {
-  static unsigned int first = 1;
+  static unsigned int first = 1, SyncFlags = 0;
   unsigned long rel_motor_perfil = 0;
 
   printf("Sincronizando parametros da maquina:\n");
@@ -658,8 +708,7 @@ int MaqSync(unsigned int mask)
     MaqGravarRegistrador(MAQ_REG_PERF_FATOR_LOW   , (rel_motor_perfil    ) & 0XFFFF);
     MaqGravarRegistrador(MAQ_REG_PERF_FATOR_HIGH  , (rel_motor_perfil>>16) & 0XFFFF);
 
-    MaqConfigFlags((first ? 0 : MaqLerFlags()) | MAQ_MODO_PERF_SYNC);
-    first = 0;
+    SyncFlags |= MAQ_MODO_PERF_SYNC;
   }
 
   if(mask & MAQ_SYNC_ENCODER) {
@@ -685,8 +734,31 @@ int MaqSync(unsigned int mask)
 
       MaqGravarRegistrador(MAQ_REG_DIAG_DISTANCIA, maq_param.custom.diagonal.dist_prensa_corte);
       break;
+
+    case NTB_ABA_CONFIG_COLN:
+      printf("maq_param.custom.coln.dinam_vel............: %d\n", maq_param.custom.coln.dinam_vel);
+      printf("maq_param.custom.coln.curso................: %d\n", maq_param.custom.coln.curso);
+      printf("maq_param.custom.coln.auto_vel.............: %d\n", maq_param.custom.coln.auto_vel);
+      printf("maq_param.custom.coln.manual_vel...........: %d\n", maq_param.custom.coln.manual_vel);
+      printf("maq_param.custom.coln.offset...............: %f\n", maq_param.custom.coln.offset);
+      printf("maq_param.custom.coln.tam_min..............: %d\n", maq_param.custom.coln.tam_min);
+
+      MaqGravarRegistrador(MAQ_REG_COLN_PERF_DINAM_VEL ,                maq_param.custom.coln.dinam_vel      );
+      MaqGravarRegistrador(MAQ_REG_COLN_MESA_CURSO     ,                maq_param.custom.coln.curso          );
+      MaqGravarRegistrador(MAQ_REG_COLN_MESA_AUTO_VEL  ,                maq_param.custom.coln.auto_vel       );
+      MaqGravarRegistrador(MAQ_REG_COLN_MESA_MANUAL_VEL,                maq_param.custom.coln.manual_vel     );
+      MaqGravarRegistrador(MAQ_REG_COLN_OFFSET         , (unsigned int)(maq_param.custom.coln.offset    * 10));
+      MaqGravarRegistrador(MAQ_REG_COLN_TAM_MIN        ,                maq_param.custom.coln.tam_min        );
+
+      SyncFlags |= MAQ_MODO_MESA_SYNC;
+      break;
     }
   }
+
+  if(SyncFlags) {
+    MaqConfigFlags((first ? 0 : MaqLerFlags()) | SyncFlags);
+  }
+  first = 0;
 
   return 1;
 }
@@ -717,11 +789,22 @@ struct strParamDB ParamDB_Diagonal[] = {
     { NULL      , NULL             , NULL                                        , NULL        },
 };
 
+struct strParamDB ParamDB_ColunaN[] = {
+    { "ColunaN", "PerfDinamVel", &maq_param.custom.coln.dinam_vel , NULL                          },
+    { "ColunaN", "MesaCurso"   , &maq_param.custom.coln.curso     , NULL                          },
+    { "ColunaN", "MesaAutoVel" , &maq_param.custom.coln.auto_vel  , NULL                          },
+    { "ColunaN", "MesaManVel"  , &maq_param.custom.coln.manual_vel, NULL                          },
+    { "ColunaN", "Offset"      , NULL                             , &maq_param.custom.coln.offset },
+    { "ColunaN", "TamMin"      , &maq_param.custom.coln.tam_min   , NULL                          },
+    { NULL     , NULL          , NULL                             , NULL                          },
+};
+
 struct strCustomParamDB {
   int AbaConfigMais;
   struct strParamDB *ParamDB;
 } CustomParamDB[] = {
     { NTB_ABA_CONFIG_DIAGONAL, ParamDB_Diagonal },
+    { NTB_ABA_CONFIG_COLN    , ParamDB_ColunaN  },
     { 0                      , NULL             },
 };
 
@@ -1128,10 +1211,23 @@ void MaqPerfManual(uint16_t cmd)
   uint16_t flags = MaqLerFlags();
 
   flags &= ~MAQ_MODO_PERF_MASK;
-  if     (cmd == PERF_AVANCA)
+  if     (cmd == OPER_PERF_AVANCA)
     flags |= MAQ_MODO_PERF_AVANCA;
-  else if(cmd == PERF_RECUA)
+  else if(cmd == OPER_PERF_RECUA)
     flags |= MAQ_MODO_PERF_RECUA;
+
+  MaqConfigFlags(flags);
+}
+
+void MaqMesaManual(uint16_t cmd)
+{
+  uint16_t flags = MaqLerFlags();
+
+  flags &= ~MAQ_MODO_MESA_MASK;
+  if     (cmd == OPER_MESA_AVANCA)
+    flags |= MAQ_MODO_MESA_AVANCA;
+  else if(cmd == OPER_MESA_RECUA)
+    flags |= MAQ_MODO_MESA_RECUA;
 
   MaqConfigFlags(flags);
 }

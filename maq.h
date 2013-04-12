@@ -34,6 +34,9 @@ typedef struct {
   int            UseLogin;
   int            UseIndet;
 
+  int            NeedMaqInit;
+  int            MaqModeCV;
+
   MaqIOMap      *IOMap;
 
   char         **ErrorList;
@@ -62,18 +65,25 @@ int         MaqConfig_GetActive (void);
 #define MAQ_MODO_MASK   0x0001
 #define MAQ_MODO_MANUAL 0x0000
 #define MAQ_MODO_AUTO   0x0001
-#define MAQ_MODO_CORTAR 0x0002
-#define MAQ_MODO_LIMPAR 0x0004
+
+// Flags que disparam acoes na maquina
+#define MAQ_MODO_CORTAR 0x0002 // Executa uma operacao de corte
+#define MAQ_MODO_LIMPAR 0x0004 // Limpa erros existentes
 
 // Flag solicitando sincronizacao dos parametros do CLP com o Inversor
-#define MAQ_MODO_PERF_SYNC 0x0020
+#define MAQ_MODO_PERF_SYNC 0x0020 // Configura o inversor
 
 // Flag solicitando sincronizacao do status do inversor com o CLP
-#define MAQ_MODO_INV_SYNC  0x0080
+#define MAQ_MODO_INV_SYNC  0x0080 // Leitura de dados do inversor
+
+// Flag solicitando sincronizacao do status do servo da mesa com o CLP
+// Apenas para maquinas que possuem Corte Voador
+#define MAQ_MODO_MESA_SYNC  0x0100 // Configura o servo
 
 // Flag que libera a maquina para operacao
-#define MAQ_MODO_LIBERA 0x0040
+#define MAQ_MODO_LIBERA 0x0040 // Ativa a maquina
 
+// Mascara que indica quais flags devem ser desligadas quando se desativa a maquina
 #define MAQ_MODO_MASK_LIBERA  (~(MAQ_MODO_LIBERA | MAQ_MODO_LIMPAR | MAQ_MODO_MASK))
 
 // Flags para controle manual da perfiladeira
@@ -81,9 +91,22 @@ int         MaqConfig_GetActive (void);
 #define MAQ_MODO_PERF_AVANCA 0x0008
 #define MAQ_MODO_PERF_RECUA  0x0010
 
-#define PERF_PARAR  0
-#define PERF_AVANCA 1
-#define PERF_RECUA  2
+// Flags para controle manual da mesa (Para maquinas com Corte Voador)
+#define MAQ_MODO_MESA_MASK   0x0600
+#define MAQ_MODO_MESA_AVANCA 0x0200
+#define MAQ_MODO_MESA_RECUA  0x0400
+
+// Flags de operacoes manuais
+#define OPER_PERF_PARAR  0
+#define OPER_PERF_AVANCA 1
+#define OPER_PERF_RECUA  2
+#define OPER_MESA_PARAR  3
+#define OPER_MESA_AVANCA 4
+#define OPER_MESA_RECUA  5
+#define OPER_CORTAR      6
+
+// Flags que indicam o estado da maquina
+#define MAQ_STATUS_INITOK   0x0040
 
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01
@@ -119,7 +142,18 @@ int         MaqConfig_GetActive (void);
 #define MAQ_REG_ENC_PERIM         22
 #define MAQ_REG_CRT_FACA          25
 
+// Registradores especificos da Diagonal / Travessa
 #define MAQ_REG_DIAG_DISTANCIA    24
+
+// Registradores especificos da Coluna N
+#define MAQ_REG_COLN_PERF_DINAM_VEL  18
+#define MAQ_REG_COLN_MESA_POS        19
+#define MAQ_REG_COLN_OFFSET          23
+#define MAQ_REG_COLN_TAM_MIN         24
+#define MAQ_REG_COLN_MESA_CURSO      26
+#define MAQ_REG_COLN_MESA_AUTO_VEL   27
+#define MAQ_REG_COLN_MESA_MANUAL_VEL 28
+#define MAQ_REG_COLN_NOVO_VALOR      29
 
 /*** Estruturas de informacoes da Maquina ***/
 
@@ -153,8 +187,16 @@ struct strMaqParam
     // Parametros especificos das maquinas, nao sendo utilizados por todas
     struct strMaqParamCustom {
       struct { // Parametros especificos da Diagonal / Travessa
-        unsigned int dist_prensa_corte;
+        unsigned int dist_prensa_corte; // Distancia em mm entre a prensa e o corte
       } diagonal;
+      struct { // Parametros especificos da Coluna N
+        unsigned int dinam_vel; // Velocidade do perfil em modo dinamico
+        unsigned int curso; // Curso de deslocamento da mesa
+        unsigned int auto_vel; // Velocidade da mesa em modo automatico
+        unsigned int manual_vel; // Velocidade da mesa em modo manual
+        float        offset; // Indica quanto antes da posicao de corte a mesa deve partir
+        unsigned int tam_min; // Menor peca possivel de ser feita em modo dinamico
+      } coln;
     } custom;
 } maq_param;
 
@@ -199,6 +241,7 @@ void     MaqLimparErro(void);
 void     MaqLiberar   (uint16_t liberar);
 uint16_t MaqLerEstado (void);
 void     MaqPerfManual(uint16_t cmd);
+void     MaqMesaManual(uint16_t cmd);
 void     MaqCortar    (void);
 
 uint16_t MaqInvSyncOK     (void);

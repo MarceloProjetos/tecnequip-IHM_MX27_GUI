@@ -813,11 +813,26 @@ void IPC_Update(void)
   }
 }
 
+static const char *lista_botoes[] = {
+    "btnOperarProduzir",
+    "btnManualPerfAvanca",
+    "btnManualPerfRecua",
+    "btnCVOperarProduzir",
+    "btnCVManualPerfAvanca",
+    "btnCVManualPerfRecua",
+    "btnManualMesaAvanca",
+    "btnCVManualCortar",
+    "btnManualMesaPosic",
+    "btnManualMesaRecua",
+    "",
+};
+
 gboolean tmrGtkUpdate(gpointer data)
 {
   time_t now;
   char tmp[40], *msg_error;
   uint32_t val, i;
+  static uint32_t estado_init = -1;
   GtkWidget *wdg;
   struct tm *timeptr;
   static GtkLabel *lbl = NULL;
@@ -958,6 +973,15 @@ gboolean tmrGtkUpdate(gpointer data)
             break; // Sai do loop
 
           gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
+        }
+      }
+    } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+      val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
+      if(val != estado_init) {
+        estado_init = val;
+        for(i=0; lista_botoes[i][0] != 0; i++) {
+          wdg = GTK_WIDGET(gtk_builder_get_object(builder, lista_botoes[i]));
+          gtk_widget_set_sensitive(wdg, estado_init);
         }
       }
     }
@@ -1212,6 +1236,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   GtkWidget *wnd;
   GtkComboBox *cmb;
   BoardStatus bs;
+  GError *ge = NULL;
   char  hostname[BUFSIZ];
   char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
   char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
@@ -1224,7 +1249,11 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   //Carrega a interface a partir do arquivo glade
   builder = gtk_builder_new();
-  gtk_builder_add_from_file(builder, "IHM.glade", NULL);
+  gtk_builder_add_from_file(builder, "IHM.glade", &ge);
+  if(ge != NULL) {
+    printf("Erro carregando objetos (%d): %s\n", ge->code, ge->message);
+  }
+
   wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
   //Conecta Sinais aos Callbacks
   gtk_builder_connect_signals(builder, NULL);
@@ -1269,6 +1298,11 @@ uint32_t IHM_Init(int argc, char *argv[])
 
   for(i=0; (m = MaqConfig_GetMachine(i)) != &MaqConfigDefault; i++) {
     CarregaItemCombo(cmb, m->Name);
+  }
+
+  // Configura a tela de operacao manual
+  if(MaqConfigCurrent->MaqModeCV) {
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbOperar")), 1);
   }
 
   // Cria filas de mensagens para comunicacao entre a thread ihm_update e o main

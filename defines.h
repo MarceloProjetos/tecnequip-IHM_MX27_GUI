@@ -148,6 +148,7 @@ typedef uint16_t u16;
 #define NTB_ABA_NONE          99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
+#define NTB_ABA_CONFIG_COLN     2
 
 // Modos de corte da peça
 #define MODO_CORTE_HIDR  0

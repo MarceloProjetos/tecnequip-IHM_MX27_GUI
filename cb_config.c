@@ -228,6 +228,12 @@ char *lista_ent[] = {
     "spbConfigPerfReducao",
     "spbConfigPerfDiamRolo",
     "entConfigDiagonalDistancia",
+    "spbConfigColNPerfVelMaxAutoDinam",
+    "entConfigColNMesaCurso",
+    "spbConfigColNMesaVelMaxAuto",
+    "spbConfigColNMesaVelMaxManual",
+    "spbConfigColNOffset",
+    "entConfigColNTamMin",
     ""
 };
 
@@ -237,7 +243,7 @@ int GravarDadosConfig()
   unsigned int i;
   char **valor_ent, cmdline[1000];
   struct strMaqParam mp;
-  valor_ent = (char **)(malloc(13*sizeof(char[10])));
+  valor_ent = (char **)(malloc((sizeof(lista_ent)/sizeof(lista_ent[0]))*sizeof(char *)));
 
   // Carrega o valor dos widgets conforme a lista fornecida
   LerValoresWidgets(lista_ent, valor_ent);
@@ -262,7 +268,17 @@ int GravarDadosConfig()
   mp.corte.tam_faca    = atol(valor_ent[9]);
   MaqConfigCorte(mp.corte);
 
+  // Parametros personalizados da Diagonal / Travessa
   mp.custom.diagonal.dist_prensa_corte = atol(valor_ent[12]);
+
+  // Parametros personalizados da Coluna N
+  mp.custom.coln.dinam_vel  = atol(valor_ent[13]);
+  mp.custom.coln.curso      = atol(valor_ent[14]);
+  mp.custom.coln.auto_vel   = atol(valor_ent[15]);
+  mp.custom.coln.manual_vel = atol(valor_ent[16]);
+  mp.custom.coln.offset     = atof(valor_ent[17]);
+  mp.custom.coln.tam_min    = atol(valor_ent[18]);
+
   MaqConfigCustom(mp.custom);
 
   GravaDadosBanco();
@@ -350,6 +366,30 @@ void LerDadosConfig()
   strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.custom.diagonal.dist_prensa_corte);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.coln.dinam_vel);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.coln.curso);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.coln.auto_vel);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.coln.manual_vel);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%.1f", mp.custom.coln.offset);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.coln.tam_min);
   valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[idx++], tmp);
 
@@ -911,6 +951,17 @@ void cbRemoverModelo(GtkButton *button, gpointer user_data)
     }
 }
 
+void cbConfigGeralMais(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbConfigGeral")),
+      MaqConfigCurrent->AbaConfigMais);
+}
+
+void cbConfigGeralVoltar(GtkButton *button, gpointer user_data)
+{
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbConfigGeral")), 0);
+}
+
 void AbrirConfig(unsigned int pos)
 {
   if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
@@ -925,6 +976,7 @@ void AbrirConfig(unsigned int pos)
       MaqConfigCurrent->AbaConfigMais != 0);
 
   WorkAreaGoTo(NTB_ABA_CONFIG);
+  cbConfigGeralVoltar(NULL, NULL);
 
 // Se pos != 0, foi chamada a janela forçadamente e portanto esta ação não pode ser cancelada!
   if(pos) {
@@ -933,17 +985,6 @@ void AbrirConfig(unsigned int pos)
   }
 
   LerDadosConfig();
-}
-
-void cbConfigGeralMais(GtkButton *button, gpointer user_data)
-{
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbConfigGeral")),
-      MaqConfigCurrent->AbaConfigMais);
-}
-
-void cbConfigGeralVoltar(GtkButton *button, gpointer user_data)
-{
-  gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbConfigGeral")), 0);
 }
 
 void cbConfigOk(GtkButton *button, gpointer user_data)

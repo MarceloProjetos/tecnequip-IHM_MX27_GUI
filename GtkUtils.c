@@ -164,8 +164,9 @@ int AchaIndiceCombo(GtkComboBox *cmb, char *valor)
 void GravarValorWidget(char *nome, char *valor)
 {
 	GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, nome));
-	if(obj==NULL)
+	if(obj==NULL) {
 		return;
+	}
 
   if     (!strncmp(nome, "ent", 3))
     gtk_entry_set_text(GTK_ENTRY(obj), valor);
@@ -179,6 +180,8 @@ void GravarValorWidget(char *nome, char *valor)
 		gtk_combo_box_set_active(GTK_COMBO_BOX(obj), AchaIndiceCombo(GTK_COMBO_BOX(obj), valor));
   else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), atol(valor));
+  else
+    printf("Gravar valor em '%s' nao suportado!!!\n", nome);
 }
 
 void GravarValoresWidgets(char **lst_wdg, char **lst_val)
