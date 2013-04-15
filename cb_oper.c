@@ -874,12 +874,20 @@ void OperarManual(unsigned int operacao)
 
 void cbManualPerfAvancar(GtkButton *button, gpointer user_data)
 {
-  OperarManual(OPER_PERF_AVANCA);
+  if(MaqConfigCurrent->InverterComandos) {
+    OperarManual(OPER_PERF_RECUA);
+  } else {
+    OperarManual(OPER_PERF_AVANCA);
+  }
 }
 
 void cbManualPerfRecuar(GtkButton *button, gpointer user_data)
 {
-  OperarManual(OPER_PERF_RECUA);
+  if(MaqConfigCurrent->InverterComandos) {
+    OperarManual(OPER_PERF_AVANCA);
+  } else {
+    OperarManual(OPER_PERF_RECUA);
+  }
 }
 
 void cbManualPerfParar(GtkButton *button, gpointer user_data)
@@ -889,12 +897,20 @@ void cbManualPerfParar(GtkButton *button, gpointer user_data)
 
 void cbManualMesaAvancar(GtkButton *button, gpointer user_data)
 {
-  OperarManual(OPER_MESA_AVANCA);
+  if(MaqConfigCurrent->InverterComandos) {
+    OperarManual(OPER_MESA_RECUA);
+  } else {
+    OperarManual(OPER_MESA_AVANCA);
+  }
 }
 
 void cbManualMesaRecuar(GtkButton *button, gpointer user_data)
 {
-  OperarManual(OPER_MESA_RECUA);
+  if(MaqConfigCurrent->InverterComandos) {
+    OperarManual(OPER_MESA_AVANCA);
+  } else {
+    OperarManual(OPER_MESA_RECUA);
+  }
 }
 
 void cbManualMesaParar(GtkButton *button, gpointer user_data)

@@ -26,6 +26,7 @@
 
 #include "io.h"
 #include "maq.h"
+#include "version.h"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -34,7 +35,7 @@ typedef uint16_t u16;
 /*** Definições gerais ***/
 
 // Ativar a linha abaixo para desativar a comunicação pela Ethernet
-//#define DEBUG_PC_NOETH
+#define DEBUG_PC_NOETH
 
 // Ativar a linha abaixo para rodar em modo de teste
 //#define DEBUG_MODO_TESTE

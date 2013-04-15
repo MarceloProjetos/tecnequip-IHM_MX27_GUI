@@ -4,6 +4,12 @@ CFLAGS="-pthread -ggdb -Wall -Wcast-align"
 
 echo Apagando objetos antigos
 rm -rf *.o
+
+echo Atualizando numero de versao
+build=$(sed -ne "s/.*BUILD_NUMBER \(.*\)/\1/p" version.h)
+echo "#define BUILD_NUMBER $(expr $build + 1)" > version.h
+echo "#define BUILD_DATE \"$(date)\"" >> version.h
+
 echo Iniciando...
 gcc $CFLAGS -c -o modbus.o modbus_rtu.c
 gcc $CFLAGS -c -o io.o io.c

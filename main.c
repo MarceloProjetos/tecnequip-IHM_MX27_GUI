@@ -1279,6 +1279,11 @@ uint32_t IHM_Init(int argc, char *argv[])
       GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
 
+  // Atualiza o label que indica a versao do programa
+  char strversion[100];
+  sprintf(strversion, "%d de '%s'", BUILD_NUMBER, BUILD_DATE);
+  gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblVersion")), strversion);
+
   // Atualiza o estado inicial do CapsLock como desativado
   cbVirtualKeyboardCapsLock(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "tgbCapsLock")), NULL);
 

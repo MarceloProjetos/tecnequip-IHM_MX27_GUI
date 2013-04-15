@@ -101,20 +101,11 @@ void cbColN_MudarAbaConfig(GtkButton *button, gpointer user_data)
   gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbColN")), aba);
 }
 
-int ColN_Init(void)
-{
-  return 1;
-}
-
 void ColN_Erro(int erro)
 {
   if(erro == MAQ_ERRO_DESATIVADA) {
     MaqLiberar(1);
   }
-}
-
-void ColN_Auto(int ativo)
-{
 }
 
 gboolean tmrAguardaFimOperacao(gpointer data)

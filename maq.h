@@ -36,6 +36,7 @@ typedef struct {
 
   int            NeedMaqInit;
   int            MaqModeCV;
+  int            InverterComandos;
 
   MaqIOMap      *IOMap;
 
