@@ -108,6 +108,51 @@ MaqIOMap MaqDefaultIOMap = {
   },
 };
 
+// Mapas de I/O da Diagonal / Travessa
+MaqIOMap MaqIOMapColunaN = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Avança Perfil"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recua Perfil"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Avança Mesa"                     , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recua Mesa"                      , "images/ihm-ent-perfil-recuar.png"   },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
+      { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+      { "Trava da Mesa"                   , "images/ihm-manut-mesa-trava.png"    },
+      { "Servo OK"                        , "images/ihm-ent-inversor-erro.png"   },
+      { "Próximo ao Fim"                  , "images/ihm-ent-.png" },
+      { "Vel. Sinc."                      , "images/ihm-ent-inversor-posic.png"  },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Escravo"         , "images/ihm-ent-inversor-posic.png"   },
+      { "Hab. Servo"      , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
 // Mapa de I/O da Diagonal / Travessa
 MaqIOMap MaqIOMapDiagonal = {
   .InputMask  = 0,
@@ -347,7 +392,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = TRUE,
         .MaqModeCV        = TRUE,
         .InverterComandos = TRUE,
-        .IOMap            = &MaqDefaultIOMap,
+        .IOMap            = &MaqIOMapColunaN,
         .fncOnInit        = NULL,
         .fncOnError       = ColN_Erro,
         .fncOnAuto        = NULL,
