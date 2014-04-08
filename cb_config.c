@@ -1020,11 +1020,15 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
   char sql[300], *lembrete = "";
   char senha[20], *tmpPerm;
 
+#ifndef DISABLE_SQL_SERVER
   // Verifica se conectamos no banco SQL Server
   if(!(sDB && (sDB->status & DB_FLAGS_CONNECTED))) {
     sDB = &mainDB; // Não conectamos, tenta login local
     MessageBox("Erro ao conectar ao servidor, tentando conexão local");
   }
+#else
+  sDB = &mainDB; // Nao estamos usando o SQL Server, usar banco local
+#endif
 
   if(!(sDB->status & DB_FLAGS_CONNECTED)) { // Banco não conectado!
     if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) // Senha correta
@@ -1064,6 +1068,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
         strcpy(UserPerm, tmpPerm);
 
+#ifndef DISABLE_SQL_SERVER
         // Se conectou pelo SQL Server, sincronizar usuário e permissões com o MySQL
         if(sDB->DriverID != NULL && !strcmp(sDB->DriverID, "MSSQL")) {
           // Primeiro sincroniza os perfis
@@ -1103,6 +1108,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
           DB_Execute(&mainDB, 0, sql); // Insere/Atualiza registro com os dados atuais
         }
+#endif
 
         Log("Entrada no sistema", LOG_TIPO_SISTEMA);
 
@@ -1261,12 +1267,6 @@ void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint ar
 
   if(CurrentWorkArea == NTB_ABA_POWERDOWN && !OnPowerDown) {
     WorkAreaGoPrevious(); // Tela nao faz mais sentido agora, energia restabelecida!
-  } else if((arg1 == MaqConfigCurrent->AbaHome || arg1 == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
-    if(MaqConfigCurrent->UseIndet) {
-      WorkAreaGoTo(NTB_ABA_INDETERMINADO);
-    } else {
-      SetMaqStatus(MAQ_STATUS_PARADA);
-    }
   }
 }
 
@@ -1287,6 +1287,14 @@ void WorkAreaGoTo(int NewWorkArea)
     }
 
     gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NewWorkArea);
+
+    if((NewWorkArea == MaqConfigCurrent->AbaHome || NewWorkArea == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
+      if(MaqConfigCurrent->UseIndet) {
+        WorkAreaGoTo(NTB_ABA_INDETERMINADO);
+      } else {
+        SetMaqStatus(MAQ_STATUS_PARADA);
+      }
+    }
   } else if(NewWorkArea != NTB_ABA_MESSAGEBOX) {
     AddWA(&WA_PreviousList, NewWorkArea);
   }
@@ -1531,6 +1539,7 @@ void cbMudarSenha(GtkButton *button, gpointer user_data)
 // Funcao executada quando for aplicada a alteracao de senha
 void cbSenhaAlterar(GtkButton *button, gpointer user_data)
 {
+#ifndef DISABLE_SQL_SERVER
   int i;
   struct strDB *sDB;
   char senha[100], sql[100];
@@ -1565,6 +1574,9 @@ void cbSenhaAlterar(GtkButton *button, gpointer user_data)
       MessageBox("Senha atual inválida!");
     }
   }
+#else
+  MessageBox("Troca de senha DESATIVADA");
+#endif
 }
 
 // Funcao executada quando for cancelada a alteracao de senha

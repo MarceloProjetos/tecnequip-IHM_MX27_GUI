@@ -37,11 +37,14 @@ gcc $CFLAGS -c -export-dynamic -o banho.o banho.c \
 gcc $CFLAGS -c -export-dynamic -o diagonal.o diagonal.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libDB
+gcc $CFLAGS -c -export-dynamic -o AplanDesbobMezanino.o AplanDesbobMezanino.c \
+    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
+    -I../libDB
 gcc $CFLAGS -c -export-dynamic -o coln.o coln.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     -I../libDB
 echo Compilando main.c
-gcc $CFLAGS -export-dynamic -o IHM main.c maq.o io.o banho.o diagonal.o coln.o \
+gcc $CFLAGS -export-dynamic -o IHM main.c maq.o io.o banho.o diagonal.o coln.o AplanDesbobMezanino.o \
     modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \

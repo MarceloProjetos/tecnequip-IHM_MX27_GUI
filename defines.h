@@ -38,7 +38,19 @@ typedef uint16_t u16;
 //#define DEBUG_PC_NOETH
 
 // Ativar a linha abaixo para rodar em modo de teste
-//#define DEBUG_MODO_TESTE
+#define DEBUG_MODO_TESTE
+
+// Ativar a linha abaixo para desativar a integracao das IHMs com o SQL Server
+#define DISABLE_SQL_SERVER
+
+// As definicoes a seguir somente serao consideradas quando a integracao
+// das IHMs com o SQL Server estiver ativa.
+#ifndef DISABLE_SQL_SERVER
+
+// Ativar a linha abaixo para nao permitir a producao manual
+//#define MANUAL_PRODUCTION_NOT_ALLOWED
+
+#endif
 
 // Definicao da Linha/Maquina que este programa vai rodar
 // Definicao de mensagem a exibir quando nao existe erro ativo
@@ -146,6 +158,10 @@ typedef uint16_t u16;
 #define NTB_ABA_CALC_FATOR    18
 #define NTB_ABA_POWERDOWN     19
 #define NTB_ABA_HOME_BANHO    20
+#define NTB_ABA_HOME_PRENSA   21
+#define NTB_ABA_PROG_PARAM    22
+#define NTB_ABA_PRENSA_PROD   23
+#define NTB_ABA_PROG_PADRAO   24
 #define NTB_ABA_NONE          99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
@@ -252,3 +268,5 @@ extern uint32_t OnPowerDown;
 // Prototipos de Funcoes
 void AbrirData  (GtkEntry *entry, GCallback cb);
 int  GetUserPerm(unsigned int perm);
+
+gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data);

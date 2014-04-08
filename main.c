@@ -79,6 +79,7 @@ char * MSSQL_DateFromTimeT(time_t t, char *data)
 // Executa uma consulta SQL
 int MSSQL_Execute(int nres, char *sql, unsigned int flags)
 {
+#ifndef DISABLE_SQL_SERVER
   char msg[200], *sql_sync;
   struct strDB *sDB;
   int ret;
@@ -113,11 +114,15 @@ int MSSQL_Execute(int nres, char *sql, unsigned int flags)
   }
 
   return ret;
+#else
+  return -1; // Sempre retorna erro se SQL Server desativado
+#endif
 }
 
 // Sincroniza o SQL Server com o MySQL
 void MSSQL_Sync(void)
 {
+#ifndef DISABLE_SQL_SERVER
   char sql[500];
   unsigned int SyncDone = 0, SyncIncomplete = 0;
 
@@ -149,10 +154,12 @@ void MSSQL_Sync(void)
     else
       Log("Sincronismo com SQL Server finalizado com sucesso", LOG_TIPO_SISTEMA);
   }
+#endif
 }
 
 struct strDB * MSSQL_Connect(void)
 {
+#ifndef DISABLE_SQL_SERVER
   int ret;
   static time_t timer = 0;
 
@@ -179,6 +186,9 @@ struct strDB * MSSQL_Connect(void)
   }
 
   return sMSDB;
+#else
+  return NULL;
+#endif
 }
 
 char * MSSQL_GetData(int nres, unsigned int pos)
@@ -269,7 +279,9 @@ void Log(char *evento, int tipo)
 {
   char sql[200];
   unsigned int LogID = idUser;
+#ifndef DISABLE_SQL_SERVER
   static unsigned int log_in_mssql = 0;
+#endif
 
   if(!LogID)
     LogID = LOG_ID_SISTEMA;
@@ -280,6 +292,7 @@ void Log(char *evento, int tipo)
     DB_Execute(&mainDB, 3, sql);
     }
 
+#ifndef DISABLE_SQL_SERVER
   if(!log_in_mssql) {
     log_in_mssql = 1;
     sprintf(sql, "insert into LOG_EVENTO (LINHA, MAQUINA, OPERADOR, TIPO, HISTORICO) values ('%s', '%s', '%d', '%d', '%s')",
@@ -287,6 +300,7 @@ void Log(char *evento, int tipo)
     MSSQL_Execute(3, sql, MSSQL_USE_SYNC); // Mesmo que dê erro temos que inserir para sincronizarmos depois.
     log_in_mssql = 0;
   }
+#endif
 }
 
 int32_t ihm_connect(char *host, int16_t port)

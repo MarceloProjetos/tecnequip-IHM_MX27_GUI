@@ -241,10 +241,12 @@ void InsertLocalTask(void)
 
 void CarregaListaTarefas(GtkWidget *tvw)
 {
-  int i, TaskIndex = 1;
+#ifndef DISABLE_SQL_SERVER
   struct strTask *currTask;
-  const int tam = 9;
   struct strDB *mssqlDB;
+#endif
+  int i, TaskIndex = 1;
+  const int tam = 9;
   char *valores[tam+1], sql[500];
 
   valores[tam] = NULL;
@@ -277,6 +279,7 @@ void CarregaListaTarefas(GtkWidget *tvw)
     free(valores[0]);
     }
 
+#ifndef DISABLE_SQL_SERVER
   // Carrega as tarefas do sistema (SQL Server) se conseguir a conexao.
   mssqlDB = MSSQL_Connect();
   if(mssqlDB && (mssqlDB->status == DB_FLAGS_CONNECTED)) {
@@ -326,6 +329,8 @@ void CarregaListaTarefas(GtkWidget *tvw)
   }
 
   MSSQL_Close();
+#endif
+
   ConfigBotoesTarefa(GTK_WIDGET(tvw), FALSE);
 }
 
@@ -752,6 +757,13 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
   } else {
     DadosOK = 1;
   }
+
+#ifdef MANUAL_PRODUCTION_NOT_ALLOWED
+  if(Task->Origem == TRF_ORIGEM_MANUAL) { // Tarefa manual BLOQUEADA!
+    MessageBox("Produção Manual BLOQUEADA!");
+    return;
+  }
+#endif
 
   // Se for tarefa manual, exibe tela pedindo os dados adicionais
   if(Task->Origem == TRF_ORIGEM_MANUAL && !DadosOK) {

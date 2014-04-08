@@ -6,8 +6,9 @@ extern void IPC_Update(void);
 #endif
 
 // Funcoes de inicializacao das maquinas
-int Banho_Init   (void); // Inicializacao do banho
-int Diagonal_Init(void); // Inicializacao da Diagonal/Travessa
+int Banho_Init     (void); // Inicializacao do banho
+int Diagonal_Init  (void); // Inicializacao da Diagonal/Travessa
+int ProgPrensa_Init(void); // Inicializacao da Prensa de Mezanino
 
 // Funcoes de tratamento de erro das maquinas
 void Banho_Erro(int erro); // Tratamento de erro do banho
@@ -147,6 +148,51 @@ MaqIOMap MaqIOMapColunaN = {
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
       { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
       { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+// Mapas de I/O do Tubo
+MaqIOMap MaqIOMapTubo = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Pressão Ar OK"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
@@ -378,6 +424,27 @@ MaqIOMap MaqBanhoIOMap = {
 
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
+    { // Tubo Antiga
+        .ID               = "IhmTubo",
+        .Name             = "Tubo",
+        .Line             = "TUBO",
+        .Machine          = "TUBO",
+        .ClpAddr          = "192.168.2.247",
+        .AbaHome          = NTB_ABA_HOME,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaConfigMais    = 0,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = TRUE,
+        .IOMap            = &MaqIOMapTubo,
+        .fncOnInit        = NULL,
+        .fncOnError       = NULL,
+        .fncOnAuto        = NULL,
+        .ErrorList        = ErrorListDefault,
+        .Alertas          = 0,
+    },
     { // Coluna N
         .ID               = "IhmColN",
         .Name             = "Coluna N",
@@ -514,8 +581,9 @@ MaqConfig MaqConfigDefault = {
     .Name             = "Maquina de Teste",
     .Line             = "TESTE",
     .Machine          = "TESTE",
-    .ClpAddr          = "192.168.2.234",
-    .AbaHome          = NTB_ABA_HOME,
+//    .ClpAddr          = "192.168.0.102",
+    .ClpAddr          = "192.168.2.243",
+    .AbaHome          = NTB_ABA_HOME_PRENSA,
     .AbaManut         = NTB_ABA_MANUT,
     .AbaConfigMais    = 0,
     .UseLogin         = TRUE,
@@ -524,11 +592,11 @@ MaqConfig MaqConfigDefault = {
     .MaqModeCV        = FALSE,
     .InverterComandos = FALSE,
     .IOMap            = &MaqDefaultIOMap,
-    .fncOnInit        = NULL,
+    .fncOnInit        = ProgPrensa_Init,
     .fncOnError       = NULL,
     .fncOnAuto        = NULL,
     .ErrorList        = ErrorListDefault,
-    .Alertas          = 0,
+    .Alertas          = (1UL << 9), // Erro de Posicionamento
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -678,6 +746,7 @@ void EnviarMB(struct strIPCMQ_Message *ipc_msg, struct strMaqReply *rp)
 // Funcao que sincroniza a estrutura de parametros com o clp. Retorna default_value se erro
 uint16_t MaqLerRegistrador(uint16_t reg, uint16_t default_value)
 {
+  uint16_t ret = default_value;
   struct strMaqReply rp;
   struct strIPCMQ_Message ipc_msg;
 
@@ -692,11 +761,12 @@ uint16_t MaqLerRegistrador(uint16_t reg, uint16_t default_value)
 
   EnviarMB(&ipc_msg, &rp);
 
-  if(rp.modbus_reply.ExceptionCode != MODBUS_EXCEPTION_NONE) {
-    return default_value; // Erro de comunicacao
+  if(rp.modbus_reply.ExceptionCode == MODBUS_EXCEPTION_NONE) { // Sem erro de comunicacao
+    ret = CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
+    printf("Lido %d (0x%04x) de %d\n", ret, ret, reg);
   }
 
-  return CONV_PCHAR_UINT16(rp.modbus_reply.reply.read_holding_registers.data);
+  return ret;
 }
 
 void MaqGravarRegistrador(uint16_t reg, uint16_t val)
@@ -709,6 +779,8 @@ void MaqGravarRegistrador(uint16_t reg, uint16_t val)
   ipc_msg.data.modbus_query.function_code = MODBUS_FC_WRITE_SINGLE_REGISTER;
   ipc_msg.data.modbus_query.data.write_single_register.address = reg;
   ipc_msg.data.modbus_query.data.write_single_register.val = val;
+
+  printf("Escrevendo %d (0x%04x) em %d\n", val, val, reg);
 
   IPCMQ_Main_Enviar(&ipc_msg);
 }
@@ -750,7 +822,7 @@ int MaqSync(unsigned int mask)
     printf("maq_param.perfil.manual_vel................: %d\n" , maq_param.perfil.manual_vel);
     printf("maq_param.perfil.manual_acel...............: %f\n" , maq_param.perfil.manual_acel);
     printf("maq_param.perfil.manual_desacel............: %f\n" , maq_param.perfil.manual_desacel);
-
+/*
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_VEL    ,                maq_param.perfil.auto_vel           );
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_ACEL   , (unsigned int)(maq_param.perfil.auto_acel     *100));
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_DESACEL, (unsigned int)(maq_param.perfil.auto_desacel  *100));
@@ -759,7 +831,7 @@ int MaqSync(unsigned int mask)
     MaqGravarRegistrador(MAQ_REG_PERF_MAN_DESACEL , (unsigned int)(maq_param.perfil.manual_desacel*100));
     MaqGravarRegistrador(MAQ_REG_PERF_FATOR_LOW   , (rel_motor_perfil    ) & 0XFFFF);
     MaqGravarRegistrador(MAQ_REG_PERF_FATOR_HIGH  , (rel_motor_perfil>>16) & 0XFFFF);
-
+*/
     SyncFlags |= MAQ_MODO_PERF_SYNC;
   }
 
@@ -767,16 +839,17 @@ int MaqSync(unsigned int mask)
     printf("maq_param.encoder.fator....................: %f\n", maq_param.encoder.fator);
     printf("maq_param.encoder.perimetro................: %d\n", maq_param.encoder.perimetro);
     printf("maq_param.encoder.precisao.................: %d\n", maq_param.encoder.precisao);
-
+/*
     MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator*1000));
     MaqGravarRegistrador(MAQ_REG_ENC_RESOL,                maq_param.encoder.precisao   );
     MaqGravarRegistrador(MAQ_REG_ENC_PERIM,                maq_param.encoder.perimetro  );
+*/
   }
 
   if(mask & MAQ_SYNC_CORTE) {
     printf("maq_param.corte.tam_faca...................: %d\n", maq_param.corte.tam_faca);
 
-    MaqGravarRegistrador(MAQ_REG_CRT_FACA, maq_param.corte.tam_faca);
+//    MaqGravarRegistrador(MAQ_REG_CRT_FACA, maq_param.corte.tam_faca);
   }
 
   if(mask & MAQ_SYNC_CUSTOM) {
@@ -886,8 +959,12 @@ int ParamDB_Load(struct strParamDB *ParamDB)
         ret = 0;
       } else {
         if(DB_GetNextRow(&mainDB, 3) > 0) {
+          char *val = DB_GetData(&mainDB, 3, 1);
+          char *pos_comma = strchr(val, '.');
+          if(pos_comma != NULL) *pos_comma = ',';
+          ValFloat = atof(val);
+
           ValInt   = atoi(DB_GetData(&mainDB, 3, 0));
-          ValFloat = atof(DB_GetData(&mainDB, 3, 1));
         }
       }
     } else {
