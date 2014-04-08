@@ -232,7 +232,7 @@ void LerDadosConfig()
   }
   free(valor_ent);
 
-  if(mainDB.res != NULL) // Somente carrega se há conexão com o DB
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Somente carrega se há conexão com o DB
     {
     // Carrega dados da aba de usuários
     CarregaComboUsuarios();
@@ -761,7 +761,7 @@ void cbRemoverModelo(GtkButton *button, gpointer user_data)
 
 void AbrirConfig(unsigned int pos)
 {
-  if(mainDB.res != NULL) // Banco de dados conectado!
+  if(mainDB.status & DB_FLAGS_CONNECTED) // Banco de dados conectado!
     if(!GetUserPerm(PERM_ACESSO_CONFIG))
       {
       WorkAreaGoTo(NTB_ABA_HOME);
@@ -804,7 +804,7 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
   char sql[100], *lembrete = "";
   static int first_time = 1;
 
-  if(mainDB.res==NULL) { // Banco não conectado!
+  if(!(mainDB.status & DB_FLAGS_CONNECTED)) { // Banco não conectado!
     if(!strcmp(Crypto((char *)(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entLoginSenha"))))), SENHA_MASTER)) { // Senha correta
       idUser=1; // Grava 1 para indicar que foi logado
 
