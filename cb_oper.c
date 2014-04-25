@@ -935,13 +935,6 @@ void cbManualCortar(GtkButton *button, gpointer user_data)
   OperarManual(OPER_CORTAR);
 }
 
-// defines que permitem selecionar o ponto de referencia para insercao da imagem
-#define LOADPB_REFPOS_UP      0x00
-#define LOADPB_REFPOS_DOWN    0x01
-#define LOADPB_REFPOS_LEFT    0x00
-#define LOADPB_REFPOS_RIGHT   0x02
-#define LOADPB_REFPOS_DEFAULT (LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT)
-
 void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, gdouble scale_y, gint refpos)
 {
   GdkPixbuf *pbtmp;

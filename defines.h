@@ -138,31 +138,31 @@ typedef uint16_t u16;
 #define CHECAR_MANUAL 1
 
 // Numeracao das abas que contem a tela (ntbWorkArea)
-#define NTB_ABA_HOME           0
-#define NTB_ABA_MANUT          1
-#define NTB_ABA_CONFIG         2
-#define NTB_ABA_OPERAR         3
-#define NTB_ABA_MANUAL         4
-#define NTB_ABA_LOGS           5
-#define NTB_ABA_TAREFA         7
-#define NTB_ABA_MODBUS         8
-#define NTB_ABA_DATA           9
-#define NTB_ABA_EXECUTAR      10
-#define NTB_ABA_VIRTUAL_KB    11
-#define NTB_ABA_MESSAGEBOX    12
-#define NTB_ABA_LOGIN         13
-#define NTB_ABA_DADOS_PEDIDO  14
-#define NTB_ABA_INDETERMINADO 15
-#define NTB_ABA_ESPERA        16
-#define NTB_ABA_MUDAR_SENHA   17
-#define NTB_ABA_CALC_FATOR    18
-#define NTB_ABA_POWERDOWN     19
-#define NTB_ABA_HOME_BANHO    20
-#define NTB_ABA_HOME_PRENSA   21
-#define NTB_ABA_PROG_PARAM    22
-#define NTB_ABA_PRENSA_PROD   23
-#define NTB_ABA_PROG_PADRAO   24
-#define NTB_ABA_NONE          99
+#define NTB_ABA_HOME            0
+#define NTB_ABA_MANUT           1
+#define NTB_ABA_CONFIG          2
+#define NTB_ABA_OPERAR          3
+#define NTB_ABA_MANUAL          4
+#define NTB_ABA_LOGS            5
+#define NTB_ABA_TAREFA          7
+#define NTB_ABA_MODBUS          8
+#define NTB_ABA_DATA            9
+#define NTB_ABA_EXECUTAR       10
+#define NTB_ABA_VIRTUAL_KB     11
+#define NTB_ABA_MESSAGEBOX     12
+#define NTB_ABA_LOGIN          13
+#define NTB_ABA_DADOS_PEDIDO   14
+#define NTB_ABA_INDETERMINADO  15
+#define NTB_ABA_ESPERA         16
+#define NTB_ABA_MUDAR_SENHA    17
+#define NTB_ABA_CALC_FATOR     18
+#define NTB_ABA_POWERDOWN      19
+#define NTB_ABA_HOME_BANHO     20
+#define NTB_ABA_HOME_PRENSA    21
+#define NTB_ABA_PROG_PARAM     22
+#define NTB_ABA_PRENSA_PROD    23
+#define NTB_ABA_PRENSA_CADPROG 24
+#define NTB_ABA_NONE           99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
 #define NTB_ABA_CONFIG_COLN     2
@@ -173,6 +173,13 @@ typedef uint16_t u16;
 
 // Definições para cast de variáveis, evitando problemas com alinhamento.
 #define CONV_PCHAR_UINT16(data) (((uint16_t)(*(data+1))<<8) | (uint16_t)(*data))
+
+// defines que permitem selecionar o ponto de referencia para insercao da imagem
+#define LOADPB_REFPOS_UP      0x00
+#define LOADPB_REFPOS_DOWN    0x01
+#define LOADPB_REFPOS_LEFT    0x00
+#define LOADPB_REFPOS_RIGHT   0x02
+#define LOADPB_REFPOS_DEFAULT (LOADPB_REFPOS_UP | LOADPB_REFPOS_LEFT)
 
 /*** Fim das definições gerais ***/
 

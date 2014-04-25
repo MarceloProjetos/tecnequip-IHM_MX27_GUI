@@ -178,7 +178,8 @@ void GravarValorWidget(char *nome, char *valor)
 		gtk_text_buffer_set_text(gtk_text_view_get_buffer(GTK_TEXT_VIEW(obj)), valor, -1);
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		gtk_combo_box_set_active(GTK_COMBO_BOX(obj), AchaIndiceCombo(GTK_COMBO_BOX(obj), valor));
-  else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
+  else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) ||
+      !strncmp(nome, "tgb", 3) || !strncmp(nome, "ckb", 3))
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(obj), atol(valor));
   else
     printf("Gravar valor em '%s' nao suportado!!!\n", nome);
@@ -212,7 +213,8 @@ char * LerValorWidget(char *nome)
 		gtk_text_buffer_get_end_iter(tb, &end);
 		return (char *)(gtk_text_buffer_get_text(tb, &start, &end, FALSE));
 		}
-	else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3) || !strncmp(nome, "tgb", 3))
+	else if(!strncmp(nome, "rdb", 3) || !strncmp(nome, "rbt", 3)
+	    || !strncmp(nome, "tgb", 3) || !strncmp(nome, "ckb", 3))
 		return gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(obj)) ? "1" : "0";
 	else if(!strncmp(nome, "cmb", 3) || !strncmp(nome, "cbe", 3))
 		return (char *)(LerComboAtivo(GTK_COMBO_BOX(obj)));

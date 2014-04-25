@@ -43,9 +43,10 @@ typedef struct {
   char         **ErrorList;
   unsigned int   Alertas;
 
-  int         ( *fncOnInit )(void);
-  void        ( *fncOnError)(int );
-  void        ( *fncOnAuto )(int );
+  int         ( *fncOnInit     )(void);
+  void        ( *fncOnError    )(int );
+  void        ( *fncOnAuto     )(int );
+  void        ( *fncTimerUpdate)(void);
 } MaqConfig;
 
 /*** Definicoes e funcoes relacionados a Configuracao da Maquina ***/

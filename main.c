@@ -978,7 +978,8 @@ gboolean tmrGtkUpdate(gpointer data)
         }
       }
     } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      if(WorkAreaGet() == MaqConfigCurrent->AbaManut) {
+      int currentWorkArea = WorkAreaGet();
+      if(currentWorkArea == MaqConfigCurrent->AbaManut) {
         val = MaqLerEntradas() ^ MaqConfigCurrent->IOMap->InputMask;
         for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
           sprintf(tmp, "imgStatusEnt%02d", i);
@@ -988,6 +989,8 @@ gboolean tmrGtkUpdate(gpointer data)
 
           gtk_image_set_from_pixbuf(GTK_IMAGE(wdg), (val>>i)&1 ? pb_on : pb_off);
         }
+      } else if(currentWorkArea == MaqConfigCurrent->AbaHome && MaqConfigCurrent->fncTimerUpdate != NULL) {
+        (MaqConfigCurrent->fncTimerUpdate)();
       }
     } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
@@ -1252,8 +1255,9 @@ uint32_t IHM_Init(int argc, char *argv[])
   BoardStatus bs;
   GError *ge = NULL;
   char  hostname[BUFSIZ];
-  char *campos_log   [] = { "Data", "Usuário", "Evento", "" };
-  char *campos_tarefa[] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
+  char *campos_log       [] = { "Data", "Usuário", "Evento", "" };
+  char *campos_PrensaProg[] = { "Número", "Nome", "Singelo", "Quantidade", "" };
+  char *campos_tarefa    [] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
 
   /* init threads */
   g_thread_init (NULL);
@@ -1266,6 +1270,8 @@ uint32_t IHM_Init(int argc, char *argv[])
   gtk_builder_add_from_file(builder, "IHM.glade", &ge);
   if(ge != NULL) {
     printf("Erro carregando objetos (%d): %s\n", ge->code, ge->message);
+  } else {
+    printf("Arquivo de interface carregado sem erros!\n");
   }
 
   wnd = GTK_WIDGET(gtk_builder_get_object(builder, "wndDesktop"));
@@ -1292,6 +1298,11 @@ uint32_t IHM_Init(int argc, char *argv[])
   TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")), campos_log,
       GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_log)/sizeof(campos_log[0]))-1,
           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+
+  // Configura TreeView da tela de Programas da Prensa
+  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwPrensaProg")), campos_PrensaProg,
+      GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_PrensaProg)/sizeof(campos_PrensaProg[0]))-1,
+          G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
 
   // Atualiza o label que indica a versao do programa
   char strversion[100];

@@ -53,7 +53,7 @@
     <property name="page_increment">10</property>
   </object>
   <object class="GtkAdjustment" id="adjConfigPerfVelMaxAuto">
-    <property name="upper">100</property>
+    <property name="upper">150</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -84,6 +84,18 @@
   </object>
   <object class="GtkAdjustment" id="adjMin">
     <property name="upper">59</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjPrensaProgAvanco">
+    <property name="upper">3200</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">10</property>
+  </object>
+  <object class="GtkAdjustment" id="adjPrensaProgRepeticoes">
+    <property name="lower">1</property>
+    <property name="upper">100</property>
+    <property name="value">1</property>
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
@@ -373,7 +385,6 @@
     <property name="can_focus">False</property>
     <property name="resizable">False</property>
     <property name="decorated">False</property>
-    <signal name="key-press-event" handler="cbKeyPressed" swapped="no"/>
     <child>
       <object class="GtkVBox" id="vbxWorkArea">
         <property name="visible">True</property>
@@ -1536,7 +1547,6 @@ Nível Inferior</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="use_action_appearance">False</property>
-                            <signal name="toggled" handler="cbAtualSaidas" swapped="no"/>
                             <child>
                               <object class="GtkVBox" id="vbox27">
                                 <property name="visible">True</property>
@@ -11147,7 +11157,6 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                         <property name="can_focus">True</property>
                                         <property name="receives_default">True</property>
                                         <property name="use_action_appearance">False</property>
-                                        <signal name="clicked" handler="cbLimparErro" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="expand">True</property>
@@ -11245,91 +11254,83 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
               </packing>
             </child>
             <child>
-              <object class="GtkVBox" id="vbox50">
+              <object class="GtkNotebook" id="notebook1">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="can_focus">True</property>
                 <child>
-                  <object class="GtkTable" id="table34">
+                  <object class="GtkVBox" id="vbox50">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="n_rows">3</property>
-                    <property name="n_columns">3</property>
                     <child>
-                      <object class="GtkButton" id="btnPrensaMez_MesaAbrir">
-                        <property name="label" translatable="yes">Mesa Subir</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="pressed" handler="cbProgPrensa_MesaSubir" swapped="no"/>
-                        <signal name="released" handler="cbProgPrensa_MesaParar" swapped="no"/>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="btnPrensaMez_AplanSubir">
-                        <property name="label" translatable="yes">Aplanadora Subir</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="pressed" handler="cbProgPrensa_AplanSubir" swapped="no"/>
-                        <signal name="released" handler="cbProgPrensa_AplanParar" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkComboBox" id="cmbPrensaProg">
+                      <object class="GtkTable" id="table34">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="model">lstPrensaProg</property>
+                        <property name="n_rows">2</property>
+                        <property name="n_columns">2</property>
                         <child>
-                          <object class="GtkCellRendererText" id="crtModNome1"/>
-                          <attributes>
-                            <attribute name="text">0</attribute>
-                          </attributes>
+                          <object class="GtkButton" id="btnPrensaMez_MesaAbrir">
+                            <property name="label" translatable="yes">Mesa Subir</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <signal name="pressed" handler="cbProgPrensa_MesaSubir" swapped="no"/>
+                            <signal name="released" handler="cbProgPrensa_MesaParar" swapped="no"/>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaMez_AplanSubir">
+                            <property name="label" translatable="yes">Aplanadora Subir</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <signal name="pressed" handler="cbProgPrensa_AplanSubir" swapped="no"/>
+                            <signal name="released" handler="cbProgPrensa_AplanParar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaMez_Descer">
+                            <property name="label" translatable="yes">Mesa Descer</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <signal name="pressed" handler="cbProgPrensa_MesaDescer" swapped="no"/>
+                            <signal name="released" handler="cbProgPrensa_MesaParar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaMez_AplanDescer">
+                            <property name="label" translatable="yes">Aplanadora Descer</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="image_position">bottom</property>
+                            <signal name="pressed" handler="cbProgPrensa_AplanDescer" swapped="no"/>
+                            <signal name="released" handler="cbProgPrensa_AplanParar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
                         </child>
                       </object>
                       <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="x_options">GTK_FILL</property>
-                        <property name="y_options">GTK_FILL</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="btnPrensaMez_Descer">
-                        <property name="label" translatable="yes">Mesa Descer</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="pressed" handler="cbProgPrensa_MesaDescer" swapped="no"/>
-                        <signal name="released" handler="cbProgPrensa_MesaParar" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
-                        <property name="right_attach">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkButton" id="btnPrensaMez_AplanDescer">
-                        <property name="label" translatable="yes">Aplanadora Descer</property>
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="image_position">bottom</property>
-                        <signal name="pressed" handler="cbProgPrensa_AplanDescer" swapped="no"/>
-                        <signal name="released" handler="cbProgPrensa_AplanParar" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">2</property>
-                        <property name="right_attach">3</property>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
                       </packing>
                     </child>
                     <child>
@@ -11342,54 +11343,234 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <signal name="toggled" handler="cbDesbob" swapped="no"/>
                       </object>
                       <packing>
-                        <property name="left_attach">2</property>
-                        <property name="right_attach">3</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="btnPrensaMez_Produzir">
-                        <property name="label" translatable="yes">Produzir</property>
+                      <object class="GtkHBox" id="hbox58">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="clicked" handler="cbProgPrensa_Produzir" swapped="no"/>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaF2">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="image_position">top</property>
+                            <signal name="clicked" handler="cbFunctionKey" swapped="no"/>
+                            <child>
+                              <object class="GtkVBox" id="vbox55">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="spacing">3</property>
+                                <child>
+                                  <object class="GtkImage" id="imgF1">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="pixbuf">images/ihm-config.png</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="label105">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Configurar</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaF4">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="image_position">top</property>
+                            <signal name="clicked" handler="cbProgPrensa_Produzir" swapped="no"/>
+                            <child>
+                              <object class="GtkVBox" id="vbox57">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <child>
+                                  <object class="GtkImage" id="imgF8">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="pixbuf">images/ihm-operar.png</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="label108">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Operar</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaF5">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="image_position">top</property>
+                            <signal name="clicked" handler="cbFunctionKey" swapped="no"/>
+                            <child>
+                              <object class="GtkVBox" id="vbox58">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <child>
+                                  <object class="GtkImage" id="imgF9">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="pixbuf">images/ihm-logs.png</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="label109">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Registros</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaF6">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="image_position">top</property>
+                            <signal name="clicked" handler="cbFunctionKey" swapped="no"/>
+                            <child>
+                              <object class="GtkVBox" id="vbox59">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <child>
+                                  <object class="GtkImage" id="imgF10">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="pixbuf">images/ihm-sair.png</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel" id="label110">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Sair</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
                       </packing>
                     </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
+                  </object>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label100">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Comandos Originais</property>
                   </object>
                   <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="btnPrensaMezSairF6">
-                    <property name="label" translatable="yes">Sair</property>
+                  <object class="GtkDrawingArea" id="dwaPrensa">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="use_action_appearance">False</property>
-                    <signal name="clicked" handler="cbFunctionKey" swapped="no"/>
+                    <property name="can_focus">False</property>
+                    <signal name="expose-event" handler="cbDesenharPrensa" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
                     <property name="position">1</property>
+                  </packing>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label103">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Desenho da Máquina</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
               </object>
@@ -11413,28 +11594,54 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
-                  <object class="GtkTable" id="tblProgParam">
+                  <object class="GtkHBox" id="hbox59">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="n_rows">3</property>
-                    <property name="n_columns">2</property>
                     <child>
-                      <placeholder/>
+                      <object class="GtkLabel" id="label107">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Programa:</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
                     </child>
                     <child>
-                      <placeholder/>
+                      <object class="GtkComboBox" id="cmbPrensaProg">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="model">lstPrensaProg</property>
+                        <signal name="changed" handler="cbProgramaSelecionado" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererText" id="crtModNome1"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                     <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
+                      <object class="GtkButton" id="btnPrensaProgAbrirLista">
+                        <property name="label" translatable="yes">Lista de Programas</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_action_appearance">False</property>
+                        <signal name="clicked" handler="cbPrensaProgAbrirListaProg" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
@@ -11444,37 +11651,478 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkHBox" id="hbox49">
+                  <object class="GtkNotebook" id="ntbPrensaProg">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="homogeneous">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="show_tabs">False</property>
                     <child>
-                      <object class="GtkButton" id="btnProgParamProduzir">
-                        <property name="label" translatable="yes">Iniciar Produção</property>
+                      <object class="GtkVBox" id="vbox54">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkTable" id="tblProgParam">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="n_rows">3</property>
+                            <property name="n_columns">2</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox49">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkButton" id="btnProgParamProduzir">
+                                <property name="label" translatable="yes">Iniciar Produção</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <signal name="clicked" handler="cbProgParamProduzir" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="btnProgParamCancelar">
+                                <property name="label">gtk-cancel</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="use_stock">True</property>
+                                <signal name="clicked" handler="cbProgParamCancelar" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="tab">
+                      <object class="GtkLabel" id="label101">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Parametros do Programa</property>
                       </object>
                       <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
+                        <property name="tab_fill">False</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="btnProgParamCancelar">
-                        <property name="label">gtk-cancel</property>
+                      <object class="GtkVBox" id="vbox56">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="use_stock">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkTable" id="table36">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="n_rows">7</property>
+                            <property name="n_columns">2</property>
+                            <child>
+                              <object class="GtkLabel" id="lblProgPadraoAvanco">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Avanço (mm)</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="lblProgPadraoPasso">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Passo (mm)</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="lblProgPadraoTamanho">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Tamanho da Peça (mm)</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="entProgPadraoAvanco">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="max_length">20</property>
+                                <property name="invisible_char">•</property>
+                                <property name="invisible_char_set">True</property>
+                                <property name="primary_icon_activatable">False</property>
+                                <property name="secondary_icon_activatable">False</property>
+                                <property name="primary_icon_sensitive">True</property>
+                                <property name="secondary_icon_sensitive">True</property>
+                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="entProgPadraoPasso">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="max_length">20</property>
+                                <property name="invisible_char">•</property>
+                                <property name="invisible_char_set">True</property>
+                                <property name="primary_icon_activatable">False</property>
+                                <property name="secondary_icon_activatable">False</property>
+                                <property name="primary_icon_sensitive">True</property>
+                                <property name="secondary_icon_sensitive">True</property>
+                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">1</property>
+                                <property name="bottom_attach">2</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="entProgPadraoTamanho">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="max_length">20</property>
+                                <property name="invisible_char">•</property>
+                                <property name="invisible_char_set">True</property>
+                                <property name="primary_icon_activatable">False</property>
+                                <property name="secondary_icon_activatable">False</property>
+                                <property name="primary_icon_sensitive">True</property>
+                                <property name="secondary_icon_sensitive">True</property>
+                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">2</property>
+                                <property name="bottom_attach">3</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="lblProgPadraoQtd">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Quantidade</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label102">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Usar Faca ?</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="entProgPadraoQtd">
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="max_length">20</property>
+                                <property name="invisible_char">•</property>
+                                <property name="invisible_char_set">True</property>
+                                <property name="primary_icon_activatable">False</property>
+                                <property name="secondary_icon_activatable">False</property>
+                                <property name="primary_icon_sensitive">True</property>
+                                <property name="secondary_icon_sensitive">True</property>
+                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">3</property>
+                                <property name="bottom_attach">4</property>
+                                <property name="y_options"></property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="hbox55">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkRadioButton" id="rbtProgPadraoComFaca">
+                                    <property name="label" translatable="yes">Sim</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="use_action_appearance">False</property>
+                                    <property name="active">True</property>
+                                    <property name="draw_indicator">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkRadioButton" id="rbtProgPadraoSemFaca">
+                                    <property name="label" translatable="yes">Não</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="use_action_appearance">False</property>
+                                    <property name="draw_indicator">True</property>
+                                    <property name="group">rbtProgPadraoComFaca</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label98">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Estampo com Gaveta ?</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">5</property>
+                                <property name="bottom_attach">6</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="hbox56">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkRadioButton" id="rbtProgPadraoComPrensa">
+                                    <property name="label" translatable="yes">Sim</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="use_action_appearance">False</property>
+                                    <property name="active">True</property>
+                                    <property name="draw_indicator">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkRadioButton" id="rbtProgPadraoSemPrensa">
+                                    <property name="label" translatable="yes">Não</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="use_action_appearance">False</property>
+                                    <property name="draw_indicator">True</property>
+                                    <property name="group">rbtProgPadraoComPrensa</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">5</property>
+                                <property name="bottom_attach">6</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="label99">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="label" translatable="yes">Modo da Prensa</property>
+                              </object>
+                              <packing>
+                                <property name="top_attach">6</property>
+                                <property name="bottom_attach">7</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkHBox" id="hbox57">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkRadioButton" id="rbtProgPadraoContinuo">
+                                    <property name="label" translatable="yes">Contínuo</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="use_action_appearance">False</property>
+                                    <property name="active">True</property>
+                                    <property name="draw_indicator">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkRadioButton" id="rbtProgPadraoSingelo">
+                                    <property name="label" translatable="yes">Singelo</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">False</property>
+                                    <property name="use_action_appearance">False</property>
+                                    <property name="draw_indicator">True</property>
+                                    <property name="group">rbtProgPadraoContinuo</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">6</property>
+                                <property name="bottom_attach">7</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox54">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkButton" id="btnProgPadraoContinuar">
+                                <property name="label" translatable="yes">Continuar Produção Anterior</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <signal name="clicked" handler="cbProgPadraoContinuar" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="btnProgPadraoCancelar">
+                                <property name="label">gtk-cancel</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="use_stock">True</property>
+                                <signal name="clicked" handler="cbProgPadraoCancelar" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkButton" id="btnProgPadraoIniciar">
+                                <property name="label" translatable="yes">Iniciar Nova Produção</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">True</property>
+                                <property name="use_action_appearance">False</property>
+                                <signal name="clicked" handler="cbProgPadraoIniciar" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
-                        <property name="expand">True</property>
-                        <property name="fill">True</property>
                         <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child type="tab">
+                      <object class="GtkLabel" id="label106">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Programa Padrão</property>
+                      </object>
+                      <packing>
+                        <property name="position">1</property>
+                        <property name="tab_fill">False</property>
                       </packing>
                     </child>
                   </object>
@@ -11949,327 +12597,18 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
               </packing>
             </child>
             <child>
-              <object class="GtkVBox" id="vbox54">
+              <object class="GtkNotebook" id="ntbPrensaProgCadastro">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <property name="show_tabs">False</property>
                 <child>
-                  <object class="GtkTable" id="table36">
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="n_rows">7</property>
-                    <property name="n_columns">2</property>
-                    <child>
-                      <object class="GtkLabel" id="lblProgPadraoAvanco">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Avanço (mm)</property>
-                      </object>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="lblProgPadraoPasso">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Passo (mm)</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="lblProgPadraoTamanho">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Tamanho da Peça (mm)</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="entProgPadraoAvanco">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="max_length">20</property>
-                        <property name="invisible_char">•</property>
-                        <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
-                        <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="entProgPadraoPasso">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="max_length">20</property>
-                        <property name="invisible_char">•</property>
-                        <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
-                        <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="entProgPadraoTamanho">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="max_length">20</property>
-                        <property name="invisible_char">•</property>
-                        <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
-                        <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="lblProgPadraoQtd">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Quantidade</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="label102">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Usar Faca ?</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="entProgPadraoQtd">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="max_length">20</property>
-                        <property name="invisible_char">•</property>
-                        <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
-                        <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox55">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="homogeneous">True</property>
-                        <child>
-                          <object class="GtkRadioButton" id="rbtProgPadraoComFaca">
-                            <property name="label" translatable="yes">Sim</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkRadioButton" id="rbtProgPadraoSemFaca">
-                            <property name="label" translatable="yes">Não</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                            <property name="group">rbtProgPadraoComFaca</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">4</property>
-                        <property name="bottom_attach">5</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="label98">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Estampo com Gaveta ?</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">5</property>
-                        <property name="bottom_attach">6</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox56">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="homogeneous">True</property>
-                        <child>
-                          <object class="GtkRadioButton" id="rbtProgPadraoComPrensa">
-                            <property name="label" translatable="yes">Sim</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkRadioButton" id="rbtProgPadraoSemPrensa">
-                            <property name="label" translatable="yes">Não</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                            <property name="group">rbtProgPadraoComPrensa</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">5</property>
-                        <property name="bottom_attach">6</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="label99">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Modo da Prensa</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">6</property>
-                        <property name="bottom_attach">7</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkHBox" id="hbox57">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="homogeneous">True</property>
-                        <child>
-                          <object class="GtkRadioButton" id="rbtProgPadraoContinuo">
-                            <property name="label" translatable="yes">Contínuo</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkRadioButton" id="rbtProgPadraoSingelo">
-                            <property name="label" translatable="yes">Singelo</property>
-                            <property name="visible">True</property>
-                            <property name="can_focus">True</property>
-                            <property name="receives_default">False</property>
-                            <property name="use_action_appearance">False</property>
-                            <property name="active">True</property>
-                            <property name="draw_indicator">True</property>
-                            <property name="group">rbtProgPadraoContinuo</property>
-                          </object>
-                          <packing>
-                            <property name="expand">True</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">6</property>
-                        <property name="bottom_attach">7</property>
-                      </packing>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">0</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkHBox" id="hbox54">
+                  <object class="GtkVBox" id="vbox60">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <child>
-                      <object class="GtkButton" id="btnProgPadraoContinuar">
-                        <property name="label" translatable="yes">Continuar Produção Anterior</property>
+                      <object class="GtkTreeView" id="tvwPrensaProg">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="clicked" handler="cbProgPadraoContinuar" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -12278,14 +12617,724 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="btnProgPadraoCancelar">
-                        <property name="label">gtk-cancel</property>
+                      <object class="GtkHBox" id="hbox60">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <property name="use_stock">True</property>
-                        <signal name="clicked" handler="cbProgPadraoCancelar" swapped="no"/>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgNovo">
+                            <property name="label">gtk-new</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbNovoPrograma" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgEditar">
+                            <property name="label">gtk-edit</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbEditarPrograma" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgExcluir">
+                            <property name="label">gtk-delete</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbExcluirPrograma" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgVoltar">
+                            <property name="label">gtk-go-back</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgVoltar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label104abc">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Lista de Programas</property>
+                  </object>
+                  <packing>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkVBox" id="vbox61">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkTable" id="table37">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="n_rows">4</property>
+                        <property name="n_columns">2</property>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgNome">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Nome do Programa</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label117">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Modo de Operação</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label118">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Pedir Quantidade?</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgQtd">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Quantidade</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="entPrensaProgNome">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">•</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox63">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgModoContinuo">
+                                <property name="label" translatable="yes">Contínuo</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgModoSingelo">
+                                <property name="label" translatable="yes">Singelo</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">rbtPrensaProgModoContinuo</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox64">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgPedirQtdSim">
+                                <property name="label" translatable="yes">Sim</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgPedirQtdNao">
+                                <property name="label" translatable="yes">Não</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">rbtPrensaProgPedirQtdSim</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="entPrensaProgQtd">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">•</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hbox61">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgSalvar">
+                            <property name="label">gtk-save</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgSalvar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgPassos">
+                            <property name="label" translatable="yes">Passos</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <signal name="clicked" handler="cbPrensaProgAbrirPassos" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgCancelar">
+                            <property name="label">gtk-cancel</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgCancelar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label115">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Dados do Programa</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkVBox" id="vbox62">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkHBox" id="hbox66">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkLabel" id="label130">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Passo Atual:</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgPassoNum">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">-</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgPassoAnt">
+                            <property name="label">gtk-media-rewind</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgPassosAnt" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgPassoProx">
+                            <property name="label">gtk-media-forward</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgPassosProx" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">3</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkTable" id="table38">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="n_rows">7</property>
+                        <property name="n_columns">2</property>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgAvanco">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Avanço (mm)</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgRepeticoes">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Repetições</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label147">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Portas</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label149">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Pedir Avanço ?</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgTextoAvanco">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Texto do Avanço</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">4</property>
+                            <property name="bottom_attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="label151">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Pedir Repetições ?</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">5</property>
+                            <property name="bottom_attach">6</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="lblPrensaProgTextoRep">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="label" translatable="yes">Texto das Repetições</property>
+                          </object>
+                          <packing>
+                            <property name="top_attach">6</property>
+                            <property name="bottom_attach">7</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="entPrensaProgTextoRep">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">•</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">6</property>
+                            <property name="bottom_attach">7</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkEntry" id="entPrensaProgTextoAvanco">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">•</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">4</property>
+                            <property name="bottom_attach">5</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox67">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="homogeneous">True</property>
+                            <child>
+                              <object class="GtkCheckButton" id="ckbPrensaProgPorta1">
+                                <property name="label" translatable="yes">Prensa</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkCheckButton" id="ckbPrensaProgPorta2">
+                                <property name="label" translatable="yes">Guilhotina</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkCheckButton" id="ckbPrensaProgPorta3">
+                                <property name="label" translatable="yes">Extra</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">2</property>
+                            <property name="bottom_attach">3</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox68">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgPedirAvancoSim">
+                                <property name="label" translatable="yes">Sim</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgPedirAvancoNao">
+                                <property name="label" translatable="yes">Não</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">rbtPrensaProgPedirAvancoSim</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">3</property>
+                            <property name="bottom_attach">4</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="hbox69">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgPedirRepSim">
+                                <property name="label" translatable="yes">Sim</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkRadioButton" id="rbtPrensaProgPedirRepNao">
+                                <property name="label" translatable="yes">Não</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="use_action_appearance">False</property>
+                                <property name="draw_indicator">True</property>
+                                <property name="group">rbtPrensaProgPedirRepSim</property>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">5</property>
+                            <property name="bottom_attach">6</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="spbPrensaProgRepeticoes">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">•</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <property name="adjustment">adjPrensaProgRepeticoes</property>
+                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                            <property name="top_attach">1</property>
+                            <property name="bottom_attach">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkSpinButton" id="spbPrensaProgAvanco">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="invisible_char">•</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                            <property name="adjustment">adjPrensaProgAvanco</property>
+                            <property name="digits">1</property>
+                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="right_attach">2</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -12294,13 +13343,57 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkButton" id="btnProgPadraoIniciar">
-                        <property name="label" translatable="yes">Iniciar Nova Produção</property>
+                      <object class="GtkHBox" id="hbox65">
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="use_action_appearance">False</property>
-                        <signal name="clicked" handler="cbProgPadraoIniciar" swapped="no"/>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgPassoAdicionar">
+                            <property name="label">gtk-add</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgPassosAdicionar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgPassoRemover">
+                            <property name="label">gtk-remove</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgPassosRemover" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="btnPrensaProgPassoVoltar">
+                            <property name="label">gtk-go-back</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="use_action_appearance">False</property>
+                            <property name="use_stock">True</property>
+                            <signal name="clicked" handler="cbPrensaProgPassosVoltar" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">2</property>
+                          </packing>
+                        </child>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -12310,9 +13403,18 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                     </child>
                   </object>
                   <packing>
-                    <property name="expand">True</property>
-                    <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+                <child type="tab">
+                  <object class="GtkLabel" id="label157">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Passos do Programa</property>
+                  </object>
+                  <packing>
+                    <property name="position">2</property>
+                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
               </object>
@@ -12321,10 +13423,10 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="lblAbaProgPadrao">
+              <object class="GtkLabel" id="lblAbaPrensaProgramar">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Programa Padrao</property>
+                <property name="label" translatable="yes">Prensa - Programar</property>
               </object>
               <packing>
                 <property name="position">24</property>
@@ -12406,7 +13508,7 @@ Ao clicar em OK o programa será finalizado!</property>
             <property name="can_focus">False</property>
             <property name="homogeneous">True</property>
             <child>
-              <object class="GtkLabel" id="label105">
+              <object class="GtkLabel" id="label105abc">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
               </object>
@@ -12433,7 +13535,7 @@ Ao clicar em OK o programa será finalizado!</property>
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="label106">
+              <object class="GtkLabel" id="label106abc">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
               </object>

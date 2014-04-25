@@ -14,6 +14,9 @@ int ProgPrensa_Init(void); // Inicializacao da Prensa de Mezanino
 void Banho_Erro(int erro); // Tratamento de erro do banho
 void ColN_Erro (int erro); // Tratamento de erro da Coluna N
 
+// Funcoes de atualizacao das maquinas
+void PrensaMezanino_Update(void); // Atualizacao da tela da Prensa de Mezanino
+
 // Funcoes de mudanca de modo das maquinas: manual <=> auto
 void Diagonal_Auto(int ativo); // Diagonal/Travessa
 
@@ -442,6 +445,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
         .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
@@ -463,6 +467,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = NULL,
         .fncOnError       = ColN_Erro,
         .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListColunaN,
         .Alertas          = (3UL << 8), // Erro de Posicionamento e Corte
     },
@@ -484,6 +489,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = Diagonal_Init,
         .fncOnError       = NULL,
         .fncOnAuto        = Diagonal_Auto,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = (1UL << 9), // Erro de Posicionamento
     },
@@ -505,6 +511,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
         .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
@@ -526,6 +533,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
         .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
@@ -547,6 +555,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
         .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
@@ -568,6 +577,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnInit        = Banho_Init,
         .fncOnError       = Banho_Erro,
         .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListBanho,
         .Alertas          = 0,
     },
@@ -581,8 +591,8 @@ MaqConfig MaqConfigDefault = {
     .Name             = "Maquina de Teste",
     .Line             = "TESTE",
     .Machine          = "TESTE",
-//    .ClpAddr          = "192.168.0.102",
-    .ClpAddr          = "192.168.2.243",
+    .ClpAddr          = "192.168.0.102",
+//    .ClpAddr          = "192.168.2.243",
     .AbaHome          = NTB_ABA_HOME_PRENSA,
     .AbaManut         = NTB_ABA_MANUT,
     .AbaConfigMais    = 0,
@@ -595,6 +605,7 @@ MaqConfig MaqConfigDefault = {
     .fncOnInit        = ProgPrensa_Init,
     .fncOnError       = NULL,
     .fncOnAuto        = NULL,
+    .fncTimerUpdate   = PrensaMezanino_Update,
     .ErrorList        = ErrorListDefault,
     .Alertas          = (1UL << 9), // Erro de Posicionamento
 };
