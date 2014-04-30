@@ -1,2 +1,2 @@
-#define BUILD_NUMBER 288
-#define BUILD_DATE "Sex Abr 25 11:10:04 BRT 2014"
+#define BUILD_NUMBER 378
+#define BUILD_DATE "Qua Abr 30 14:04:12 BRT 2014"

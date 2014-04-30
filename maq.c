@@ -11,8 +11,9 @@ int Diagonal_Init  (void); // Inicializacao da Diagonal/Travessa
 int ProgPrensa_Init(void); // Inicializacao da Prensa de Mezanino
 
 // Funcoes de tratamento de erro das maquinas
-void Banho_Erro(int erro); // Tratamento de erro do banho
-void ColN_Erro (int erro); // Tratamento de erro da Coluna N
+void Banho_Erro (int erro); // Tratamento de erro do banho
+void ColN_Erro  (int erro); // Tratamento de erro da Coluna N
+void Prensa_Erro(int erro); // Tratamento de erro da Prensa
 
 // Funcoes de atualizacao das maquinas
 void PrensaMezanino_Update(void); // Atualizacao da tela da Prensa de Mezanino
@@ -32,6 +33,7 @@ char *ErrorListDefault[] = {
     "Erro no Corte do Perfil",
     "Erro no Tamanho da Peca",
     "Erro no Posicionamento",
+    "Maquina Desativada",
 //      "Baixa pressao de ar",
     ""
 };
@@ -108,6 +110,48 @@ MaqIOMap MaqDefaultIOMap = {
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+// Mapas de I/O da Aplanadora da Prensa de Mezanino
+MaqIOMap MaqIOMapPrensaMez = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Erro no Servo"                   , "images/ihm-ent-inversor-erro.png"   },
+      { "Aplanadora Fechada"              , "images/ihm-ent-.png" },
+      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png" },
+      { "Avança Chapa"                    , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recua Chapa"                     , "images/ihm-ent-perfil-recuar.png"   },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Alim. Prensa OK"                 , "images/ihm-ent-.png" },
+      { "Ferram. Liberada"                , "images/ihm-ent-.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Abrir Aplanadora"                , "images/ihm-ent-.png" },
+      { "Fechar Aplanadora"               , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Mesa Sobe"       , "images/ihm-manut-.png" },
+      { "Mesa Desce"      , "images/ihm-manut-.png" },
+      { "Apĺan. Abre"     , "images/ihm-manut-.png" },
+      { "Aplan. Fecha"    , "images/ihm-manut-.png" },
+      { "Aplan. Desce"    , "images/ihm-manut-.png" },
+      { "Aplan. Sobe"     , "images/ihm-manut-.png" },
+      { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Porta Prensa"    , "images/ihm-manut-.png" },
+      { "Porta Faca"      , "images/ihm-manut-.png" },
+      { "Porta Pistao"    , "images/ihm-manut-.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Ligar Prensa"    , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
   },
 };
@@ -441,6 +485,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = TRUE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapTubo,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -463,6 +508,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = TRUE,
         .MaqModeCV        = TRUE,
         .InverterComandos = TRUE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapColunaN,
         .fncOnInit        = NULL,
         .fncOnError       = ColN_Erro,
@@ -485,6 +531,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = TRUE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapDiagonal,
         .fncOnInit        = Diagonal_Init,
         .fncOnError       = NULL,
@@ -507,6 +554,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapColunaMezanino,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -529,6 +577,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapVigaMezanino,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -551,6 +600,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapSigma,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -573,6 +623,7 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
+        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqBanhoIOMap,
         .fncOnInit        = Banho_Init,
         .fncOnError       = Banho_Erro,
@@ -580,6 +631,29 @@ MaqConfig MaqConfigList[] = {
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListBanho,
         .Alertas          = 0,
+    },
+    { // Aplanadora da Prensa de Mezanino
+        .ID               = "IhmAplanMez",
+        .Name             = "Aplanadora da Prensa de Mezanino",
+        .Line             = "MZAPLAN",
+        .Machine          = "MZAPLAN",
+        .ClpAddr          = "192.168.2.243",
+        .AbaHome          = NTB_ABA_HOME_PRENSA,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaConfigMais    = 0,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = FALSE,
+        .MaqMultFatorEnc  = 10000,
+        .IOMap            = &MaqIOMapPrensaMez,
+        .fncOnInit        = ProgPrensa_Init,
+        .fncOnError       = Prensa_Erro,
+        .fncOnAuto        = NULL,
+        .fncTimerUpdate   = PrensaMezanino_Update,
+        .ErrorList        = ErrorListDefault,
+        .Alertas          = 0x200, // Erro de Posicionamento
     },
     { // Final
         .ID = NULL
@@ -601,13 +675,14 @@ MaqConfig MaqConfigDefault = {
     .NeedMaqInit      = FALSE,
     .MaqModeCV        = FALSE,
     .InverterComandos = FALSE,
-    .IOMap            = &MaqDefaultIOMap,
+    .MaqMultFatorEnc  = 10000,
+    .IOMap            = &MaqIOMapPrensaMez,
     .fncOnInit        = ProgPrensa_Init,
-    .fncOnError       = NULL,
+    .fncOnError       = Prensa_Erro,
     .fncOnAuto        = NULL,
     .fncTimerUpdate   = PrensaMezanino_Update,
     .ErrorList        = ErrorListDefault,
-    .Alertas          = (1UL << 9), // Erro de Posicionamento
+    .Alertas          = 0x200, // Erro de Posicionamento
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -833,7 +908,7 @@ int MaqSync(unsigned int mask)
     printf("maq_param.perfil.manual_vel................: %d\n" , maq_param.perfil.manual_vel);
     printf("maq_param.perfil.manual_acel...............: %f\n" , maq_param.perfil.manual_acel);
     printf("maq_param.perfil.manual_desacel............: %f\n" , maq_param.perfil.manual_desacel);
-/*
+
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_VEL    ,                maq_param.perfil.auto_vel           );
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_ACEL   , (unsigned int)(maq_param.perfil.auto_acel     *100));
     MaqGravarRegistrador(MAQ_REG_PERF_AUTO_DESACEL, (unsigned int)(maq_param.perfil.auto_desacel  *100));
@@ -842,7 +917,7 @@ int MaqSync(unsigned int mask)
     MaqGravarRegistrador(MAQ_REG_PERF_MAN_DESACEL , (unsigned int)(maq_param.perfil.manual_desacel*100));
     MaqGravarRegistrador(MAQ_REG_PERF_FATOR_LOW   , (rel_motor_perfil    ) & 0XFFFF);
     MaqGravarRegistrador(MAQ_REG_PERF_FATOR_HIGH  , (rel_motor_perfil>>16) & 0XFFFF);
-*/
+
     SyncFlags |= MAQ_MODO_PERF_SYNC;
   }
 
@@ -850,17 +925,17 @@ int MaqSync(unsigned int mask)
     printf("maq_param.encoder.fator....................: %f\n", maq_param.encoder.fator);
     printf("maq_param.encoder.perimetro................: %d\n", maq_param.encoder.perimetro);
     printf("maq_param.encoder.precisao.................: %d\n", maq_param.encoder.precisao);
-/*
-    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator*1000));
+
+    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator * MaqConfigCurrent->MaqMultFatorEnc));
     MaqGravarRegistrador(MAQ_REG_ENC_RESOL,                maq_param.encoder.precisao   );
     MaqGravarRegistrador(MAQ_REG_ENC_PERIM,                maq_param.encoder.perimetro  );
-*/
+
   }
 
   if(mask & MAQ_SYNC_CORTE) {
     printf("maq_param.corte.tam_faca...................: %d\n", maq_param.corte.tam_faca);
 
-//    MaqGravarRegistrador(MAQ_REG_CRT_FACA, maq_param.corte.tam_faca);
+    MaqGravarRegistrador(MAQ_REG_CRT_FACA, maq_param.corte.tam_faca);
   }
 
   if(mask & MAQ_SYNC_CUSTOM) {

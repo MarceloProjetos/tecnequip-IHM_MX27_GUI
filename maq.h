@@ -38,6 +38,8 @@ typedef struct {
   int            MaqModeCV;
   int            InverterComandos;
 
+  int            MaqMultFatorEnc;
+
   MaqIOMap      *IOMap;
 
   char         **ErrorList;
