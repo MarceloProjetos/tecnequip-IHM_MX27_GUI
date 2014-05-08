@@ -184,10 +184,14 @@ void ProgPrensa_Enviar(tProgData ProgData)
 
 void CarregaComboProgramas(void)
 {
+  char sql[300];
   GtkWidget *obj = GTK_WIDGET(gtk_builder_get_object(builder, "cmbPrensaProg"));
 
 // Carregamento dos programas cadastrados no MySQL no ComboBox.
-  DB_Execute(&mainDB, 0, "select Nome from ProgPrensa order by ID");
+  sprintf(sql, "select Nome from ProgPrensa where LINHA='%s' and MAQUINA='%s' order by ID",
+      MAQ_LINHA, MAQ_MAQUINA);
+
+  DB_Execute(&mainDB, 0, sql);
   CarregaCombo(&mainDB, GTK_COMBO_BOX(obj),0, NULL);
 }
 
@@ -199,45 +203,6 @@ int ProgPrensa_Init(void)
 }
 
 // Logica da tela principal: Callback de botoes e demais funcoes
-
-void cbProgPrensa_MesaSubir(GtkButton *button, gpointer user_data)
-{
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_MESA_SUBIR);
-}
-
-void cbProgPrensa_MesaDescer(GtkButton *button, gpointer user_data)
-{
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_MESA_DESCER);
-}
-
-void cbProgPrensa_MesaParar(GtkButton *button, gpointer user_data)
-{
-  MaqConfigFlags(MaqLerFlags() & (~(FLAG_CMD_MESA_DESCER | FLAG_CMD_MESA_SUBIR)));
-}
-
-void cbProgPrensa_AplanSubir(GtkButton *button, gpointer user_data)
-{
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_APLAN_SUBIR);
-}
-
-void cbProgPrensa_AplanDescer(GtkButton *button, gpointer user_data)
-{
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_APLAN_DESCER);
-}
-
-void cbProgPrensa_AplanParar(GtkButton *button, gpointer user_data)
-{
-  MaqConfigFlags(MaqLerFlags() & (~(FLAG_CMD_APLAN_DESCER | FLAG_CMD_APLAN_SUBIR)));
-}
-
 void cbProgPrensa_Parar(GtkButton *button, gpointer user_data)
 {
   atividade++;
@@ -463,7 +428,7 @@ void cbProgParamProduzir(GtkButton *button, gpointer user_data)
     tObjList   *item      = ProgParam->lista_avanco;
 
     while(item != NULL) {
-      val = atoi(gtk_entry_get_text(GTK_ENTRY(item->obj))) * 100;
+      val = atoi(gtk_entry_get_text(GTK_ENTRY(item->obj))) * 10;
       if(val > 0) {
         sprintf(sql,"update ProgPrensaPassos set ProgPrensaAvanco=%d where ID=%d", val, item->id);
         DB_Execute(&mainDB, 0, sql);
@@ -672,8 +637,7 @@ void AbrirProgParam(void)
     return; // Sem item ativo.
   }
 
-  sprintf(sql, "select ID, NumCiclos, PedirNumCiclos from ProgPrensa where LINHA='%s' and MAQUINA='%s' and nome='%s'",
-      MAQ_LINHA, MAQ_MAQUINA, LerComboAtivo(combo));
+  sprintf(sql, "select ID, NumCiclos, PedirNumCiclos from ProgPrensa where nome='%s'", LerComboAtivo(combo));
   DB_Execute(&mainDB, 0, sql);
   DB_GetNextRow(&mainDB, 0);
 
@@ -763,7 +727,7 @@ void AbrirProgParam(void)
 
         gtk_table_attach_defaults(GTK_TABLE(tbl), obj, 0, 1, i, i+1);
 
-        sprintf(tmp, "%d", atoi(DB_GetData(&mainDB, idx, 2)) / (idx == 0 ? 100 : 1));
+        sprintf(tmp, "%d", atoi(DB_GetData(&mainDB, idx, 2)) / (idx == 0 ? 10 : 1));
 
         obj = gtk_entry_new_with_max_length(10); // Tamanho de um int
         gtk_entry_set_text(GTK_ENTRY(obj), tmp);
@@ -903,8 +867,8 @@ struct strCoordIHM {
         { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
         { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
         { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-tampa-fechar.png" },
+        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
         { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
         { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
         { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
@@ -916,8 +880,8 @@ struct strCoordIHM {
         { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
         { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
         { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-tampa-fechar.png" },
+        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
         { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
         { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
         { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
@@ -930,8 +894,8 @@ struct strCoordIHM {
         { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
         { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
         { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-tampa-fechar.png" },
+        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
         { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
         { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
         { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
@@ -944,8 +908,8 @@ struct strCoordIHM {
         { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
         { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
         { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-tampa-fechar.png" },
+        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
         { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
         { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
         { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
@@ -953,16 +917,18 @@ struct strCoordIHM {
         { 0, 0, 0, 0, NULL, NULL } },
 };
 
+#define DEBUG_CARREGAR_TELA
+
 void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM *lst_img, struct strCoordIHM *lst_coord)
 {
-//  char arq[50];
-//  static unsigned int n = 0;
+  char arq[50];
+  static unsigned int n = 0;
 
 #ifdef DEBUG_CARREGAR_TELA
   tela->offset = 0;
   tela->coord  = lst_coord;
 
-  sprintf(arq, "images/maq.%d.png", n++);
+  sprintf(arq, "maq.%d.png", n++);
   tela->pb = gdk_pixbuf_new_from_file(arq, NULL);
 #else
   GdkPixbuf *pb;
@@ -997,7 +963,7 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
   }
 
   // Recorta pixbuf para o tamanho da tela e copia para um novo
-//  pb = gdk_pixbuf_new_subpixbuf(tela->pb, tela->offset, tela->offset, lst_img[0].posx, lst_img[0].posy);
+  pb = gdk_pixbuf_new_subpixbuf(tela->pb, tela->offset, tela->offset, lst_img[0].posx, lst_img[0].posy);
 //  copy_pb = gdk_pixbuf_copy(pb);
 
   // Remove referências dos pixbufs antigos e aponta a tela para o novo
@@ -1005,8 +971,8 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
 //  g_object_unref(tela->pb);
 //  tela->pb = copy_pb;
 
-//  sprintf(arq, "maq.%d.png", n++);
-//  gdk_pixbuf_save(pb, arq, "png", NULL, NULL);
+  sprintf(arq, "maq.%d.png", n++);
+  gdk_pixbuf_save(pb, arq, "png", NULL, NULL);
 //  tela->pb = pb;
 #endif
 }
@@ -1049,7 +1015,7 @@ gboolean cbPrensaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer 
 
     MaqGravarRegistrador(REG_PROG_FLAGS, MaqLerRegistrador(REG_PROG_FLAGS, 0) &
         (~(FLAG_CMD_APLAN_ABRIR  | FLAG_CMD_APLAN_FECHAR)));
-}
+  }
 
   return TRUE;
 }
@@ -1155,8 +1121,10 @@ void PrensaMezanino_Update(void)
   current_flags = (MaqLerEstado() >> 13) & 0x3;
   if(last_flags != current_flags) {
     last_flags = current_flags;
-    printf("current_flags = %d\n", current_flags);
     cbDesenharPrensa(NULL, NULL, (gpointer)(&current_flags));
+
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "btnExecDesbob")),
+        (current_flags & FLAG_CMD_DESBOB_LIGAR) ? TRUE : FALSE);
   }
 }
 
@@ -1353,7 +1321,7 @@ void CarregaListaProgramas(GtkWidget *tvw)
 {
   int i;
   const int tam = 4;
-  char *valores[tam+1];
+  char *valores[tam+1], sql[500];
 
   valores[tam] = NULL;
 
@@ -1361,8 +1329,9 @@ void CarregaListaProgramas(GtkWidget *tvw)
   TV_Limpar(tvw);
 
   // Carrega os Programas
-  DB_Execute(&mainDB, 0,
-      "select ID, Nome, case ModoSingelo when 0 then 'Nao' else 'Sim' end as Singelo, NumCiclos from ProgPrensa where ID!=1 order by Nome");
+  sprintf(sql, "select ID, Nome, case ModoSingelo when 0 then 'Nao' else 'Sim' end as Singelo, NumCiclos from ProgPrensa "
+      "where ID!=1 and LINHA='%s' and MAQUINA='%s' order by Nome", MAQ_LINHA, MAQ_MAQUINA);
+  DB_Execute(&mainDB, 0, sql);
 
   while(DB_GetNextRow(&mainDB, 0)>0) {
     valores[0] = DB_GetData(&mainDB, 0, 0);

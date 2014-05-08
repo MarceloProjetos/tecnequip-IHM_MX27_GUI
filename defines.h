@@ -38,7 +38,7 @@ typedef uint16_t u16;
 //#define DEBUG_PC_NOETH
 
 // Ativar a linha abaixo para rodar em modo de teste
-#define DEBUG_MODO_TESTE
+//#define DEBUG_MODO_TESTE
 
 // Ativar a linha abaixo para desativar a integracao das IHMs com o SQL Server
 #define DISABLE_SQL_SERVER
