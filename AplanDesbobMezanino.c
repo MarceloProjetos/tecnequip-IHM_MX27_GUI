@@ -30,6 +30,8 @@ static const int FLAG_PROG_LER_ESTADO     = 0x0040;
 static const int FLAG_PROG_LER_DADOS      = 0x0080;
 static const int FLAG_PROG_FINALIZAR      = 0x0100;
 
+static const int FLAG_DESBOB_LIGADO       = 0x4000;
+
 static const int REG_PROG_INDICE     = 23;
 static const int REG_PROG_AVANCO     = 24;
 static const int REG_PROG_PORTAS     = 25;
@@ -1118,13 +1120,15 @@ void PrensaMezanino_Update(void)
   static int last_flags = -1;
 
   // Leitura das flags de estado da máquina para atualização da imagem na tela principal
-  current_flags = (MaqLerEstado() >> 13) & 0x3;
+  current_flags = MaqLerEstado();
+
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "btnExecDesbob")),
+      (current_flags & FLAG_DESBOB_LIGADO) ? TRUE : FALSE);
+
+  current_flags = (current_flags >> 13) & 0x3;
   if(last_flags != current_flags) {
     last_flags = current_flags;
     cbDesenharPrensa(NULL, NULL, (gpointer)(&current_flags));
-
-    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "btnExecDesbob")),
-        (current_flags & FLAG_CMD_DESBOB_LIGAR) ? TRUE : FALSE);
   }
 }
 

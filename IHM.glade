@@ -13053,7 +13053,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="homogeneous">True</property>
                             <child>
                               <object class="GtkCheckButton" id="ckbPrensaProgPorta1">
-                                <property name="label" translatable="yes">Prensa</property>
+                                <property name="label" translatable="yes">Estampo</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">False</property>
