@@ -69,6 +69,21 @@ char *ErrorListColunaN[] = {
     ""
 };
 
+char *ErrorListPPLeve[] = {
+    "Erro na comunicacao",
+    "Emergencia Acionada",
+    "Falta de fase",
+    "Erro na unidade hidraulica",
+    "Termistor do motor aberto",
+    "Erro no inversor",
+    "Erro no desbobinador",
+    "Erro de comunicacao - Inversor",
+    "Erro no Corte do Perfil",
+    "Erro inexistente - RESERVADO",
+    "Maquina Desativada",
+    ""
+};
+
 // Mapas de I/O das Maquinas
 MaqIOMap MaqDefaultIOMap = {
   .InputMask  = 0,
@@ -469,8 +484,76 @@ MaqIOMap MaqBanhoIOMap = {
   },
 };
 
+// Mapa de I/O da Viga de Mezanino
+MaqIOMap MaqIOMapPPLeve = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
+      { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png" },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Térmico - Motor"                 , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+      { "Reservado"                       , "images/ihm-ent-.png"              },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
+      { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
+      { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+  },
+};
+
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
+    { // Porta-Palete Leve
+        .ID               = "IhmPPLeve",
+        .Name             = "Porta-Palete Leve",
+        .Line             = "PPLEV",
+        .Machine          = "PPLEV",
+        .ClpAddr          = "192.168.2.251",
+        .AbaHome          = NTB_ABA_HOME,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaConfigMais    = 0,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = FALSE,
+        .MaqMultFatorEnc  = 1000,
+        .IOMap            = &MaqIOMapPPLeve,
+        .fncOnInit        = NULL,
+        .fncOnError       = NULL,
+        .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
+        .ErrorList        = ErrorListPPLeve,
+        .Alertas          = 0,
+    },
     { // Aplanadora da Prensa de Mezanino
         .ID               = "IhmAplanMez",
         .Name             = "Aplanadora da Prensa de Mezanino",
@@ -665,9 +748,9 @@ MaqConfig MaqConfigDefault = {
     .Name             = "Maquina de Teste",
     .Line             = "TESTE",
     .Machine          = "TESTE",
-    .ClpAddr          = "192.168.0.99",
+    .ClpAddr          = "192.168.1.100",
 //    .ClpAddr          = "192.168.2.243",
-    .AbaHome          = NTB_ABA_HOME_PRENSA,
+    .AbaHome          = NTB_ABA_HOME,
     .AbaManut         = NTB_ABA_MANUT,
     .AbaConfigMais    = 0,
     .UseLogin         = TRUE,
@@ -675,14 +758,14 @@ MaqConfig MaqConfigDefault = {
     .NeedMaqInit      = FALSE,
     .MaqModeCV        = FALSE,
     .InverterComandos = FALSE,
-    .MaqMultFatorEnc  = 10000,
-    .IOMap            = &MaqIOMapPrensaMez,
-    .fncOnInit        = ProgPrensa_Init,
-    .fncOnError       = Prensa_Erro,
+    .MaqMultFatorEnc  = 1000,
+    .IOMap            = &MaqIOMapPPLeve,
+    .fncOnInit        = NULL,
+    .fncOnError       = NULL,
     .fncOnAuto        = NULL,
-    .fncTimerUpdate   = PrensaMezanino_Update,
-    .ErrorList        = ErrorListDefault,
-    .Alertas          = 0x200, // Erro de Posicionamento
+    .fncTimerUpdate   = NULL,
+    .ErrorList        = ErrorListPPLeve,
+    .Alertas          = 0,
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;

@@ -6,7 +6,7 @@
 extern GtkBuilder *builder;
 
 // Estrutura que representa o ModBus
-extern struct MB_Device mbdev;
+//extern struct MB_Device mbdev;
 
 // Funcao para retornar para a tela anterior
 extern void WorkAreaGoPrevious(void);

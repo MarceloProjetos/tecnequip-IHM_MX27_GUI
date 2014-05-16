@@ -772,8 +772,6 @@ void cbProgramaSelecionado(GtkComboBox *combobox, gpointer user_data)
 
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
-void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, gdouble scale_y, gint refpos);
-
 struct strImgIHM {
   char *arq;
   int posx, posy;
@@ -920,6 +918,10 @@ struct strCoordIHM {
 };
 
 #define DEBUG_CARREGAR_TELA
+
+#ifndef DEBUG_CARREGAR_TELA
+void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, gdouble scale_y, gint refpos);
+#endif
 
 void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM *lst_img, struct strCoordIHM *lst_coord)
 {
