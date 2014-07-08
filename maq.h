@@ -38,8 +38,6 @@ typedef struct {
   int            MaqModeCV;
   int            InverterComandos;
 
-  int            MaqMultFatorEnc;
-
   MaqIOMap      *IOMap;
 
   char         **ErrorList;
@@ -222,6 +220,9 @@ uint32_t MaqLerSaidas  (void);
 
 uint16_t MaqLerRegistrador   (uint16_t reg, uint16_t default_value);
 void     MaqGravarRegistrador(uint16_t reg, uint16_t val);
+
+void     MaqSetDateTime      (struct tm *t);
+void     MaqGetIpAddress     (char *iface, char *ipaddr);
 
 void                      MaqConfigModo   (uint16_t  modo);
 void                      MaqConfigFlags  (uint16_t flags);

@@ -216,7 +216,7 @@ void LerDadosConfig()
   valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[idx++], tmp);
 
-  sprintf(tmp, "%f", mp.encoder.fator);
+  sprintf(tmp, "%.4f", mp.encoder.fator);
   valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[idx++], tmp);
 
@@ -1390,6 +1390,9 @@ void cbAplicarDataHora(GtkButton *button, gpointer user_data)
   sprintf(tmp, "date %02d%02d%02d%02d%04d.00", m+1, d, hora, min, y);
   system(tmp);
 
+  // Atualiza a hora da POP-7
+  MaqSetDateTime(NULL);
+
   WorkAreaGoPrevious();
 }
 
@@ -1422,6 +1425,7 @@ void cbMudarSenha(GtkButton *button, gpointer user_data)
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual"   )), "");
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaNova"    )), "");
   gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaConfirma")), "");
+  gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaLembrete")), "");
 
   // Carrega campo exibindo o usuario sendo alterado
   sprintf(user, "Alterando senha para o usuário %s",
@@ -1434,7 +1438,6 @@ void cbMudarSenha(GtkButton *button, gpointer user_data)
 // Funcao executada quando for aplicada a alteracao de senha
 void cbSenhaAlterar(GtkButton *button, gpointer user_data)
 {
-#ifndef DISABLE_SQL_SERVER
   int i;
   struct strDB *sDB;
   char senha[100], sql[100];
@@ -1454,24 +1457,45 @@ void cbSenhaAlterar(GtkButton *button, gpointer user_data)
     }
   }
 
-  if(i>0 && (sDB = MSSQL_Connect()) != NULL) {
-    sprintf(sql, "select SENHA from OPERADOR where USUARIO='%s'", user+i);
-    MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
-    DB_GetNextRow(sDB, 0);
-    if(!strcmp(Crypto((char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual")))), MSSQL_GetData(0, 0))) {
-      sprintf(sql, "update OPERADOR set SENHA='%s', LEMBRETE='%s' where USUARIO='%s'", Crypto(senha), lembrete, user+i);
+  if(i>0) {
+#ifndef DISABLE_SQL_SERVER
+    sDB = MSSQL_Connect();
+#else
+    sDB = &mainDB;
+#endif
+
+    if(sDB != NULL) {
+      char *oldpwd;
+      sprintf(sql, "select SENHA from OPERADOR where USUARIO='%s'", user+i);
+
+#ifndef DISABLE_SQL_SERVER
       MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
-      MessageBox("Senha alterada com sucesso!");
-      sprintf(sql, "Alterada senha do usuario %s", user+i);
-      Log(sql, LOG_TIPO_SISTEMA);
-      WorkAreaGoPrevious();
-    } else {
-      MessageBox("Senha atual inválida!");
+      DB_GetNextRow(sDB, 0);
+      oldpwd = MSSQL_GetData(0, 0);
+#else
+      DB_Execute(sDB, 0, sql);
+      DB_GetNextRow(sDB, 0);
+      oldpwd = DB_GetData(sDB, 0, 0);
+#endif
+
+      if(!strcmp(Crypto((char *)gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entSenhaAtual")))), oldpwd)) {
+        sprintf(sql, "update OPERADOR set SENHA='%s', LEMBRETE='%s' where USUARIO='%s'", Crypto(senha), lembrete, user+i);
+
+#ifndef DISABLE_SQL_SERVER
+        MSSQL_Execute(0, sql, MSSQL_DONT_SYNC);
+#else
+        DB_Execute(sDB, 0, sql);
+#endif
+
+        MessageBox("Senha alterada com sucesso!");
+        sprintf(sql, "Alterada senha do usuario %s", user+i);
+        Log(sql, LOG_TIPO_SISTEMA);
+        WorkAreaGoPrevious();
+      } else {
+        MessageBox("Senha atual inválida!");
+      }
     }
   }
-#else
-  MessageBox("Troca de senha DESATIVADA");
-#endif
 }
 
 // Funcao executada quando for cancelada a alteracao de senha
@@ -1501,7 +1525,7 @@ void cbCalcFatorConfirma(GtkButton *button, gpointer user_data)
   float FatorAnterior = atof(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator"       ))));;
 
   if(TamCorreto && TamMedido && FatorAnterior) {
-    NovoFator = (int)(((float)(TamCorreto*10000)*FatorAnterior) / TamMedido);
+    NovoFator = (int)(((float)(TamCorreto*100000)*FatorAnterior) / TamMedido);
 
     // Arredonda e depois remove a casa adicional
     if((NovoFator%10)>5) {
@@ -1509,7 +1533,7 @@ void cbCalcFatorConfirma(GtkButton *button, gpointer user_data)
     }
     NovoFator /= 10;
 
-    sprintf(StringFator, "%.03f", (float)(NovoFator)/1000);
+    sprintf(StringFator, "%.04f", (float)(NovoFator)/10000);
     gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator")), StringFator);
   } else {
     MessageBox("Parâmetros inválidos!\nAs medidas e o fator atual devem ser diferentes de zero!");

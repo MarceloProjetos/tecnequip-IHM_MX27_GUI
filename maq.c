@@ -79,7 +79,7 @@ char *ErrorListPPLeve[] = {
     "Erro no desbobinador",
     "Erro de comunicacao - Inversor",
     "Erro no Corte do Perfil",
-    "Erro inexistente - RESERVADO",
+    "Erro de Posicionamento",
     "Maquina Desativada",
     ""
 };
@@ -545,7 +545,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapPPLeve,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -568,7 +567,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
-        .MaqMultFatorEnc  = 10000,
         .IOMap            = &MaqIOMapPrensaMez,
         .fncOnInit        = ProgPrensa_Init,
         .fncOnError       = Prensa_Erro,
@@ -591,7 +589,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = TRUE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapTubo,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -614,7 +611,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = TRUE,
         .MaqModeCV        = TRUE,
         .InverterComandos = TRUE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapColunaN,
         .fncOnInit        = NULL,
         .fncOnError       = ColN_Erro,
@@ -637,7 +633,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = TRUE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapDiagonal,
         .fncOnInit        = Diagonal_Init,
         .fncOnError       = NULL,
@@ -660,7 +655,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapVigaMezanino,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -683,7 +677,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapColunaMezanino,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -706,7 +699,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqIOMapSigma,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
@@ -729,7 +721,6 @@ MaqConfig MaqConfigList[] = {
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
-        .MaqMultFatorEnc  = 1000,
         .IOMap            = &MaqBanhoIOMap,
         .fncOnInit        = Banho_Init,
         .fncOnError       = Banho_Erro,
@@ -748,8 +739,8 @@ MaqConfig MaqConfigDefault = {
     .Name             = "Maquina de Teste",
     .Line             = "TESTE",
     .Machine          = "TESTE",
-    .ClpAddr          = "192.168.1.100",
-//    .ClpAddr          = "192.168.2.243",
+//    .ClpAddr          = "192.168.1.254",
+    .ClpAddr          = "192.168.1.102",
     .AbaHome          = NTB_ABA_HOME,
     .AbaManut         = NTB_ABA_MANUT,
     .AbaConfigMais    = 0,
@@ -758,7 +749,6 @@ MaqConfig MaqConfigDefault = {
     .NeedMaqInit      = FALSE,
     .MaqModeCV        = FALSE,
     .InverterComandos = FALSE,
-    .MaqMultFatorEnc  = 1000,
     .IOMap            = &MaqIOMapPPLeve,
     .fncOnInit        = NULL,
     .fncOnError       = NULL,
@@ -1009,7 +999,7 @@ int MaqSync(unsigned int mask)
     printf("maq_param.encoder.perimetro................: %d\n", maq_param.encoder.perimetro);
     printf("maq_param.encoder.precisao.................: %d\n", maq_param.encoder.precisao);
 
-    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator * MaqConfigCurrent->MaqMultFatorEnc));
+    MaqGravarRegistrador(MAQ_REG_ENC_FATOR, (unsigned int)(maq_param.encoder.fator * 10000UL));
     MaqGravarRegistrador(MAQ_REG_ENC_RESOL,                maq_param.encoder.precisao   );
     MaqGravarRegistrador(MAQ_REG_ENC_PERIM,                maq_param.encoder.perimetro  );
 
@@ -1586,4 +1576,75 @@ void MaqConfigCustom(struct strMaqParamCustom custom)
 struct strMaqParamCustom MaqLerCustom(void)
 {
   return maq_param.custom;
+}
+
+void MaqSetDateTime(struct tm *t)
+{
+  time_t rawtime;
+  char cWriteBuffer[16];
+
+  if(t == NULL) {
+    time ( &rawtime );
+    t = localtime ( &rawtime );
+  }
+
+  t->tm_year += 1900;
+  t->tm_mon++;
+  t->tm_sec = t->tm_sec > 59 ? 59 : t->tm_sec;
+
+  memset(cWriteBuffer, 0, sizeof(cWriteBuffer));
+
+  memcpy(&cWriteBuffer[0], &t->tm_mday, 1);
+  memcpy(&cWriteBuffer[1], &t->tm_mon , 1);
+  memcpy(&cWriteBuffer[2], &t->tm_year, 2);
+  memcpy(&cWriteBuffer[4], &t->tm_hour, 1);
+  memcpy(&cWriteBuffer[5], &t->tm_min , 1);
+  memcpy(&cWriteBuffer[6], &t->tm_sec , 1);
+  memcpy(&cWriteBuffer[7], &t->tm_wday, 1);
+  memcpy(&cWriteBuffer[8], &t->tm_yday, 2);
+
+  // Registradores de data/hora da POP-7: 32 a 36
+  MaqGravarRegistrador(32, *((uint16_t *)&cWriteBuffer[0]));
+  MaqGravarRegistrador(33, *((uint16_t *)&cWriteBuffer[2]));
+  MaqGravarRegistrador(34, *((uint16_t *)&cWriteBuffer[4]));
+  MaqGravarRegistrador(35, *((uint16_t *)&cWriteBuffer[6]));
+  MaqGravarRegistrador(36, *((uint16_t *)&cWriteBuffer[8]));
+}
+
+void MaqGetIpAddress(char *iface, char *ipaddr)
+{
+  struct ifaddrs *ifaddr, *ifa;
+  int s;
+  char host[NI_MAXHOST];
+
+  // Se interface ou buffer para o endereco ip for nulo, retorna...
+  if(iface == NULL) return;
+
+  // Inicializa com string vazia para o caso de nada ser encontrado.
+  if(ipaddr != NULL) {
+    ipaddr[0] = 0;
+  }
+
+  if (getifaddrs(&ifaddr) != -1) {
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr == NULL) continue;
+
+        s = getnameinfo(ifa->ifa_addr,sizeof(struct sockaddr_in), host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
+
+        if(!strcmp(ifa->ifa_name, iface) && (ifa->ifa_addr->sa_family == AF_INET)) {
+            if (s == 0 && ipaddr != NULL) {
+              strcpy(ipaddr, host);
+            }
+
+            printf("Endereco IP IHM: <%s>\n", host);
+            if(MaqConfigCurrent != NULL) {
+              printf("Endereco IP CLP: <%s>\n", MaqConfigCurrent->ClpAddr);
+            }
+
+            break;
+        }
+    }
+  }
+
+  freeifaddrs(ifaddr);
 }

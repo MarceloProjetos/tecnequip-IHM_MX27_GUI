@@ -1419,6 +1419,12 @@ uint32_t IHM_Init(int argc, char *argv[])
     WorkAreaGoTo(MaqConfigCurrent->AbaHome);
   }
 
+  MaqSetDateTime(NULL);
+
+  char host[NI_MAXHOST];
+  MaqGetIpAddress("eth0", host);
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblIpAddress")), host);
+
   if(MaqInit()) {
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
