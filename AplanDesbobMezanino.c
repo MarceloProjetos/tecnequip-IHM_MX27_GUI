@@ -48,8 +48,6 @@ static const int NTB_CADPROG_LISTA    = 0;
 static const int NTB_CADPROG_PROGRAMA = 1;
 static const int NTB_CADPROG_PASSOS   = 2;
 
-#define MAQ_ERRO_DESATIVADA 0x400
-
 // Definicoes para cadastro de programas
 
 typedef struct {
@@ -269,13 +267,6 @@ void cbExecProgRepetAnterior(GtkButton *button, gpointer user_data)
 {
   uint16_t flags = MaqLerRegistrador(REG_PROG_FLAGS, 0);
   MaqGravarRegistrador(REG_PROG_FLAGS, flags | FLAG_PROG_REPET_ANTERIOR);
-}
-
-void Prensa_Erro(int erro)
-{
-  if(erro == MAQ_ERRO_DESATIVADA) {
-    MaqLiberar(1);
-  }
 }
 
 /*** Logica para montar a janela de parametros do programa ***/

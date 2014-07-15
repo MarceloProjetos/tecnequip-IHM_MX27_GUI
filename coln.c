@@ -8,9 +8,6 @@
 #include "defines.h"
 #include "GtkUtils.h"
 
-// Flags de erro da maquina
-#define MAQ_ERRO_DESATIVADA 0x0400
-
 // Flags de operacoes da maquina
 #define MAQ_MODO_CALC_FATOR 0x0800
 #define MAQ_MODO_CALC_REL   0x1000
@@ -99,13 +96,6 @@ void cbColN_MudarAbaConfig(GtkButton *button, gpointer user_data)
   unsigned int aba  = atoi(&nome[strlen(nome)-1]);
 
   gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbColN")), aba);
-}
-
-void ColN_Erro(int erro)
-{
-  if(erro == MAQ_ERRO_DESATIVADA) {
-    MaqLiberar(1);
-  }
 }
 
 gboolean tmrAguardaFimOperacao(gpointer data)

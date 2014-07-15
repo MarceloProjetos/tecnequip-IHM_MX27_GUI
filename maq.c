@@ -12,14 +12,19 @@ int ProgPrensa_Init(void); // Inicializacao da Prensa de Mezanino
 
 // Funcoes de tratamento de erro das maquinas
 void Banho_Erro (int erro); // Tratamento de erro do banho
-void ColN_Erro  (int erro); // Tratamento de erro da Coluna N
-void Prensa_Erro(int erro); // Tratamento de erro da Prensa
 
 // Funcoes de atualizacao das maquinas
 void PrensaMezanino_Update(void); // Atualizacao da tela da Prensa de Mezanino
 
 // Funcoes de mudanca de modo das maquinas: manual <=> auto
 void Diagonal_Auto(int ativo); // Diagonal/Travessa
+
+void MaqErro(int erro)
+{
+  if(erro == MAQ_ERRO_DESATIVADA) {
+    MaqLiberar(1);
+  }
+}
 
 // Listas de Erro das Maquinas
 char *ErrorListDefault[] = {
@@ -531,6 +536,29 @@ MaqIOMap MaqIOMapPPLeve = {
 
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
+    { // Porta-Palete Pesado
+        .ID               = "IhmPPPesado",
+        .Name             = "Porta-Palete Pesado",
+        .Line             = "PPPES",
+        .Machine          = "PPPES",
+        .ClpAddr          = "192.168.1.109",
+//        .ClpAddr          = "192.168.2.253",
+        .AbaHome          = NTB_ABA_HOME,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaConfigMais    = 0,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = FALSE,
+        .IOMap            = &MaqIOMapPPLeve,
+        .fncOnInit        = NULL,
+        .fncOnError       = MaqErro,
+        .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
+        .ErrorList        = ErrorListPPLeve,
+        .Alertas          = 0x100, // Erro de Corte
+    },
     { // Porta-Palete Leve
         .ID               = "IhmPPLeve",
         .Name             = "Porta-Palete Leve",
@@ -547,7 +575,7 @@ MaqConfig MaqConfigList[] = {
         .InverterComandos = FALSE,
         .IOMap            = &MaqIOMapPPLeve,
         .fncOnInit        = NULL,
-        .fncOnError       = NULL,
+        .fncOnError       = MaqErro,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListPPLeve,
@@ -569,7 +597,7 @@ MaqConfig MaqConfigList[] = {
         .InverterComandos = FALSE,
         .IOMap            = &MaqIOMapPrensaMez,
         .fncOnInit        = ProgPrensa_Init,
-        .fncOnError       = Prensa_Erro,
+        .fncOnError       = MaqErro,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = PrensaMezanino_Update,
         .ErrorList        = ErrorListDefault,
@@ -613,7 +641,7 @@ MaqConfig MaqConfigList[] = {
         .InverterComandos = TRUE,
         .IOMap            = &MaqIOMapColunaN,
         .fncOnInit        = NULL,
-        .fncOnError       = ColN_Erro,
+        .fncOnError       = MaqErro,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListColunaN,

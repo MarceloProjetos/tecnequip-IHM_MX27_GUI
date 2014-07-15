@@ -101,6 +101,9 @@ typedef uint16_t u16;
 // Tempo máximo de inatividade permitido
 #define MAQ_IDLE_TIMEOUT 30
 
+// Definicao de mascara de erro para Maquina Desativada
+#define MAQ_ERRO_DESATIVADA 0x0400
+
 // Definição de estado das tarefas
 #define TRF_ESTADO_NOVA     0
 #define TRF_ESTADO_PARCIAL  1

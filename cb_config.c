@@ -1524,8 +1524,12 @@ void cbCalcFatorConfirma(GtkButton *button, gpointer user_data)
   int   TamCorreto    = atoi(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entCalcFatorTamCorreto"))));
   float FatorAnterior = atof(gtk_entry_get_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator"       ))));;
 
-  if(TamCorreto && TamMedido && FatorAnterior) {
-    NovoFator = (int)(((float)(TamCorreto*100000)*FatorAnterior) / TamMedido);
+  if(FatorAnterior <= 0.0f) {
+    FatorAnterior = 1.0f;
+  }
+
+  if(TamCorreto && TamMedido) {
+    NovoFator = (int)(((float)(TamMedido*100000)*FatorAnterior) / TamCorreto);
 
     // Arredonda e depois remove a casa adicional
     if((NovoFator%10)>5) {
@@ -1536,7 +1540,7 @@ void cbCalcFatorConfirma(GtkButton *button, gpointer user_data)
     sprintf(StringFator, "%.04f", (float)(NovoFator)/10000);
     gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entEncoderFator")), StringFator);
   } else {
-    MessageBox("Parâmetros inválidos!\nAs medidas e o fator atual devem ser diferentes de zero!");
+    MessageBox("Parâmetros inválidos!\nAs medidas devem ser diferentes de zero!");
   }
 
   WorkAreaGoPrevious();
