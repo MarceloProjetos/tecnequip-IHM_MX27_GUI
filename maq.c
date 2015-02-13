@@ -1,6 +1,8 @@
 #include "defines.h"
 #include "maq.h"
 
+void Log(char *evento, int tipo);
+
 #ifndef DEBUG_PC_NOETH
 extern void IPC_Update(void);
 #endif
@@ -512,7 +514,6 @@ MaqIOMap MaqIOMapPPLeve = {
         { "Sensor de Furo\nAuxiliar"        , "images/ihm-ent-.png"                },
         { "Reservado"                       , "images/ihm-ent-.png"                },
         { "Reservado"                       , "images/ihm-ent-.png"                },
-        { "Reservado"                       , "images/ihm-ent-.png"                },
     },
 
     .Output  = {
@@ -580,15 +581,81 @@ MaqIOMap MaqIOMapPPPesado = {
   },
 };
 
+// Mapa de I/O do Porta-Palete Normal
+MaqIOMap MaqIOMapPPNormal = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png"                },
+      { "Erro no inversor 2"              , "images/ihm-ent-inversor-erro.png"   },
+      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
+      { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
+      { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+      { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
+      { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
+      { "Placa Fusível"                   , "images/ihm-ent-.png"                },
+      { "Reservado"                       , "images/ihm-ent-.png"                },
+      { "Sensor de Furo\nPrincipal"       , "images/ihm-ent-.png"                },
+      { "Sensor de Furo\nAuxiliar"        , "images/ihm-ent-.png"                },
+      { "Reservado"                       , "images/ihm-ent-.png"                },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
+      { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
+      { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Velocidade Alta" , "images/ihm-manut-.png"               },
+      { "Velocidade Baixa", "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
+  },
+};
+
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
+    { // Porta-Palete Normal
+        .ID               = "IhmPP",
+        .Name             = "Porta-Palete",
+        .Line             = "PPNRM",
+        .Machine          = "PPNRM",
+        .ClpAddr          = "192.168.2.233",
+        .AbaHome          = NTB_ABA_HOME,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaConfigMais    = 0,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = FALSE,
+        .IOMap            = &MaqIOMapPPNormal,
+        .fncOnInit        = NULL,
+        .fncOnError       = MaqErro,
+        .fncOnAuto        = NULL,
+        .fncTimerUpdate   = NULL,
+        .ErrorList        = ErrorListPPLeve,
+        .Alertas          = 0x100, // Erro de Corte
+    },
     { // Porta-Palete Pesado
         .ID               = "IhmPPPesado",
         .Name             = "Porta-Palete Pesado",
         .Line             = "PPPES",
         .Machine          = "PPPES",
-        .ClpAddr          = "192.168.1.109",
-//        .ClpAddr          = "192.168.2.253",
+        .ClpAddr          = "192.168.2.253",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
         .AbaConfigMais    = 0,
@@ -1198,6 +1265,8 @@ int ParamDB_Load(struct strParamDB *ParamDB)
           ValFloat = atof(val);
 
           ValInt   = atoi(DB_GetData(&mainDB, 3, 0));
+        } else {
+          ret = 0;
         }
       }
     } else {
@@ -1281,61 +1350,40 @@ int MaqGravarConfig(void)
     }
   }
 
-  return ret && ParamDB_Save(ParamDB, mask);
+  if(ret) {
+    ret = ParamDB_Save(ParamDB, mask);
+  }
+
+  if(!ret) {
+    Log("Erro ao gravar parametros", LOG_TIPO_CONFIG);
+  }
+
+  return ret;
 }
 
-// Funcao que le a estrutura de configuracao do disco / BD
+// Funcao que le a estrutura de configuracao do BD
 int MaqLerConfig(void)
 {
   int i;
-  struct strMaqParam maq_tmp;
-  long fd = open(MAQ_ARQ_CONFIG, O_RDONLY), ret=0;
-  unsigned long val;
+  long ret = 1;
 
-  if(fd<0) { // Se arquivo nao existe, parametros devem estar no SQL SERVER
-    ret = 1;
-
-    for(i=0; CustomParamDB[i].ParamDB != NULL; i++) {
-      if(CustomParamDB[i].AbaConfigMais == MaqConfigCurrent->AbaConfigMais) {
-        ret = ParamDB_Load(CustomParamDB[i].ParamDB);
-        break;
-      }
+  for(i=0; CustomParamDB[i].ParamDB != NULL; i++) {
+    if(CustomParamDB[i].AbaConfigMais == MaqConfigCurrent->AbaConfigMais) {
+      ret = ParamDB_Load(CustomParamDB[i].ParamDB);
+      break;
     }
+  }
 
-    ret = ret && ParamDB_Load(ParamDB);
+  ret = ret && ParamDB_Load(ParamDB);
 
-    // Grava o resultado da funcao que sincroniza os dados em ret.
-    // Assim a funcao retorna OK se os dados foram efetivamente gravados.
-    if(ret) {
-      ret = MaqSync(MAQ_SYNC_TODOS);
-    }
-  } else {
-    read(fd, &val, sizeof(val));
-    if(val == MAQ_CFG_MAGIC)
-      {
-      read(fd, &maq_tmp, 48);
+  // Grava o resultado da funcao que sincroniza os dados em ret.
+  // Assim a funcao retorna OK se os dados foram efetivamente gravados.
+  if(ret) {
+    ret = MaqSync(MAQ_SYNC_TODOS);
+  }
 
-      read(fd, &val, sizeof(val));
-      if(val == CalcCheckSum((void *)(&maq_tmp), 48))
-        {
-        memcpy(&maq_param, &maq_tmp, 48);
-
-// Grava o resultado da funcao que sincroniza os dados em ret.
-// Assim a funcao retorna OK se os dados foram efetivamente gravados.
-        ret = MaqSync(MAQ_SYNC_TODOS);
-        }
-      }
-
-    close(fd);
-
-    if(ret) {
-      // Parametros lidos corretamente do arquivo.
-      // Gravamos no banco para passar a utilizar os parametros de la.
-      // Se gravou corretamente, apagamos o arquivo.
-      if(MaqGravarConfig()) {
-        unlink(MAQ_ARQ_CONFIG);
-      }
-    }
+  if(!ret) {
+    Log("Erro ao ler parametros", LOG_TIPO_CONFIG);
   }
 
   return ret;

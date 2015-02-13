@@ -279,6 +279,7 @@ gboolean tmrScheduler(gpointer data)
   time_t t = time(NULL);
   GDate *date = g_date_new();
   unsigned int modo_auto, state;
+  static   int checkedZeroHour = FALSE;
   unsigned int start = BANHO_START, stop = BANHO_STOP; // Horario p/ ligar/desligar equipamento
 
   // Carrega data atual
@@ -292,12 +293,21 @@ gboolean tmrScheduler(gpointer data)
   if(state == SCHED_ANTECIPATED)
     start--;
 
-  // Identifica inicio de um novo mes
-  if(now->tm_hour == 0 && now->tm_mday == 1 && GTK_IS_CALENDAR(data)) {
-    gtk_calendar_select_month(GTK_CALENDAR(data),
-        g_date_get_month(date)-1, g_date_get_year(date));
-    g_date_subtract_months(date, 1);
-    scheduler_invalidate_month(date);
+  if(!checkedZeroHour && now->tm_hour == 0) {
+    checkedZeroHour = TRUE;
+
+    // Atualiza a hora da POP-7
+    MaqSetDateTime(NULL);
+
+    // Identifica inicio de um novo mes
+    if(now->tm_mday == 1 && GTK_IS_CALENDAR(data)) {
+      gtk_calendar_select_month(GTK_CALENDAR(data),
+          g_date_get_month(date)-1, g_date_get_year(date));
+      g_date_subtract_months(date, 1);
+      scheduler_invalidate_month(date);
+    }
+  } else if(now->tm_hour != 0) {
+    checkedZeroHour = FALSE;
   }
 
   // Checa agendamento
