@@ -14,5 +14,6 @@ echo $1 > /etc/hostname
 
 hostname $1
 
-touch hostname_changed
+# Isso era necessario para salvar os parametros atuais no servidor, quando usavamos um arquivo de configuracao
+#touch hostname_changed
 

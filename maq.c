@@ -881,22 +881,22 @@ MaqConfig MaqConfigDefault = {
     .Line             = "TESTE",
     .Machine          = "TESTE",
 //    .ClpAddr          = "192.168.1.254",
-    .ClpAddr          = "192.168.1.102",
+    .ClpAddr          = "192.168.0.102",
     .AbaHome          = NTB_ABA_HOME,
     .AbaManut         = NTB_ABA_MANUT,
-    .AbaConfigMais    = 0,
+    .AbaConfigMais    = NTB_ABA_CONFIG_DIAGONAL,
     .UseLogin         = TRUE,
     .UseIndet         = TRUE,
     .NeedMaqInit      = FALSE,
     .MaqModeCV        = FALSE,
-    .InverterComandos = FALSE,
-    .IOMap            = &MaqIOMapPPLeve,
-    .fncOnInit        = NULL,
+    .InverterComandos = TRUE,
+    .IOMap            = &MaqIOMapDiagonal,
+    .fncOnInit        = Diagonal_Init,
     .fncOnError       = NULL,
-    .fncOnAuto        = NULL,
+    .fncOnAuto        = Diagonal_Auto,
     .fncTimerUpdate   = NULL,
-    .ErrorList        = ErrorListPPLeve,
-    .Alertas          = 0,
+    .ErrorList        = ErrorListDefault,
+    .Alertas          = (1UL << 9), // Erro de Posicionamento
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -1156,8 +1156,15 @@ int MaqSync(unsigned int mask)
     switch(MaqConfigCurrent->AbaConfigMais) {
     case NTB_ABA_CONFIG_DIAGONAL:
       printf("maq_param.custom.diagonal.dist_prensa_corte: %d\n", maq_param.custom.diagonal.dist_prensa_corte);
+      printf("maq_param.custom.diagonal.qtd_furos_interm.: %d\n", maq_param.custom.diagonal.qtd_furos_interm);
 
       MaqGravarRegistrador(MAQ_REG_DIAG_DISTANCIA, maq_param.custom.diagonal.dist_prensa_corte);
+
+      // Para configurar este parametro, devemos carregar o valor no registrador de quantidade e ativar a flag
+      // no registrador de flags pois todos os registradores ja estao ocupados
+      MaqGravarRegistrador(MAQ_REG_PROD_QTD, maq_param.custom.diagonal.qtd_furos_interm + 1);
+      SyncFlags |= MAQ_LOAD_QTD_FUROS;
+
       break;
 
     case NTB_ABA_CONFIG_COLN:
@@ -1211,6 +1218,7 @@ struct strParamDB {
 
 struct strParamDB ParamDB_Diagonal[] = {
     { "Diagonal", "DistPrensaCorte", &maq_param.custom.diagonal.dist_prensa_corte, NULL        },
+    { "Diagonal", "QtdFurosInterm" , &maq_param.custom.diagonal.qtd_furos_interm , NULL        },
     { NULL      , NULL             , NULL                                        , NULL        },
 };
 
@@ -1374,12 +1382,14 @@ int MaqLerConfig(void)
     }
   }
 
-  ret = ret && ParamDB_Load(ParamDB);
+  if(ParamDB_Load(ParamDB) == 0) {
+    ret = 0;
+  }
 
   // Grava o resultado da funcao que sincroniza os dados em ret.
   // Assim a funcao retorna OK se os dados foram efetivamente gravados.
-  if(ret) {
-    ret = MaqSync(MAQ_SYNC_TODOS);
+  if(MaqSync(MAQ_SYNC_TODOS) == 0) {
+    ret = 0;
   }
 
   if(!ret) {

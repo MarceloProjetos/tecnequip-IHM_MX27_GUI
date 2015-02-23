@@ -123,6 +123,7 @@ char *lista_ent[] = {
     "spbConfigPerfReducao",
     "spbConfigPerfDiamRolo",
     "entConfigDiagonalDistancia",
+    "spbConfigDiagonalQtdFuros",
     "spbConfigColNPerfVelMaxAutoDinam",
     "entConfigColNMesaCurso",
     "spbConfigColNMesaVelMaxAuto",
@@ -135,7 +136,7 @@ char *lista_ent[] = {
 int GravarDadosConfig()
 {
   MaqConfig *m;
-  unsigned int i;
+  unsigned int i, idx = 0;
   char **valor_ent, cmdline[1000];
   struct strMaqParam mp;
   valor_ent = (char **)(malloc((sizeof(lista_ent)/sizeof(lista_ent[0]))*sizeof(char *)));
@@ -145,36 +146,38 @@ int GravarDadosConfig()
   for(i=0; lista_ent[i][0]; i++)
     printf("%d: %s = %s\n" , i, lista_ent[i], valor_ent[i] );
 
-  mp.perfil.auto_vel       = atol(valor_ent[ 3]);
-  mp.perfil.auto_acel      = atof(valor_ent[ 4]);
-  mp.perfil.auto_desacel   = atof(valor_ent[ 5]);
-  mp.perfil.manual_vel     = atol(valor_ent[ 6]);
-  mp.perfil.manual_acel    = atof(valor_ent[ 7]);
-  mp.perfil.manual_desacel = atof(valor_ent[ 8]);
-  mp.perfil.fator          = atof(valor_ent[10]);
-  mp.perfil.diam_rolo      = atol(valor_ent[11]);
-  MaqConfigPerfil(mp.perfil);
+  mp.encoder.perimetro     = atof(valor_ent[idx++]);
+  mp.encoder.fator         = atof(valor_ent[idx++]);
+  mp.encoder.precisao      = atol(valor_ent[idx++]);
 
-  mp.encoder.fator     = atof(valor_ent[1]);
-  mp.encoder.precisao  = atol(valor_ent[2]);
-  mp.encoder.perimetro = atof(valor_ent[0]);
-  MaqConfigEncoder(mp.encoder);
+  mp.perfil.auto_vel       = atol(valor_ent[idx++]);
+  mp.perfil.auto_acel      = atof(valor_ent[idx++]);
+  mp.perfil.auto_desacel   = atof(valor_ent[idx++]);
+  mp.perfil.manual_vel     = atol(valor_ent[idx++]);
+  mp.perfil.manual_acel    = atof(valor_ent[idx++]);
+  mp.perfil.manual_desacel = atof(valor_ent[idx++]);
 
-  mp.corte.tam_faca    = atol(valor_ent[9]);
-  MaqConfigCorte(mp.corte);
+  mp.corte.tam_faca        = atol(valor_ent[idx++]);
+
+  mp.perfil.fator          = atof(valor_ent[idx++]);
+  mp.perfil.diam_rolo      = atol(valor_ent[idx++]);
 
   // Parametros personalizados da Diagonal / Travessa
-  mp.custom.diagonal.dist_prensa_corte = atol(valor_ent[12]);
+  mp.custom.diagonal.dist_prensa_corte = atol(valor_ent[idx++]);
+  mp.custom.diagonal.qtd_furos_interm  = atol(valor_ent[idx++]);
 
   // Parametros personalizados da Coluna N
-  mp.custom.coln.dinam_vel  = atol(valor_ent[13]);
-  mp.custom.coln.curso      = atol(valor_ent[14]);
-  mp.custom.coln.auto_vel   = atol(valor_ent[15]);
-  mp.custom.coln.manual_vel = atol(valor_ent[16]);
-  mp.custom.coln.offset     = atof(valor_ent[17]);
-  mp.custom.coln.tam_min    = atol(valor_ent[18]);
+  mp.custom.coln.dinam_vel  = atol(valor_ent[idx++]);
+  mp.custom.coln.curso      = atol(valor_ent[idx++]);
+  mp.custom.coln.auto_vel   = atol(valor_ent[idx++]);
+  mp.custom.coln.manual_vel = atol(valor_ent[idx++]);
+  mp.custom.coln.offset     = atof(valor_ent[idx++]);
+  mp.custom.coln.tam_min    = atol(valor_ent[idx++]);
 
-  MaqConfigCustom(mp.custom);
+  MaqConfigPerfil (mp.perfil );
+  MaqConfigEncoder(mp.encoder);
+  MaqConfigCorte  (mp.corte  );
+  MaqConfigCustom (mp.custom );
 
   GravaDadosBanco();
 
@@ -261,6 +264,10 @@ void LerDadosConfig()
   strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.custom.diagonal.dist_prensa_corte);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.diagonal.qtd_furos_interm);
   valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[idx++], tmp);
 

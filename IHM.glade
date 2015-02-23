@@ -22,6 +22,11 @@
     <property name="step_increment">1</property>
     <property name="page_increment">10</property>
   </object>
+  <object class="GtkAdjustment" id="adjConfigDiagonalQtdFuros">
+    <property name="upper">10</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">5</property>
+  </object>
   <object class="GtkAdjustment" id="adjConfigPerfAcelAuto">
     <property name="upper">99.989999999999995</property>
     <property name="step_increment">0.10000000000000001</property>
@@ -3472,6 +3477,7 @@ Nível Inferior</property>
                               <object class="GtkHBox" id="hbox32">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
+                                <property name="homogeneous">True</property>
                                 <child>
                                   <object class="GtkLabel" id="lblConfigDiagonalDistancia">
                                     <property name="visible">True</property>
@@ -3509,6 +3515,52 @@ Nível Inferior</property>
                               </packing>
                             </child>
                             <child>
+                              <object class="GtkHBox" id="hbox70">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel" id="lblConfigDiagonalQtdFuros">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Quantidade de Furações Intermediárias</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkSpinButton" id="spbConfigDiagonalQtdFuros">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="invisible_char">●</property>
+                                    <property name="invisible_char_set">True</property>
+                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="secondary_icon_activatable">False</property>
+                                    <property name="primary_icon_sensitive">True</property>
+                                    <property name="secondary_icon_sensitive">True</property>
+                                    <property name="adjustment">adjConfigDiagonalQtdFuros</property>
+                                    <property name="climb_rate">1</property>
+                                    <property name="snap_to_ticks">True</property>
+                                    <property name="numeric">True</property>
+                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                            <child>
                               <object class="GtkButton" id="btnConfigDiagonalVoltar">
                                 <property name="label" translatable="yes">Retornar às Configurações</property>
                                 <property name="visible">True</property>
@@ -3520,7 +3572,7 @@ Nível Inferior</property>
                               <packing>
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
-                                <property name="position">1</property>
+                                <property name="position">2</property>
                               </packing>
                             </child>
                           </object>

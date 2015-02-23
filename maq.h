@@ -98,6 +98,9 @@ int         MaqConfig_GetActive (void);
 #define MAQ_MODO_MESA_AVANCA 0x0200
 #define MAQ_MODO_MESA_RECUA  0x0400
 
+// Flag para carregamento de furacao intermediaria (Exclusiva para Diagonal/Travessa)
+#define MAQ_LOAD_QTD_FUROS   0x2000
+
 // Flags de operacoes manuais
 #define OPER_PERF_PARAR  0
 #define OPER_PERF_AVANCA 1
@@ -190,6 +193,7 @@ struct strMaqParam
     struct strMaqParamCustom {
       struct { // Parametros especificos da Diagonal / Travessa
         unsigned int dist_prensa_corte; // Distancia em mm entre a prensa e o corte
+        unsigned int qtd_furos_interm ; // Quantidade de furos intermediarios na peca
       } diagonal;
       struct { // Parametros especificos da Coluna N
         unsigned int dinam_vel; // Velocidade do perfil em modo dinamico
