@@ -15,39 +15,39 @@ gcc $CFLAGS -c -o modbus.o modbus_rtu.c
 gcc $CFLAGS -c -o io.o io.c
 gcc $CFLAGS -c -o maq.o maq.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -o GtkUtils.o GtkUtils.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o cb_debug.o cb_debug.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o cb_config.o cb_config.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o cb_oper.o cb_oper.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o cb_log.o cb_log.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o banho.o banho.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o diagonal.o diagonal.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o AplanDesbobMezanino.o AplanDesbobMezanino.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 gcc $CFLAGS -c -export-dynamic -o coln.o coln.c \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../libDB
+    -I../tecnequip-libDB
 echo Compilando main.c
 gcc $CFLAGS -export-dynamic -o IHM main.c maq.o io.o banho.o diagonal.o coln.o AplanDesbobMezanino.o \
-    modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../libDB/libDB.a \
+    modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../tecnequip-libDB/libDB.a \
     `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
     `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
     -lmysqlclient -lcrypt -lsybdb \
-    -I../libDB
+    -I../tecnequip-libDB
 echo Terminado!

@@ -3,6 +3,7 @@
 	<name>IHM_MX27_GUI</name>
 	<comment></comment>
 	<projects>
+		<project>libDB</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
