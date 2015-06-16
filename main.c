@@ -144,7 +144,7 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
     printf("%02x ", data[i]);
   printf("\n");
 
-  tcp_socket = ihm_connect("192.168.2.235", 502);
+  tcp_socket = ihm_connect("192.168.0.235", 502);
   if(tcp_socket >= 0) {
     // Configura socket para o modo non-blocking e retorna se houver erro.
     opts = fcntl(tcp_socket,F_GETFL);
@@ -835,7 +835,7 @@ uint32_t IHM_Init(int argc, char *argv[])
     mainDB.passwd  = "y1cGH3WK20";
     mainDB.nome_db = "cv";
 #else
-    mainDB.server  = "interno.tecnequip.com.br";
+    mainDB.server  = "localhost";//"interno.tecnequip.com.br";
     mainDB.user    = "root";
     mainDB.passwd  = "y1cGH3WK20";
     mainDB.nome_db = "cv";
