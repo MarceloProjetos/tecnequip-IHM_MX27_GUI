@@ -885,6 +885,8 @@ gboolean tmrGtkUpdate(gpointer data)
         MaqError(current_status);
 
         last_status = current_status;
+      } else if(current_status && WorkAreaGet() != NTB_ABA_MESSAGEBOX) {
+    	  MaqLimparErro();
       }
 
       // Se status não for indeterminado, parada ou produzindo e atingiu o tempo limite, entra em estado indeterminado
@@ -1370,7 +1372,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   if(!DB_LerConfig(&mainDB, DB_ARQ_CONFIG)) // Se ocorrer erro abrindo o arquivo, carrega defaults
     {
     mainDB.DriverID = "MySQL";
-    mainDB.server   = "interno.tecnequip.com.br";
+    mainDB.server   = "127.0.0.1";
     mainDB.user     = "root";
     mainDB.passwd   = "y1cGH3WK20";
     mainDB.nome_db  = "cv_integrado";
