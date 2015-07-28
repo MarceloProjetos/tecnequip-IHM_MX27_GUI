@@ -1,6 +1,8 @@
 #!/bin/sh
 
-CFLAGS="-pthread -ggdb -Wall -Wcast-align"
+CFLAGS="-pthread -ggdb -Wall -Wcast-align -I../tecnequip-libDB"
+GTKFLAGS="$(pkg-config --cflags gtk+-2.0) $(pkg-config --cflags gthread-2.0)"
+GTKLIBS="$(pkg-config --libs gtk+-2.0) $(pkg-config --libs gthread-2.0)"
 
 echo Apagando objetos antigos
 rm -rf *.o
@@ -10,44 +12,16 @@ build=$(sed -ne "s/.*BUILD_NUMBER \(.*\)/\1/p" version.h)
 echo "#define BUILD_NUMBER $(expr $build + 1)" > version.h
 echo "#define BUILD_DATE \"$(date)\"" >> version.h
 
-echo Iniciando...
-gcc $CFLAGS -c -o modbus.o modbus_rtu.c
-gcc $CFLAGS -c -o io.o io.c
-gcc $CFLAGS -c -o maq.o maq.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -o GtkUtils.o GtkUtils.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o cb_debug.o cb_debug.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o cb_config.o cb_config.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o cb_oper.o cb_oper.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o cb_log.o cb_log.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o banho.o banho.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o diagonal.o diagonal.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o AplanDesbobMezanino.o AplanDesbobMezanino.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-gcc $CFLAGS -c -export-dynamic -o coln.o coln.c \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    -I../tecnequip-libDB
-echo Compilando main.c
-gcc $CFLAGS -export-dynamic -o IHM main.c maq.o io.o banho.o diagonal.o coln.o AplanDesbobMezanino.o \
-    modbus.o cb_config.o cb_oper.o cb_log.o cb_debug.o GtkUtils.o ../tecnequip-libDB/libDB.a \
-    `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0` \
-    `pkg-config --cflags gthread-2.0` `pkg-config --libs gthread-2.0` \
-    -lmysqlclient -lcrypt -lsybdb \
-    -I../tecnequip-libDB
+for fileC in $(ls *.c); do
+	echo Compilando $fileC
+	fileO=$(basename $fileC c)o
+	gcc $CFLAGS $GTKFLAGS -c -export-dynamic -o $fileO $fileC $GTKLIBS
+	listObj="$listObj $fileO"
+done
+
+echo Gerando executavel
+
+gcc $CFLAGS $GTKFLAGS -export-dynamic -o IHM $listObj \
+    ../tecnequip-libDB/libDB.a -lmysqlclient -lcrypt -lsybdb $GTKLIBS
+
 echo Terminado!

@@ -130,6 +130,12 @@ char *lista_ent[] = {
     "spbConfigColNMesaVelMaxManual",
     "spbConfigColNOffset",
     "entConfigColNTamMin",
+    "entConfigAplanPasso",
+    "rdbConfigPrsSentidoAntiHor",
+    "rdbConfigPrsSentidoHor",
+    "lblConfigPrsCiclos",
+    "entConfigPrsCiclosLub",
+    "entConfigPrsCiclosFerram",
     ""
 };
 
@@ -173,6 +179,14 @@ int GravarDadosConfig()
   mp.custom.coln.manual_vel = atol(valor_ent[idx++]);
   mp.custom.coln.offset     = atof(valor_ent[idx++]);
   mp.custom.coln.tam_min    = atol(valor_ent[idx++]);
+
+  // Parametros personalizados da Prensa
+  mp.custom.prensa.passo         = atol(valor_ent[idx++]);
+  mp.custom.prensa.sentido       = atol(valor_ent[idx++]);
+  idx++; // Este objeto representa o radio button. Precisamos dele apenas para gravar o controle, nao para leitura do valor
+  mp.custom.prensa.ciclos        = atol(valor_ent[idx++]);
+  mp.custom.prensa.ciclos_lub    = atol(valor_ent[idx++]);
+  mp.custom.prensa.ciclos_ferram = atol(valor_ent[idx++]);
 
   MaqConfigPerfil (mp.perfil );
   MaqConfigEncoder(mp.encoder);
@@ -292,6 +306,30 @@ void LerDadosConfig()
   strcpy(valor_ent[idx++], tmp);
 
   sprintf(tmp, "%d", mp.custom.coln.tam_min);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.prensa.passo);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.prensa.sentido);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", !mp.custom.prensa.sentido);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.prensa.ciclos);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.prensa.ciclos_lub);
+  valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
+  strcpy(valor_ent[idx++], tmp);
+
+  sprintf(tmp, "%d", mp.custom.prensa.ciclos_ferram);
   valor_ent[idx] = (char *)malloc(sizeof(tmp)+1);
   strcpy(valor_ent[idx++], tmp);
 
@@ -1190,7 +1228,7 @@ void WorkAreaGoTo(int NewWorkArea)
 
     gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbWorkArea")), NewWorkArea);
 
-    if((NewWorkArea == MaqConfigCurrent->AbaHome || NewWorkArea == NTB_ABA_OPERAR) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
+    if((NewWorkArea == MaqConfigCurrent->AbaHome || NewWorkArea == MaqConfigCurrent->AbaOperAuto) && CurrentStatus == MAQ_STATUS_INDETERMINADO) {
       if(MaqConfigCurrent->UseIndet) {
         WorkAreaGoTo(NTB_ABA_INDETERMINADO);
       } else {

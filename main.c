@@ -18,8 +18,6 @@ extern void AbrirLog   ();
 extern void AbrirOper  ();
 extern void AbrirConfig(unsigned int pos);
 
-void Log(char *evento, int tipo);
-
 struct MODBUS_Device mbdev;
 struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
@@ -1028,15 +1026,19 @@ void ReadID(void *dt, void *res)
 // Seleciona a aba correspondente ao botao clicado
 void cbFunctionKey(GtkButton *button, gpointer user_data)
 {
-  uint32_t idx;
+  uint32_t idx, aba;
   const gchar *nome = gtk_buildable_get_name(GTK_BUILDABLE(button));
 
   idx = nome[strlen(nome)-1]-'0';
   if(idx == NTB_ABA_MANUT) {
-    idx = MaqConfigCurrent->AbaManut;
+    aba = MaqConfigCurrent->AbaManut;
+  } else if(idx == NTB_ABA_OPERAR) {
+	  aba = MaqConfigCurrent->AbaOperAuto;
+  } else {
+	  aba = idx;
   }
 
-  WorkAreaGoTo(idx);
+  WorkAreaGoTo(aba);
 
   switch(idx) {
   case NTB_ABA_CONFIG:
@@ -1379,11 +1381,6 @@ uint32_t IHM_Init(int argc, char *argv[])
     }
 
   dbok = DB_Init(&mainDB);
-  if(dbok && !MaqLerConfig()) {
-    printf("Erro carregando configuracao\n");
-    ret = 7;
-    goto fim_config;
-  }
 
   // Iniciando os timers
   g_timeout_add(   500, tmrGtkUpdate, (gpointer)(&bs));
@@ -1391,6 +1388,12 @@ uint32_t IHM_Init(int argc, char *argv[])
   g_timeout_add(300000, tmrActivity , NULL);
 
   pthread_create (&tid, NULL, ihm_update, (void *)(&bs));
+
+  if(dbok && !MaqLerConfig()) {
+    printf("Erro carregando configuracao\n");
+    ret = 7;
+    goto fim_config;
+  }
 
   if(dbok) { // Se inicializar o banco, entra no loop do GTK.
     // Carregamento no ComboBox dos usuários cadastrados no MySQL.

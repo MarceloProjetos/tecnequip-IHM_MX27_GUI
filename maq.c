@@ -8,15 +8,21 @@ extern void IPC_Update(void);
 #endif
 
 // Funcoes de inicializacao das maquinas
-int Banho_Init     (void); // Inicializacao do banho
-int Diagonal_Init  (void); // Inicializacao da Diagonal/Travessa
-int ProgPrensa_Init(void); // Inicializacao da Prensa de Mezanino
+int Banho_Init              (void); // Inicializacao do banho
+int Diagonal_Init           (void); // Inicializacao da Diagonal/Travessa
+int ProgPrensa_Init         (void); // Inicializacao da Prensa de Mezanino
+int ProgPrensaPassoFixo_Init(void); // Inicializacao das Prensas de Passo Fixo
 
 // Funcoes de tratamento de erro das maquinas
 void Banho_Erro (int erro); // Tratamento de erro do banho
 
+// Funcoes de configuracao da tela de operacao automatica das maquinas
+void ProgPrensa_Produzir         (void); // Configuracao da tela de operacao automatica da prensa de passo variavel (Programacao de Passos / Repeticoes)
+void ProgPrensaPassoFixo_Produzir(void); // Configuracao da tela de operacao automatica da prensa de passo fixo (Sem Programacao de Passos / Repeticoes)
+
 // Funcoes de atualizacao das maquinas
-void PrensaMezanino_Update(void); // Atualizacao da tela da Prensa de Mezanino
+void PrensaPassoFixo_Update(void); // Atualizacao da tela da Prensa de Passo Fixo
+void PrensaMezanino_Update (void); // Atualizacao da tela da Prensa de Mezanino
 
 // Funcoes de mudanca de modo das maquinas: manual <=> auto
 void Diagonal_Auto(int ativo); // Diagonal/Travessa
@@ -91,6 +97,22 @@ char *ErrorListPPLeve[] = {
     ""
 };
 
+char *ErrorListAplanPrensa[] = {
+    "Erro na comunicação",
+    "Emergência Acionada",
+    "Falta de fase",
+    "Erro na unidade hidráulica",
+    "Erro na Prensa - Térmico do Martelo",
+    "Baixa pressão de ar",
+    "Erro na Prensa - Inversor",
+    "Erro na Aplanadora - Servomotor",
+    "Erro no Desbobinador",
+    "Erro de comunicação - Servomotor",
+    "Erro de posicionamento da aplanadora",
+    "Porta de Segurança da Prensa Aberta",
+    ""
+};
+
 // Mapas de I/O das Maquinas
 MaqIOMap MaqDefaultIOMap = {
   .InputMask  = 0,
@@ -132,6 +154,93 @@ MaqIOMap MaqDefaultIOMap = {
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+// Mapas de I/O da Aplanadora da Prensa de Coluna N
+MaqIOMap MaqIOMapPrensaColN = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Térmico - Martelo"               , "images/ihm-ent-hidr-termico.png"    },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Inversor OK"                     , "images/ihm-ent-inversor-erro.png"   },
+      { "Aplanadora Fechada"              , "images/ihm-ent-.png" },
+      { "Extensao Recuada"                , "images/ihm-ent-.png" },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Avança Chapa"                    , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recua Chapa"                     , "images/ihm-ent-perfil-recuar.png"   },
+      { "Alim. Prensa OK"                 , "images/ihm-ent-.png" },
+      { "Ponto de Parada\nPrensa"         , "images/ihm-ent-.png" },
+      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png" },
+      { "Ajuste - Prensa"                 , "images/ihm-ent-.png" },
+      { "Bi-Manual 1"                     , "images/ihm-ent-inversor-posic.png"  },
+      { "Bi-Manual 2"                     , "images/ihm-ent-.png" },
+      { "Desliga Continuo"                , "images/ihm-ent-.png" },
+      { "Pressao Ar OK"                   , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Aplan. Fecha"    , "images/ihm-manut-.png" },
+      { "Apĺan. Abre"     , "images/ihm-manut-.png" },
+      { "Embreagem"       , "images/ihm-manut-.png" },
+      { "Ajuste Martelo"  , "images/ihm-manut-.png" },
+      { "Liga Lubrif."    , "images/ihm-manut-.png" },
+      { "Liga Prensa Inv" , "images/ihm-manut-.png" },
+      { "Liga Prensa Norm", "images/ihm-manut-hidr-ligar.png"     },
+      { "Habilita Servo"  , "images/ihm-manut-.png" },
+      { "Reset Servo"     , "images/ihm-manut-.png" },
+      { "Libera Servo"    , "images/ihm-manut-.png" },
+      { "Chave Geral"     , "images/ihm-manut-perfil-recuar.png"  },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+  },
+};
+
+// Mapas de I/O da Aplanadora da Prensa de Porta-Palete
+MaqIOMap MaqIOMapPrensaPP = {
+  .InputMask  = 0,
+  .Input  = {
+      { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
+      { "Erro no Servo"                   , "images/ihm-ent-inversor-erro.png"   },
+      { "Aplanadora Fechada"              , "images/ihm-ent-.png" },
+      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png" },
+      { "Avança Chapa"                    , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recua Chapa"                     , "images/ihm-ent-perfil-recuar.png"   },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Alim. Prensa OK"                 , "images/ihm-ent-.png" },
+      { "Ferram. Liberada"                , "images/ihm-ent-.png" },
+      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
+      { "Abrir Aplanadora"                , "images/ihm-ent-.png" },
+      { "Fechar Aplanadora"               , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+  },
+
+  .Output  = {
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Mesa Sobe"       , "images/ihm-manut-.png" },
+      { "Mesa Desce"      , "images/ihm-manut-.png" },
+      { "Apĺan. Abre"     , "images/ihm-manut-.png" },
+      { "Aplan. Fecha"    , "images/ihm-manut-.png" },
+      { "Aplan. Desce"    , "images/ihm-manut-.png" },
+      { "Aplan. Sobe"     , "images/ihm-manut-.png" },
+      { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Porta Prensa"    , "images/ihm-manut-.png" },
+      { "Porta Faca"      , "images/ihm-manut-.png" },
+      { "Porta Pistao"    , "images/ihm-manut-.png" },
+      { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
+      { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Ligar Prensa"    , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
   },
 };
@@ -629,13 +738,14 @@ MaqIOMap MaqIOMapPPNormal = {
 // Funcoes de parametros de maquinas
 MaqConfig MaqConfigList[] = {
     { // Porta-Palete Normal
-        .ID               = "IhmPP",
+        .ID               = MAQ_ID_PERF_PP_NORMAL,
         .Name             = "Porta-Palete",
         .Line             = "PPNRM",
         .Machine          = "PPNRM",
         .ClpAddr          = "192.168.2.233",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -645,19 +755,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapPPNormal,
         .fncOnInit        = NULL,
         .fncOnError       = MaqErro,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListPPLeve,
         .Alertas          = 0x100, // Erro de Corte
     },
     { // Porta-Palete Pesado
-        .ID               = "IhmPPPesado",
+        .ID               = MAQ_ID_PERF_PP_PESADO,
         .Name             = "Porta-Palete Pesado",
         .Line             = "PPPES",
         .Machine          = "PPPES",
         .ClpAddr          = "192.168.2.253",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -667,19 +779,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapPPPesado,
         .fncOnInit        = NULL,
         .fncOnError       = MaqErro,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListPPLeve,
         .Alertas          = 0x100, // Erro de Corte
     },
     { // Porta-Palete Leve
-        .ID               = "IhmPPLeve",
+        .ID               = MAQ_ID_PERF_PP_LEVE,
         .Name             = "Porta-Palete Leve",
         .Line             = "PPLEV",
         .Machine          = "PPLEV",
         .ClpAddr          = "192.168.2.251",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -689,19 +803,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapPPLeve,
         .fncOnInit        = NULL,
         .fncOnError       = MaqErro,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListPPLeve,
         .Alertas          = 0,
     },
     { // Aplanadora da Prensa de Mezanino
-        .ID               = "IhmAplanMez",
+        .ID               = MAQ_ID_APLAN_MEZANINO,
         .Name             = "Aplanadora da Prensa de Mezanino",
         .Line             = "MZAPL",
         .Machine          = "MZAPL",
         .ClpAddr          = "192.168.2.249",
         .AbaHome          = NTB_ABA_HOME_PRENSA,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_PRENSA_CADPROG,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -711,19 +827,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapPrensaMez,
         .fncOnInit        = ProgPrensa_Init,
         .fncOnError       = MaqErro,
+        .fncOnOperAuto    = ProgPrensa_Produzir,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = PrensaMezanino_Update,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0x200, // Erro de Posicionamento
     },
     { // Tubo Antiga
-        .ID               = "IhmTubo",
+        .ID               = MAQ_ID_PERF_TUBO,
         .Name             = "Tubo",
         .Line             = "TUBO",
         .Machine          = "TUBO",
         .ClpAddr          = "192.168.2.247",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -733,19 +851,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapTubo,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
     { // Coluna N
-        .ID               = "IhmColN",
+        .ID               = MAQ_ID_PERF_COLUNA_N,
         .Name             = "Coluna N",
         .Line             = "COLN",
         .Machine          = "COLN",
         .ClpAddr          = "192.168.2.245",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = NTB_ABA_CONFIG_COLN,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -755,19 +875,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapColunaN,
         .fncOnInit        = NULL,
         .fncOnError       = MaqErro,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListColunaN,
         .Alertas          = (3UL << 8), // Erro de Posicionamento e Corte
     },
     { // Diagonal e Travessa
-        .ID               = "IhmDiagTrav",
+        .ID               = MAQ_ID_TRAV_DIAGONAL,
         .Name             = "Diagonal / Travessa",
         .Line             = "TRDIA",
         .Machine          = "TRDIA",
         .ClpAddr          = "192.168.2.243",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = NTB_ABA_CONFIG_DIAGONAL,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -777,19 +899,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapDiagonal,
         .fncOnInit        = Diagonal_Init,
         .fncOnError       = NULL,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = Diagonal_Auto,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = (1UL << 9), // Erro de Posicionamento
     },
     { // Viga do Mezanino
-        .ID               = "IhmVigaMez",
+        .ID               = MAQ_ID_VIGA_MEZANINO,
         .Name             = "Viga do Mezanino",
         .Line             = "MZVIG",
         .Machine          = "MZVIG",
         .ClpAddr          = "192.168.2.241",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -799,19 +923,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapVigaMezanino,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
     { // Coluna do Mezanino
-        .ID               = "IhmColMez",
+        .ID               = MAQ_ID_COL_MEZANINO,
         .Name             = "Coluna do Mezanino",
         .Line             = "MZCOL",
         .Machine          = "MZCOL",
         .ClpAddr          = "192.168.2.239",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -821,19 +947,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapColunaMezanino,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
     { // Viga Sigma
-        .ID               = "IhmSigma",
+        .ID               = MAQ_ID_PERF_SIGMA,
         .Name             = "Perfiladeira Sigma",
         .Line             = "PPSIG",
         .Machine          = "PPSIG",
         .ClpAddr          = "192.168.2.237",
         .AbaHome          = NTB_ABA_HOME,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
@@ -843,19 +971,21 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqIOMapSigma,
         .fncOnInit        = NULL,
         .fncOnError       = NULL,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListDefault,
         .Alertas          = 0,
     },
     { // Banho
-        .ID               = "IhmBanho",
+        .ID               = MAQ_ID_BANHO,
         .Name             = "Banho",
         .Line             = "BANHO",
         .Machine          = "BANHO",
         .ClpAddr          = "192.168.2.235",
         .AbaHome          = NTB_ABA_HOME_BANHO,
         .AbaManut         = NTB_ABA_MANUT,
+		.AbaOperAuto      = NTB_ABA_OPERAR,
         .AbaConfigMais    = 0,
         .UseLogin         = FALSE,
         .UseIndet         = FALSE,
@@ -865,38 +995,89 @@ MaqConfig MaqConfigList[] = {
         .IOMap            = &MaqBanhoIOMap,
         .fncOnInit        = Banho_Init,
         .fncOnError       = Banho_Erro,
+        .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
         .ErrorList        = ErrorListBanho,
         .Alertas          = 0,
     },
+	{
+        .ID               = MAQ_ID_APLAN_PP,
+        .Name             = "Aplanadora da Prensa de Porta-Palete",
+        .Line             = "PPAPL",
+        .Machine          = "PPAPL",
+        .ClpAddr          = "192.168.0.235",
+        .AbaHome          = NTB_ABA_HOME_PRENSA,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaOperAuto      = NTB_ABA_PRENSAPF_PROD,
+        .AbaConfigMais    = NTB_ABA_CONFIG_PRENSA,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = FALSE,
+        .IOMap            = &MaqIOMapPrensaPP,
+        .fncOnInit        = ProgPrensaPassoFixo_Init,
+        .fncOnError       = MaqErro,
+        .fncOnOperAuto    = ProgPrensaPassoFixo_Produzir,
+        .fncOnAuto        = NULL,
+        .fncTimerUpdate   = PrensaPassoFixo_Update,
+        .ErrorList        = ErrorListAplanPrensa,
+        .Alertas          = 0x200, // Erro de Posicionamento
+	},
+	{
+        .ID               = MAQ_ID_APLAN_COLUNA_N,
+        .Name             = "Aplanadora da Prensa de Coluna N",
+        .Line             = "CNAPL",
+        .Machine          = "CNAPL",
+        .ClpAddr          = "192.168.2.235",
+        .AbaHome          = NTB_ABA_HOME_PRENSA,
+        .AbaManut         = NTB_ABA_MANUT,
+        .AbaOperAuto      = NTB_ABA_PRENSAPF_PROD,
+        .AbaConfigMais    = NTB_ABA_CONFIG_PRENSA,
+        .UseLogin         = TRUE,
+        .UseIndet         = TRUE,
+        .NeedMaqInit      = FALSE,
+        .MaqModeCV        = FALSE,
+        .InverterComandos = FALSE,
+        .IOMap            = &MaqIOMapPrensaColN,
+        .fncOnInit        = ProgPrensaPassoFixo_Init,
+        .fncOnError       = MaqErro,
+        .fncOnOperAuto    = ProgPrensaPassoFixo_Produzir,
+        .fncOnAuto        = NULL,
+        .fncTimerUpdate   = PrensaPassoFixo_Update,
+        .ErrorList        = ErrorListAplanPrensa,
+        .Alertas          = 0x200, // Erro de Posicionamento
+	},
     { // Final
         .ID = NULL
     }
 };
 
 MaqConfig MaqConfigDefault = {
-    .ID               = "IhmTeste",
+    .ID               = MAQ_ID_DEFAULT,
     .Name             = "Maquina de Teste",
     .Line             = "TESTE",
     .Machine          = "TESTE",
 //    .ClpAddr          = "192.168.1.254",
-    .ClpAddr          = "192.168.2.111",
-    .AbaHome          = NTB_ABA_HOME,
+    .ClpAddr          = "192.168.0.192",
+    .AbaHome          = NTB_ABA_HOME_PRENSA,
     .AbaManut         = NTB_ABA_MANUT,
-    .AbaConfigMais    = 0,
+    .AbaOperAuto      = NTB_ABA_PRENSAPF_PROD,
+    .AbaConfigMais    = NTB_ABA_CONFIG_PRENSA,
     .UseLogin         = TRUE,
     .UseIndet         = TRUE,
     .NeedMaqInit      = FALSE,
     .MaqModeCV        = FALSE,
     .InverterComandos = FALSE,
-    .IOMap            = &MaqIOMapPPLeve,
-    .fncOnInit        = NULL,
+    .IOMap            = &MaqIOMapPrensaPP,
+    .fncOnInit        = ProgPrensaPassoFixo_Init,
     .fncOnError       = MaqErro,
+    .fncOnOperAuto    = ProgPrensaPassoFixo_Produzir,
     .fncOnAuto        = NULL,
-    .fncTimerUpdate   = NULL,
-    .ErrorList        = ErrorListPPLeve,
-    .Alertas          = 0,
+    .fncTimerUpdate   = PrensaPassoFixo_Update,
+    .ErrorList        = ErrorListAplanPrensa,
+    .Alertas          = 0x200, // Erro de Posicionamento
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -1103,7 +1284,7 @@ void MaqConfigFlags(uint16_t flags)
 // Funcao que sincroniza a estrutura de parametros com o clp
 int MaqSync(unsigned int mask)
 {
-  static unsigned int first = 1, SyncFlags = 0;
+  static unsigned int SyncFlags = 0;
   unsigned long rel_motor_perfil = 0;
 
   printf("Sincronizando parametros da maquina:\n");
@@ -1184,13 +1365,26 @@ int MaqSync(unsigned int mask)
 
       SyncFlags |= MAQ_MODO_MESA_SYNC;
       break;
+
+    case NTB_ABA_CONFIG_PRENSA:
+      printf("maq_param.custom.prensa.passo...........: %d\n", maq_param.custom.prensa.passo        );
+      printf("maq_param.custom.prensa.sentido.........: %d\n", maq_param.custom.prensa.sentido      );
+      printf("maq_param.custom.prensa.ciclos..........: %d\n", maq_param.custom.prensa.ciclos       );
+      printf("maq_param.custom.prensa.ciclos_ferram...: %d\n", maq_param.custom.prensa.ciclos_ferram);
+      printf("maq_param.custom.prensa.ciclos_lub......: %d\n", maq_param.custom.prensa.ciclos_lub   );
+
+	  MaqConfigPrsCiclos    (maq_param.custom.prensa.ciclos );
+	  MaqConfigPrsSentidoInv(maq_param.custom.prensa.sentido);
+
+      MaqGravarRegistrador(MAQ_REG_APL_PASSO  , maq_param.custom.prensa.passo);
+
+      break;
     }
   }
 
   if(SyncFlags) {
-    MaqConfigFlags((first ? 0 : MaqLerFlags()) | SyncFlags);
+    MaqConfigFlags(MaqLerFlags() | SyncFlags);
   }
-  first = 0;
 
   return 1;
 }
@@ -1232,12 +1426,22 @@ struct strParamDB ParamDB_ColunaN[] = {
     { NULL     , NULL          , NULL                             , NULL                          },
 };
 
+struct strParamDB ParamDB_Prensa	[] = {
+    { "Prensa", "Passo"       , &maq_param.custom.prensa.passo        , NULL                      },
+    { "Prensa", "Sentido"     , &maq_param.custom.prensa.sentido      , NULL                      },
+    { "Prensa", "Ciclos"      , &maq_param.custom.prensa.ciclos       , NULL                      },
+    { "Prensa", "CiclosLub"   , &maq_param.custom.prensa.ciclos_lub   , NULL                      },
+    { "Prensa", "CiclosFerram", &maq_param.custom.prensa.ciclos_ferram, NULL                      },
+    { NULL     , NULL         , NULL                                  , NULL                      },
+};
+
 struct strCustomParamDB {
   int AbaConfigMais;
   struct strParamDB *ParamDB;
 } CustomParamDB[] = {
     { NTB_ABA_CONFIG_DIAGONAL, ParamDB_Diagonal },
     { NTB_ABA_CONFIG_COLN    , ParamDB_ColunaN  },
+    { NTB_ABA_CONFIG_PRENSA  , ParamDB_Prensa   },
     { 0                      , NULL             },
 };
 
@@ -1511,6 +1715,37 @@ uint32_t MaqLerSaidas(void)
   return val;
 }
 
+uint16_t MaqLerPrsCiclos(void)
+{
+  uint16_t ciclos;
+
+  ciclos  = MaqLerRegistrador(MAQ_REG_PRS_CICLOS_MIL , maq_param.custom.prensa.ciclos/1000)*1000;
+  ciclos += MaqLerRegistrador(MAQ_REG_PRS_CICLOS_UNID, maq_param.custom.prensa.ciclos%1000);
+
+  printf("Executados %d ciclos\n", ciclos);
+
+  return ciclos;
+}
+
+int16_t MaqLerPosAtual(void)
+{
+  static int16_t pos;
+
+  pos = MaqLerRegistrador(MAQ_REG_POS_ATUAL, pos);
+
+  return pos;
+}
+
+int16_t MaqLerAplanErroPosic(void)
+{
+  static int16_t erro;
+
+  erro = MaqLerRegistrador(MAQ_REG_APL_ERRO_POSIC, erro);
+  printf("Ultimo erro: %d\n", erro);
+
+  return erro;
+}
+
 uint16_t MaqInvSyncOK(void)
 {
   uint16_t SyncOK = (MaqLerFlags() & MAQ_MODO_INV_SYNC) != 0;
@@ -1650,6 +1885,123 @@ void MaqMesaManual(uint16_t cmd)
     flags |= MAQ_MODO_MESA_RECUA;
 
   MaqConfigFlags(flags);
+}
+
+void MaqAplanManual(uint16_t cmd)
+{
+  static uint16_t flags;
+  unsigned int mask_or, mask_and;
+
+  switch(cmd) {
+    case MAQ_APLAN_ABRIR:
+    	mask_or  =  MAQ_FM_APLAN_ABRIR;
+    	mask_and = ~MAQ_FM_APLAN_FECHAR;
+        break;
+
+    case MAQ_APLAN_FECHAR:
+    	mask_or  =  MAQ_FM_APLAN_FECHAR;
+    	mask_and = ~MAQ_FM_APLAN_ABRIR;
+      break;
+
+    case MAQ_APLAN_SUBIR:
+    	mask_or  =  MAQ_FM_APLAN_SUBIR;
+    	mask_and = ~MAQ_FM_APLAN_DESCER;
+        break;
+
+    case MAQ_APLAN_DESCER:
+    	mask_or  =  MAQ_FM_APLAN_DESCER;
+    	mask_and = ~MAQ_FM_APLAN_SUBIR;
+      break;
+
+    case MAQ_APLAN_EXT_SUBIR:
+    	mask_or  =  MAQ_FM_APLAN_EXT_SUBIR;
+    	mask_and = ~MAQ_FM_APLAN_EXT_DESCER;
+        break;
+
+    case MAQ_APLAN_EXT_DESCER:
+    	mask_or  =  MAQ_FM_APLAN_EXT_DESCER;
+    	mask_and = ~MAQ_FM_APLAN_EXT_SUBIR;
+      break;
+
+    case MAQ_APLAN_EXT_EXPANDIR:
+    	mask_or  =  MAQ_FM_APLAN_EXT_EXPANDIR;
+    	mask_and = ~MAQ_FM_APLAN_EXT_RETRAIR;
+        break;
+
+    case MAQ_APLAN_EXT_RETRAIR:
+    	mask_or  =  MAQ_FM_APLAN_EXT_RETRAIR;
+    	mask_and = ~MAQ_FM_APLAN_EXT_EXPANDIR;
+      break;
+
+    case MAQ_APLAN_PARAR:
+    	mask_or  =  0x0000;
+    	mask_and = ~(MAQ_FM_APLAN_ABRIR        | MAQ_FM_APLAN_FECHAR      |
+    				 MAQ_FM_APLAN_SUBIR        | MAQ_FM_APLAN_DESCER      |
+					 MAQ_FM_APLAN_EXT_SUBIR    | MAQ_FM_APLAN_EXT_DESCER  |
+    				 MAQ_FM_APLAN_EXT_EXPANDIR | MAQ_FM_APLAN_EXT_RETRAIR
+    				 );
+      break;
+
+    default:
+    	return;
+  }
+
+  flags = (MaqLerRegistrador(MAQ_REG_PRENSA_MANUAL, flags) & mask_and) | mask_or;
+
+  MaqGravarRegistrador(MAQ_REG_PRENSA_MANUAL, flags);
+}
+
+void MaqPrsManual(uint16_t cmd)
+{
+  uint16_t flags = MaqLerFlags();
+
+  switch(cmd) {
+    case MAQ_PRS_LIGAR:
+        flags |=  MAQ_FM_PRS_LIGAR;
+        break;
+
+    case MAQ_PRS_DESLIGAR:
+        flags &= ~MAQ_FM_PRS_LIGAR;
+      break;
+
+    case MAQ_PRS_INICIAR:
+    	// Por motivo de seguranca, a prensa somente inicia por comando do operador (Pedal / Bi-Manual)
+        return;
+
+    case MAQ_PRS_PARAR:
+        flags |=  MAQ_FM_PRS_PARAR;
+        break;
+  }
+
+  MaqConfigFlags(flags);
+}
+
+uint16_t MaqPronta()
+{
+  return MaqLerEstado() & MAQ_STATUS_PRONTA ? TRUE : FALSE;
+}
+
+void MaqConfigPrsCiclos(uint32_t val)
+{
+  uint16_t modo = MaqLerFlags(), ciclos_mil = val/1000;
+
+  MaqGravarRegistrador(MAQ_REG_PRS_CICLOS_NOVO_MIL , ciclos_mil);
+  MaqGravarRegistrador(MAQ_REG_PRS_CICLOS_NOVO_UNID, val - (uint32_t)(ciclos_mil)*1000);
+
+  modo |= MAQ_MODO_PRS_CICLOS;
+  MaqConfigFlags(modo);
+}
+
+void MaqConfigPrsSentidoInv(uint16_t val)
+{
+  uint16_t modo = MaqLerFlags();
+
+  if(val)
+    modo |=  MAQ_MODO_PRS_SENTIDO;
+  else
+    modo &= ~MAQ_MODO_PRS_SENTIDO;
+
+  MaqConfigFlags(modo);
 }
 
 void MaqConfigProdQtd(uint16_t qtd)

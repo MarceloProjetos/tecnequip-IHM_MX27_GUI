@@ -512,7 +512,7 @@ void cbSairTarefa(GtkButton *button, gpointer user_data)
 {
   LimparDadosTarefa();
   CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
-  WorkAreaGoTo(NTB_ABA_OPERAR);
+  WorkAreaGoTo(MaqConfigCurrent->AbaOperAuto);
 }
 
 void cbAplicarTarefa(GtkButton *button, gpointer user_data)
@@ -666,7 +666,11 @@ void AbrirOper()
     return;
     }
 
-  CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
+  if(MaqConfigCurrent && MaqConfigCurrent->fncOnOperAuto != NULL) {
+    (*MaqConfigCurrent->fncOnOperAuto)();
+  } else {
+    CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
+  }
 }
 
 void LimparDadosPedido(void)

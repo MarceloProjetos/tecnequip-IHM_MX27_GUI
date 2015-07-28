@@ -166,10 +166,12 @@ typedef uint16_t u16;
 #define NTB_ABA_PROG_PARAM     22
 #define NTB_ABA_PRENSA_PROD    23
 #define NTB_ABA_PRENSA_CADPROG 24
+#define NTB_ABA_PRENSAPF_PROD  25 // Prensa de Passo Fixo - diferente da prensa normal, onde se programam os passos
 #define NTB_ABA_NONE           99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
 #define NTB_ABA_CONFIG_COLN     2
+#define NTB_ABA_CONFIG_PRENSA   3
 
 // Modos de corte da peça
 #define MODO_CORTE_HIDR  0
@@ -218,6 +220,9 @@ extern int atividade;
 int  WorkAreaGet (void);
 void WorkAreaGoPrevious(void);
 void WorkAreaGoTo(int NewWorkArea);
+
+// Funcao utilizada para registrar um evento
+void Log(char *evento, int tipo);
 
 void SetMaqStatus(unsigned int NewStatus);
 

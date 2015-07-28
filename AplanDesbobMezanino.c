@@ -7,18 +7,12 @@
 #include "defines.h"
 #include "GtkUtils.h"
 
+//#define DEBUG_CARREGAR_TELA
+
 static const int FLAG_PROG_TAMANHO = 0x0200;
 static const int FLAG_PROG_GRAVAR  = 0x0800;
 
-static const int FLAG_CMD_MESA_SUBIR    = 0x0002;
-static const int FLAG_CMD_MESA_DESCER   = 0x2000;
-static const int FLAG_CMD_APLAN_AVANCAR = 0x0008;
-static const int FLAG_CMD_APLAN_RECUAR  = 0x0010;
-static const int FLAG_CMD_APLAN_SUBIR   = 0x4000;
-static const int FLAG_CMD_APLAN_DESCER  = 0x8000;
 static const int FLAG_CMD_DESBOB_LIGAR  = 0x0100;
-static const int FLAG_CMD_APLAN_ABRIR   = 0x0800;
-static const int FLAG_CMD_APLAN_FECHAR  = 0x1000;
 
 static const int FLAG_PROG_PRENSA_SINGELO = 0x0001;
 static const int FLAG_PROG_PRENSA_LIGAR   = 0x0002;
@@ -28,14 +22,14 @@ static const int FLAG_PROG_PASSO_PROXIMO  = 0x0010;
 static const int FLAG_PROG_PASSO_ANTERIOR = 0x0020;
 static const int FLAG_PROG_LER_ESTADO     = 0x0040;
 static const int FLAG_PROG_LER_DADOS      = 0x0080;
-static const int FLAG_PROG_FINALIZAR      = 0x0100;
+static const int FLAG_PROG_FINALIZAR      = 0x2000;
 
 static const int FLAG_DESBOB_LIGADO       = 0x4000;
 
 static const int REG_PROG_INDICE     = 23;
 static const int REG_PROG_AVANCO     = 24;
 static const int REG_PROG_PORTAS     = 25;
-static const int REG_PROG_REPETICOES = 18;
+static const int REG_PROG_REPETICOES = 26;
 static const int REG_PROG_FLAGS      = 31;
 
 static const int PROG_MASK_PRENSA    = 0x0001;
@@ -47,6 +41,30 @@ static const int PROG_MASK_FACA      = 0x0002;
 static const int NTB_CADPROG_LISTA    = 0;
 static const int NTB_CADPROG_PROGRAMA = 1;
 static const int NTB_CADPROG_PASSOS   = 2;
+
+static       int ProgModePassoFixo    = FALSE;
+
+extern int idUser; // Indica usuário que logou se for diferente de zero.
+
+struct strImgIHM {
+  char *arq;
+  int posx, posy;
+  double scalex, scaley;
+};
+
+struct strCoordIHM {
+  unsigned int xpos, ypos, xsize, ysize;
+  void (*fnc)();
+  char *img;
+} *CurrentLstCoord;
+
+struct strTelaIHM {
+  GdkPixbuf *pb;
+  unsigned int offset;
+  struct strCoordIHM *coord;
+};
+
+static struct strTelaIHM maq[8]; // ate 3 movimentos, 2 estados para cada um. 2 ^ 3 = 8
 
 // Definicoes para cadastro de programas
 
@@ -195,13 +213,6 @@ void CarregaComboProgramas(void)
   CarregaCombo(&mainDB, GTK_COMBO_BOX(obj),0, NULL);
 }
 
-int ProgPrensa_Init(void)
-{
-  CarregaComboProgramas();
-
-  return 1;
-}
-
 // Logica da tela principal: Callback de botoes e demais funcoes
 void cbProgPrensa_Parar(GtkButton *button, gpointer user_data)
 {
@@ -217,19 +228,16 @@ void cbProgPrensa_Finalizar(GtkButton *button, gpointer user_data)
 {
   atividade++;
 
-  MaqGravarRegistrador(REG_PROG_FLAGS, MaqLerRegistrador(REG_PROG_FLAGS, 0) | FLAG_PROG_FINALIZAR);
+  MaqConfigFlags(MaqLerFlags() | FLAG_PROG_FINALIZAR);
 
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecProgMsg")), "Terminando...");
   gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
 }
 
-void cbProgPrensa_Produzir(GtkButton *button, gpointer user_data)
+void ProgPrensa_Produzir(void)
 {
-  if(!GetUserPerm(PERM_ACESSO_OPER))
-    {
-    MessageBox("Sem permissão para operar a máquina!");
-    return;
-    }
+  // Seleciona o tipo de controle de prensa: Passos Variaveis (Programacao de Passos / Repeticoes)
+  ProgModePassoFixo = FALSE;
 
   CarregaComboProgramas();
   AbrirProgParam();
@@ -268,28 +276,6 @@ void cbExecProgRepetAnterior(GtkButton *button, gpointer user_data)
   uint16_t flags = MaqLerRegistrador(REG_PROG_FLAGS, 0);
   MaqGravarRegistrador(REG_PROG_FLAGS, flags | FLAG_PROG_REPET_ANTERIOR);
 }
-
-/*** Logica para montar a janela de parametros do programa ***/
-
-// Estrutura para implementar a lista ligada com os itens
-typedef struct strObjList {
-  int id;
-  GtkWidget *obj;
-
-  struct strObjList *next;
-} tObjList;
-
-// Estrutura passada como parametro para as funcoes de callback
-// Contem os objetos e respectivos IDs para atualizacao do banco de dados
-typedef struct {
-  int id;
-  GtkWidget *qtd;
-
-  tObjList *lista_avanco;
-  tObjList *lista_repeticoes;
-} tProgParam;
-
-tProgParam *ProgParam = NULL;
 
 // Timer de producao
 gboolean tmrExecProg(gpointer data)
@@ -355,6 +341,28 @@ gboolean tmrExecProg(gpointer data)
 
   return TRUE;
 }
+
+/*** Logica para montar a janela de parametros do programa ***/
+
+// Estrutura para implementar a lista ligada com os itens
+typedef struct strObjList {
+  int id;
+  GtkWidget *obj;
+
+  struct strObjList *next;
+} tObjList;
+
+// Estrutura passada como parametro para as funcoes de callback
+// Contem os objetos e respectivos IDs para atualizacao do banco de dados
+typedef struct {
+  int id;
+  GtkWidget *qtd;
+
+  tObjList *lista_avanco;
+  tObjList *lista_repeticoes;
+} tProgParam;
+
+tProgParam *ProgParam = NULL;
 
 void IniciarProducao(int id)
 {
@@ -761,81 +769,78 @@ void cbProgramaSelecionado(GtkComboBox *combobox, gpointer user_data)
   AbrirProgParam();
 }
 
-extern int idUser; // Indica usuário que logou se for diferente de zero.
+void CmdManual(uint16_t cmd)
+{
+	atividade++;
+	SetMaqStatus(MAQ_STATUS_MANUAL);
 
-struct strImgIHM {
-  char *arq;
-  int posx, posy;
-  double scalex, scaley;
-};
-
-struct strTelaIHM {
-  GdkPixbuf *pb;
-  unsigned int offset;
-  struct strCoordIHM *coord;
-};
+	if(cmd == MAQ_PRS_LIGAR || cmd == MAQ_PRS_DESLIGAR || cmd == MAQ_PRS_PARAR) {
+		MaqPrsManual  (cmd);
+	} else if(cmd == MAQ_APLAN_AVANCAR || cmd == MAQ_APLAN_RECUAR) {
+		MaqPerfManual((cmd == MAQ_APLAN_AVANCAR) ? OPER_PERF_AVANCA : OPER_PERF_RECUA);
+	} else if(cmd != MAQ_APLAN_PARAR) {
+		MaqAplanManual(cmd);
+	} else {
+		MaqAplanManual(MAQ_APLAN_PARAR);
+		MaqPerfManual (OPER_PERF_PARAR);
+	}
+}
 
 void cbManAplanAvancar(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_APLAN_AVANCAR);
+	CmdManual(MAQ_APLAN_AVANCAR);
 }
 
 void cbManAplanRecuar(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_APLAN_RECUAR);
+	CmdManual(MAQ_APLAN_RECUAR);
 }
 
 void cbManAplanAbrir(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqGravarRegistrador(REG_PROG_FLAGS,
-      MaqLerRegistrador(REG_PROG_FLAGS, 0) | FLAG_CMD_APLAN_ABRIR);
+	CmdManual(MAQ_APLAN_ABRIR);
 }
 
 void cbManAplanFechar(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqGravarRegistrador(REG_PROG_FLAGS,
-      MaqLerRegistrador(REG_PROG_FLAGS, 0) | FLAG_CMD_APLAN_FECHAR);
+	CmdManual(MAQ_APLAN_FECHAR);
 }
 
 void cbManAplanSubir(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_APLAN_SUBIR);
+	CmdManual(MAQ_APLAN_SUBIR);
 }
 
 void cbManAplanDescer(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_APLAN_DESCER);
+	CmdManual(MAQ_APLAN_DESCER);
 }
 
 void cbManMesaSubir(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_MESA_SUBIR);
+	CmdManual(MAQ_APLAN_EXT_SUBIR);
 }
 
 void cbManMesaDescer(void)
 {
-  atividade++;
-  SetMaqStatus(MAQ_STATUS_MANUAL);
-  MaqConfigFlags(MaqLerFlags() | FLAG_CMD_MESA_DESCER);
+	CmdManual(MAQ_APLAN_EXT_DESCER);
+}
+
+void cbManMesaExpandir(void)
+{
+	CmdManual(MAQ_APLAN_EXT_EXPANDIR);
+}
+
+void cbManMesaRetrair(void)
+{
+	CmdManual(MAQ_APLAN_EXT_RETRAIR);
 }
 
 void cbManDesbob(void)
 {
   uint16_t flags = MaqLerFlags();
+
+  atividade++;
   if(flags & FLAG_CMD_DESBOB_LIGAR) {
       MaqConfigFlags(flags & (~FLAG_CMD_DESBOB_LIGAR));
     } else {
@@ -843,76 +848,42 @@ void cbManDesbob(void)
     }
 }
 
-void cbAbrirManut(void)
+void cbManPrsLigar(void)
 {
-  WorkAreaGoTo(MaqConfigCurrent->AbaManut);
+	if(MaqLerEstado() & MAQ_STATUS_PRS_LIGADA)
+		CmdManual(MAQ_PRS_DESLIGAR);
+	else
+		CmdManual(MAQ_PRS_LIGAR);
 }
 
-struct strCoordIHM {
-  unsigned int xpos, ypos, xsize, ysize;
-  void (*fnc)();
-  char *img;
-} *CurrentLstCoord, lst_coord[2][2][15] = {
-    // Posição 00 - Tampa fechada, desbobinador desativado
-    [0][0] = {
-        { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-        { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-        { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
-        { 250, 150, 260, 150, cbAbrirManut      , NULL                                },
-        { 0, 0, 0, 0, NULL, NULL } },
+void cbPrsZerarCiclos(GtkButton *button, gpointer user_data)
+{
+  maq_param.custom.prensa.ciclos = 0;
+  MaqConfigPrsCiclos(0);
 
-    // Posição 01 - Tampa fechada, desbobinador ativado
-    [0][1] = {
-        { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-        { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-        { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
-        { 250, 150, 260, 150, cbAbrirManut      , NULL                                },
-        { 0, 0, 0, 0, NULL, NULL } },
-
-    // Posição 10 - Tampa aberta, desbobinador desativado
-    [1][0] = {
-        { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-        { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-        { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
-        { 250, 150, 260, 150, cbAbrirManut      , NULL                                },
-        { 0, 0, 0, 0, NULL, NULL } },
-
-    // Posição 11 - Tampa aberta, desbobinador ativado
-    [1][1] = {
-        { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-        { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-        { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-        { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
-        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
-        { 250, 150, 260, 150, cbAbrirManut      , NULL                                },
-        { 0, 0, 0, 0, NULL, NULL } },
-};
-
-#define DEBUG_CARREGAR_TELA
+  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblConfigPrsCiclos")), "0");
+}
 
 #ifndef DEBUG_CARREGAR_TELA
 void LoadIntoPixbuf(GdkPixbuf *pb, char *file, gint x, gint y, gdouble scale_x, gdouble scale_y, gint refpos);
 #endif
+
+void CopyLstCoord(struct strCoordIHM **dst, struct strCoordIHM *src)
+{
+	unsigned int i = 0, size;
+	// Verifica se destino e origem sao validos
+	if(dst == NULL || src == NULL) return;
+
+	// Identifica numero de elementos no array
+	while(src[i].fnc != NULL) i++;
+
+	// Aloca um array para o tamanho encontrado e entao copia o conteudo por memcpy.
+	// Devemos alocar tamanho + 1 devido ao elemento final que nao eh contabilizado (elemento com fnc == NULL)
+	size = sizeof(struct strCoordIHM) * (i + 1);
+	*dst = (struct strCoordIHM *)malloc(size);
+
+	memcpy(*dst, src, size);
+}
 
 void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM *lst_img, struct strCoordIHM *lst_coord)
 {
@@ -921,9 +892,9 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
 
 #ifdef DEBUG_CARREGAR_TELA
   tela->offset = 0;
-  tela->coord  = lst_coord;
+  CopyLstCoord(&(tela->coord), lst_coord);
 
-  sprintf(arq, "maq.%d.png", n++);
+  sprintf(arq, "maq.%s.%d.png", MaqConfigCurrent->ID, n++);
   tela->pb = gdk_pixbuf_new_from_file(arq, NULL);
 #else
   GdkPixbuf *pb;
@@ -931,7 +902,7 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
   unsigned int i = 0;
 
   tela->offset = offset;
-  tela->coord  = lst_coord;
+  CopyLstCoord(&(tela->coord), lst_coord);
 
   tela->pb = gdk_pixbuf_new_from_file_at_scale(lst_img[0].arq,
       lst_img[0].posx + 2*tela->offset, lst_img[0].posy + 2*tela->offset,
@@ -966,9 +937,10 @@ void CriarTelaIHM(struct strTelaIHM *tela, unsigned int offset, struct strImgIHM
 //  g_object_unref(tela->pb);
 //  tela->pb = copy_pb;
 
-  sprintf(arq, "maq.%d.png", n++);
+  sprintf(arq, "maq.%s.%d.png", MaqConfigCurrent->ID, n++);
   gdk_pixbuf_save(pb, arq, "png", NULL, NULL);
 //  tela->pb = pb;
+
 #endif
 }
 
@@ -1003,13 +975,7 @@ gboolean cbPrensaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer 
       }
     }
   } else if (event->type == GDK_BUTTON_RELEASE) {
-    MaqConfigFlags(MaqLerFlags() &
-        (~(FLAG_CMD_MESA_DESCER   | FLAG_CMD_MESA_SUBIR |
-           FLAG_CMD_APLAN_AVANCAR | FLAG_CMD_APLAN_RECUAR |
-           FLAG_CMD_APLAN_DESCER  | FLAG_CMD_APLAN_SUBIR)));
-
-    MaqGravarRegistrador(REG_PROG_FLAGS, MaqLerRegistrador(REG_PROG_FLAGS, 0) &
-        (~(FLAG_CMD_APLAN_ABRIR  | FLAG_CMD_APLAN_FECHAR)));
+	  CmdManual(MAQ_APLAN_PARAR);
   }
 
   return TRUE;
@@ -1017,90 +983,17 @@ gboolean cbPrensaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer 
 
 gboolean cbDesenharPrensa(GtkWidget *widget, GdkEventExpose *event, gpointer data)
 {
-  unsigned int tampa, desb, offset = 200;
-  static int first = 1, flags = 0;
-  static struct strTelaIHM maq[2][2]; // 2 movimentos, 2 estados para cada um
+  static int flags = 0;
 
   if(widget == NULL) {
     widget = GTK_WIDGET(gtk_builder_get_object(builder, "dwaPrensa"));
-  }
-
-  if(first) {
-    first = 0;
-    CurrentLstCoord = NULL;
-
-    GtkAllocation allocation;
-    gtk_widget_get_allocation(widget, &allocation);
-
-    // Imagem 00 - Tampa fechada, desbobinador desativado
-    CriarTelaIHM(&maq[0][0], offset,
-        (struct strImgIHM[]){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                              { "images/maq-desbob.png"             , 504,  42, 1, 1 },
-                              { "images/maq-aplan-corpo.png"        , 240, 153, 1, 1 },
-                              { "images/maq-aplan-prol-baixo.png"   , 469, 209, 1, 1 },
-                              { "images/maq-aplan-ext-baixo.png"    , 448, 184, 1, 1 },
-                              { "images/maq-aplan-tampa-fechada.png", 292, 136, 1, 1 },
-                              { "images/maq-prs-corpo.png"          ,  20, -42, 1, 1 },
-                              { "images/maq-prs-martelo.png"        ,  63, -42, 1, 1 },
-                              { "images/maq-prs-cobertura.png"      ,  54, -52, 1, 1 },
-                              { NULL, 0, 0, 0, 0 } },
-        lst_coord[0][0]
-        );
-
-    // Imagem 01 - Tampa fechada, desbobinador ativado
-    CriarTelaIHM(&maq[0][1], offset,
-        (struct strImgIHM[]){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                              { "images/maq-desbob.png"             , 504,  42, 1, 1 },
-                              { "images/maq-aplan-corpo.png"        , 240, 153, 1, 1 },
-                              { "images/maq-aplan-prol-baixo.png"   , 469, 209, 1, 1 },
-                              { "images/maq-aplan-ext-baixo.png"    , 448, 184, 1, 1 },
-                              { "images/maq-aplan-tampa-fechada.png", 292, 136, 1, 1 },
-                              { "images/maq-prs-corpo.png"          ,  20, -42, 1, 1 },
-                              { "images/maq-prs-martelo.png"        ,  63, -42, 1, 1 },
-                              { "images/maq-prs-cobertura.png"      ,  54, -52, 1, 1 },
-                              { NULL, 0, 0, 0, 0 } },
-        lst_coord[0][1]
-        );
-
-    // Imagem 10 - Tampa aberta, desbobinador desativado
-    CriarTelaIHM(&maq[1][0], offset,
-        (struct strImgIHM[]){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                              { "images/maq-desbob.png"             , 504,  42, 1, 1 },
-                              { "images/maq-aplan-corpo.png"        , 240, 153, 1, 1 },
-                              { "images/maq-aplan-prol-baixo.png"   , 469, 209, 1, 1 },
-                              { "images/maq-aplan-ext-baixo.png"    , 448, 184, 1, 1 },
-                              { "images/maq-aplan-tampa-aberta.png" , 286, 106, 1, 1 },
-                              { "images/maq-prs-corpo.png"          ,  20, -42, 1, 1 },
-                              { "images/maq-prs-martelo.png"        ,  63, -42, 1, 1 },
-                              { "images/maq-prs-cobertura.png"      ,  54, -52, 1, 1 },
-                              { NULL, 0, 0, 0, 0 } },
-        lst_coord[1][0]
-        );
-
-    // Imagem 11 - Tampa aberta, desbobinador ativado
-    CriarTelaIHM(&maq[1][1], offset,
-        (struct strImgIHM[]){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                              { "images/maq-desbob.png"             , 504,  42, 1, 1 },
-                              { "images/maq-aplan-corpo.png"        , 240, 153, 1, 1 },
-                              { "images/maq-aplan-prol-baixo.png"   , 469, 209, 1, 1 },
-                              { "images/maq-aplan-ext-baixo.png"    , 448, 184, 1, 1 },
-                              { "images/maq-aplan-tampa-aberta.png" , 286, 106, 1, 1 },
-                              { "images/maq-prs-corpo.png"          ,  20, -42, 1, 1 },
-                              { "images/maq-prs-martelo.png"        ,  63, -42, 1, 1 },
-                              { "images/maq-prs-cobertura.png"      ,  54, -52, 1, 1 },
-                              { NULL, 0, 0, 0, 0 } },
-        lst_coord[1][1]
-        );
   }
 
   if(data != NULL)
     flags = *(unsigned int *)(data);
 
   if(idUser) {
-    desb  = (flags >> 1) & 1;
-    tampa = (flags >> 0) & 1;
-
-    DesenharTelaIHM(widget, &maq[tampa][desb]);
+    DesenharTelaIHM(widget, &maq[flags]);
   }
 
   return TRUE;
@@ -1477,3 +1370,647 @@ void cbPrensaProgAbrirListaProg(GtkButton *button, gpointer user_data)
 }
 
 /*** Fim do Código de Controle da Tela de Criacao / Edicao de Programas ***/
+
+int ProgPrensa_Init(void)
+{
+	unsigned int offset = 200;
+
+	// Seleciona o tipo de controle de prensa: Passos Variaveis (Programacao de Passos / Repeticoes)
+	ProgModePassoFixo = FALSE;
+
+    CarregaComboProgramas();
+
+    CurrentLstCoord = NULL;
+
+    GtkAllocation  allocation;
+
+    GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "dwaPrensa"));
+    gtk_widget_get_allocation(widget, &allocation);
+
+    // Imagem 00 - Tampa fechada, desbobinador desativado
+    CriarTelaIHM(&maq[0], offset,
+        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+                                { "images/maq-desbob.png"                 , 504,  42, 1, 1 },
+                                { "images/maq-aplan-dir-corpo.png"        , 240, 153, 1, 1 },
+                                { "images/maq-aplan-dir-prol-baixo.png"   , 469, 209, 1, 1 },
+                                { "images/maq-aplan-dir-ext-baixo.png"    , 448, 184, 1, 1 },
+                                { "images/maq-aplan-dir-tampa-fechada.png", 292, 136, 1, 1 },
+                                { "images/maq-prs-corpo.png"              ,  20, -42, 1, 1 },
+                                { "images/maq-prs-martelo.png"            ,  63, -42, 1, 1 },
+                                { "images/maq-prs-cobertura.png"          ,  54, -52, 1, 1 },
+                                { NULL, 0, 0, 0, 0 } },
+
+        (struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+						        { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+						        { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+						        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+						        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+						        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+						        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
+						        { 0, 0, 0, 0, NULL, NULL } }
+        );
+
+    // Imagem 10 - Tampa fechada, desbobinador ativado
+    CriarTelaIHM(&maq[2], offset,
+        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+                                { "images/maq-desbob.png"                 , 504,  42, 1, 1 },
+                                { "images/maq-aplan-dir-corpo.png"        , 240, 153, 1, 1 },
+                                { "images/maq-aplan-dir-prol-baixo.png"   , 469, 209, 1, 1 },
+                                { "images/maq-aplan-dir-ext-baixo.png"    , 448, 184, 1, 1 },
+                                { "images/maq-aplan-dir-tampa-fechada.png", 292, 136, 1, 1 },
+                                { "images/maq-prs-corpo.png"              ,  20, -42, 1, 1 },
+                                { "images/maq-prs-martelo.png"            ,  63, -42, 1, 1 },
+                                { "images/maq-prs-cobertura.png"          ,  54, -52, 1, 1 },
+                                { NULL, 0, 0, 0, 0 } },
+
+        (struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+                                { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+                                { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+                                { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+                                { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+                                { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+                                { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+                                { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
+                                { 0, 0, 0, 0, NULL, NULL } }
+        );
+
+    // Imagem 01 - Tampa aberta, desbobinador desativado
+    CriarTelaIHM(&maq[1], offset,
+        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+                                { "images/maq-desbob.png"                , 504,  42, 1, 1 },
+                                { "images/maq-aplan-dir-corpo.png"       , 240, 153, 1, 1 },
+                                { "images/maq-aplan-dir-prol-baixo.png"  , 469, 209, 1, 1 },
+                                { "images/maq-aplan-dir-ext-baixo.png"   , 448, 184, 1, 1 },
+                                { "images/maq-aplan-dir-tampa-aberta.png", 286, 106, 1, 1 },
+                                { "images/maq-prs-corpo.png"             ,  20, -42, 1, 1 },
+                                { "images/maq-prs-martelo.png"           ,  63, -42, 1, 1 },
+                                { "images/maq-prs-cobertura.png"         ,  54, -52, 1, 1 },
+                                { NULL, 0, 0, 0, 0 } },
+
+        (struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+						        { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+						        { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+						        { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
+						        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+						        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+						        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+						        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
+                                { 0, 0, 0, 0, NULL, NULL } }
+        );
+
+    // Imagem 11 - Tampa aberta, desbobinador ativado
+    CriarTelaIHM(&maq[3], offset,
+        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+                                { "images/maq-desbob.png"                , 504,  42, 1, 1 },
+                                { "images/maq-aplan-dir-corpo.png"       , 240, 153, 1, 1 },
+                                { "images/maq-aplan-dir-prol-baixo.png"  , 469, 209, 1, 1 },
+                                { "images/maq-aplan-dir-ext-baixo.png"   , 448, 184, 1, 1 },
+                                { "images/maq-aplan-dir-tampa-aberta.png", 286, 106, 1, 1 },
+                                { "images/maq-prs-corpo.png"             ,  20, -42, 1, 1 },
+                                { "images/maq-prs-martelo.png"           ,  63, -42, 1, 1 },
+                                { "images/maq-prs-cobertura.png"         ,  54, -52, 1, 1 },
+                                { NULL, 0, 0, 0, 0 } },
+
+        (struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+						        { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+						        { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+						        { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
+						        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+						        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+						        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+						        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
+                                { 0, 0, 0, 0, NULL, NULL } }
+        );
+
+	return 1;
+}
+
+/***********************************************************/
+/***     Funcoes Relacionadas a Prensa de Passo Fixo     ***/
+/***********************************************************/
+
+int  ProgPrensaPassoFixo_Init(void)
+{
+	unsigned int offset = 200;
+
+	// Seleciona o tipo de controle de prensa: Passo Fixo
+	ProgModePassoFixo = TRUE;
+
+    CurrentLstCoord = NULL;
+
+    GtkAllocation  allocation;
+
+    GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "dwaPrensa"));
+    gtk_widget_get_allocation(widget, &allocation);
+
+    if(MAQ_ID_IS(MAQ_ID_APLAN_COLUNA_N)) {
+		// Imagem 000 - Tampa fechada, extensão abaixada, prolongamento recuado.
+		CriarTelaIHM(&maq[0], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 148, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
+		CriarTelaIHM(&maq[1], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 108, 249, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 010 - Tampa fechada, extensão levantada, prolongamento recuado.
+		CriarTelaIHM(&maq[2], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"    , 113, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"     , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 011 - Tampa fechada, extensão levantada, prolongamento avançado.
+		CriarTelaIHM(&maq[3], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"    ,  73, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"     , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
+		CriarTelaIHM(&maq[4], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"  , 148, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"   , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
+		CriarTelaIHM(&maq[5], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"  , 108, 249, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"   , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 110 - Tampa aberta, extensão levantada, prolongamento recuado.
+		CriarTelaIHM(&maq[6], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"   , 113, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"    , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 111 - Tampa aberta, extensão levantada, prolongamento avançado.
+		CriarTelaIHM(&maq[7], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"   ,  73, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"    , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+    } else {
+		// Imagem 000 - Tampa fechada, extensão abaixada, prolongamento recuado.
+		CriarTelaIHM(&maq[0], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 148, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+								    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+								    {  45, 245, 70, 55, cbManMesaExpandir , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 001 - Tampa fechada, extensão abaixada, prolongamento avançado.
+		CriarTelaIHM(&maq[1], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 108, 249, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+								    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+								    {  45, 245, 70, 55, cbManMesaRetrair  , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 010 - Tampa fechada, extensão levantada, prolongamento recuado.
+		CriarTelaIHM(&maq[2], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"    , 113, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"     , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+								    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+								    {   0, 175, 70, 55, cbManMesaExpandir , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 011 - Tampa fechada, extensão levantada, prolongamento avançado.
+		CriarTelaIHM(&maq[3], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"    ,  73, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"     , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 205, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  70, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+								    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+								    {   0, 175, 70, 55, cbManMesaRetrair  , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 100 - Tampa aberta, extensão abaixada, prolongamento recuado.
+		CriarTelaIHM(&maq[4], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"  , 148, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"   , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+								    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+								    {  45, 245, 70, 55, cbManMesaExpandir, "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 101 - Tampa aberta, extensão abaixada, prolongamento avançado.
+		CriarTelaIHM(&maq[5], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"  , 108, 249, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"   , 156, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+								    { 110, 165, 70, 55, cbManAplanSubir   , "images/cmd-aplan-ext-subir.png"    },
+								    {  45, 245, 70, 55, cbManMesaRetrair  , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 110 - Tampa aberta, extensão levantada, prolongamento recuado.
+		CriarTelaIHM(&maq[6], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"   , 113, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"    , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+								    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+								    {   0, 175, 70, 55, cbManMesaExpandir , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 111 - Tampa aberta, extensão levantada, prolongamento avançado.
+		CriarTelaIHM(&maq[7], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", widget->allocation.width, widget->allocation.height, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"       , 170, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-cima.png"   ,  73, 196, 1, 1 },
+									{ "images/maq-aplan-esq-ext-cima.png"    , 129, 186, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png", 205, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             , 520, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           , 563, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         , 554, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 415,  85, 70, 55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"},
+									{ 135,  85, 70, 55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png" },
+									{ 235,  40, 70, 55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 315,  40, 70, 55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png"  },
+								    { 110, 215, 70, 55, cbManAplanDescer  , "images/cmd-aplan-ext-descer.png"   },
+								    {   0, 175, 70, 55, cbManMesaRetrair  , "images/cmd-aplan-ext-expandir.png" },
+									{ 582,   7, 70, 55, cbManPrsLigar     , "images/cmd-prensa-ligar.png"       },
+							        { 440, 185, 70, 55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+							        { 440, 245, 70, 55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+    }
+
+	return 1;
+}
+
+// Atualizacao da tela da Prensa de Passo Fixo
+void PrensaPassoFixo_Update(void)
+{
+  char tmp[40];
+  int current_flags;
+  static int last_flags = -1;
+  static uint16_t ciclos_prensa = 0, ult_aviso_lub = -1;
+
+  // Leitura das flags de estado da máquina para atualização da imagem na tela principal
+  current_flags = MaqLerEstado();
+
+  current_flags = (current_flags >> 10) & 0x7;
+  if(last_flags != current_flags) {
+    last_flags = current_flags;
+    cbDesenharPrensa(NULL, NULL, (gpointer)(&current_flags));
+  }
+
+  if(idUser) { // Apenas realiza leitura de ciclos depois do login
+    ciclos_prensa = MaqLerPrsCiclos();
+    if(maq_param.custom.prensa.ciclos != ciclos_prensa) {
+      maq_param.custom.prensa.ciclos = ciclos_prensa;
+      if(ult_aviso_lub > maq_param.custom.prensa.ciclos) {
+        if(maq_param.custom.prensa.ciclos_lub > 0) {
+          ult_aviso_lub = maq_param.custom.prensa.ciclos - (maq_param.custom.prensa.ciclos % maq_param.custom.prensa.ciclos_lub);
+        } else {
+          ult_aviso_lub = 0;
+        }
+      }
+
+      printf("Último aviso de lubrificação: %d\n", ult_aviso_lub);
+      printf("Ciclos atual: %d\n", maq_param.custom.prensa.ciclos);
+      printf("Próximo aviso de lubrificação: %d\n", ult_aviso_lub+maq_param.custom.prensa.ciclos_lub);
+
+      sprintf(tmp, "%d", maq_param.custom.prensa.ciclos);
+      gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblConfigPrsCiclos")), tmp);
+
+      if(maq_param.custom.prensa.ciclos >= ult_aviso_lub+maq_param.custom.prensa.ciclos_lub) {
+        ult_aviso_lub = maq_param.custom.prensa.ciclos;
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 1);
+      } else if(maq_param.custom.prensa.ciclos >= ult_aviso_lub + (maq_param.custom.prensa.ciclos_lub/10)) {
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub")), 0);
+      }
+
+      if(maq_param.custom.prensa.ciclos >= maq_param.custom.prensa.ciclos_ferram) {
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 1);
+      } else {
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
+      }
+
+      if(!(maq_param.custom.prensa.ciclos%50))
+        MaqGravarConfig();
+    }
+  }
+}
+
+// Timer de producao - Prensa de Passo Fixo
+gboolean tmrExecProgPassoFixo(gpointer data)
+{
+  static int ciclos_inicial, iniciando = 1;
+  char tmp[30];
+  int erro_posic;
+  GtkWidget *wdg;
+  static GtkLabel *lblSaldo = NULL, *lblProd = NULL, *lblCiclos = NULL, *lblErroPos = NULL;
+
+  if(iniciando) {
+    iniciando = 0;
+    ciclos_inicial = maq_param.custom.prensa.ciclos;
+    lblProd    = GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotalProd" ));
+    lblSaldo   = GTK_LABEL(gtk_builder_get_object(builder, "lblExecCiclos"));
+    lblCiclos  = GTK_LABEL(gtk_builder_get_object(builder, "lblExecCiclosTotal"));
+    lblErroPos = GTK_LABEL(gtk_builder_get_object(builder, "lblExecErroPos"));
+  }
+
+  printf("MaqPosAtual = %d\n", MaqLerPosAtual());
+
+  erro_posic = MaqLerAplanErroPosic();
+
+  sprintf(tmp, "%d", maq_param.custom.prensa.ciclos - ciclos_inicial);
+  gtk_label_set_text(lblSaldo, tmp);
+
+  sprintf(tmp, "%d", maq_param.custom.prensa.ciclos);
+  gtk_label_set_text(lblCiclos, tmp);
+
+  sprintf(tmp, "%.02f",
+      (float)((maq_param.custom.prensa.ciclos - ciclos_inicial) * maq_param.custom.prensa.passo) / 1000);
+  gtk_label_set_text(lblProd, tmp);
+
+  sprintf(tmp, "%.01f", (float)(erro_posic)/10);
+  gtk_label_set_text(lblErroPos, tmp);
+
+  if((MaqLerEstado() & MAQ_MODO_MASK) == MAQ_MODO_MANUAL) {
+    iniciando = 1;
+    MaqConfigModo(MAQ_MODO_MANUAL);
+
+    sprintf(tmp, "Encerrando producao apos %d ciclos", maq_param.custom.prensa.ciclos - ciclos_inicial);
+    Log(tmp, LOG_TIPO_TAREFA);
+
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPrensaMsg")), "Parado");
+
+    wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
+    gtk_button_set_label(GTK_BUTTON(wdg), "Iniciar");
+    gtk_widget_set_sensitive(wdg, TRUE);
+
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), TRUE);
+
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+void cbExecTarefaPrensaPassoFixo(GtkButton *button, gpointer user_data)
+{
+  char *modo_botao[] = { "Iniciar", "Parar" }, msg[40];
+  GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnExecIniciarParar"));
+
+  if(!strcmp(gtk_button_get_label(GTK_BUTTON(wdg)), modo_botao[0])) {
+    if(!(MaqLerEstado() & MAQ_STATUS_PRONTA))
+      return;
+
+    Log("Iniciando producao", LOG_TIPO_TAREFA);
+
+    MaqConfigModo(MAQ_MODO_AUTO);
+    g_timeout_add(1000, tmrExecProgPassoFixo, NULL);
+
+    sprintf(msg, "Produzindo com passo de %d mm", maq_param.custom.prensa.passo);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPrensaMsg")), msg);
+
+    gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), FALSE);
+
+    gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[1]);
+  } else {
+    MaqConfigModo(MAQ_MODO_MANUAL);
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPrensaMsg")), "Terminando...");
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
+
+    gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[0]);
+
+    gtk_widget_set_sensitive(wdg, FALSE);
+  }
+}
+
+void ProgPrensaPassoFixo_Produzir(void)
+{
+  // Configura visibilidade de avisos da prensa
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoLub"   )), 0);
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblExecAvisoFerram")), 0);
+
+  // Se em reversão, avisa o operador
+  if(MaqLerFlags() & MAQ_MODO_PRS_SENTIDO) {
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPrensaMsg")), "Parado - Em Reversão");
+  } else {
+    gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPrensaMsg")), "Parado");
+  }
+}
+
+/***********************************************************/
+/*** Fim das Funcoes Relacionadas a Prensa de Passo Fixo ***/
+/***********************************************************/
