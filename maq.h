@@ -87,6 +87,9 @@ int         MaqConfig_GetActive (void);
 // Flag que libera a maquina para operacao
 #define MAQ_MODO_LIBERA 0x0040 // Ativa a maquina
 
+// Flag que liga a chave gera da maquina
+#define MAQ_MODO_LIGAR  0x0800 // Liga a chave geral da maquina
+
 // Mascara que indica quais flags devem ser desligadas quando se desativa a maquina
 #define MAQ_MODO_MASK_LIBERA  (~(MAQ_MODO_LIBERA | MAQ_MODO_LIMPAR | MAQ_MODO_MASK))
 
@@ -120,6 +123,7 @@ int         MaqConfig_GetActive (void);
 #define MAQ_STATUS_PRONTA     0x0004
 #define MAQ_STATUS_PRS_LIGADA 0x0040
 #define MAQ_STATUS_INITOK     0x0040
+#define MAQ_STATUS_DESLIGADA  0x8000
 
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01

@@ -976,6 +976,16 @@ gboolean tmrGtkUpdate(gpointer data)
 
           gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), (val>>i)&1);
         }
+      } else {
+        gboolean maqDesligada = (MaqLerEstado() & MAQ_STATUS_DESLIGADA) ? TRUE : FALSE;
+
+        // Configura visibilidade de aviso de maquina desligada
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMaqDesligada")), maqDesligada);
+
+        // Reconfigura o label do botao e ativa
+        GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnMaqDesligar"));
+        gtk_button_set_label(GTK_BUTTON(wdg), maqDesligada ? "Ligar" : "Desligar");
+        gtk_widget_set_sensitive(wdg, TRUE);
       }
     } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       int currentWorkArea = WorkAreaGet();
@@ -1090,11 +1100,24 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 // Desligar a IHM
 void cbDesligar(GtkButton *button, gpointer user_data)
 {
-  if(MaqConfigCurrent->UseLogin) {
+  if(MaqConfigCurrent->UseLogin && idUser != 0) {
     cbLogoff(NULL, NULL);
   }
 
   gtk_main_quit();
+}
+
+// Desligar a Maquina
+void cbMaqDesligar(GtkButton *button, gpointer user_data)
+{
+	if(MaqLerEstado() & MAQ_STATUS_DESLIGADA) {
+		MaqConfigFlags(MaqLerFlags() |   MAQ_MODO_LIGAR );
+	} else {
+		MaqConfigFlags(MaqLerFlags() & (~MAQ_MODO_LIGAR));
+	}
+
+	// Desativa o botao para nao enviar comandos seguidos. O loop principal vai reconfigurar o label e ativar o botao
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
 }
 
 /****************************************************************************

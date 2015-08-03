@@ -8,7 +8,7 @@
 #include "GtkUtils.h"
 
 static const int FLAG_PROG_TAMANHO = 0x0200;
-static const int FLAG_PROG_GRAVAR  = 0x0800;
+static const int FLAG_PROG_GRAVAR  = 0x0002;
 
 static const int FLAG_CMD_DESBOB_LIGAR  = 0x0100;
 

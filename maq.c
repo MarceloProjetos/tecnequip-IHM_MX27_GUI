@@ -37,7 +37,7 @@ void MaqErro(int erro)
 // Listas de Erro das Maquinas
 char *ErrorListDefault[] = {
     "Erro na comunicacao",
-    "Emergencia Acionada",
+    "Parada Acionada",
     "Falta de fase",
     "Erro na unidade hidraulica",
     "Erro no inversor",
@@ -53,7 +53,7 @@ char *ErrorListDefault[] = {
 
 char *ErrorListBanho[] = {
     "Erro na comunicacao",
-    "Emergencia Acionada",
+    "Parada Acionada",
     "Falta de Fase",
     "Erro no Termico da Bomba",
     "Erro no Comando da Bomba",
@@ -69,7 +69,7 @@ char *ErrorListBanho[] = {
 
 char *ErrorListColunaN[] = {
     "Erro na comunicacao",
-    "Emergencia Acionada",
+    "Parada Acionada",
     "Falta de fase",
     "Erro na unidade hidraulica",
     "Erro no inversor",
@@ -84,7 +84,7 @@ char *ErrorListColunaN[] = {
 
 char *ErrorListPPLeve[] = {
     "Erro na comunicacao",
-    "Emergencia Acionada",
+    "Parada Acionada",
     "Falta de fase",
     "Erro na unidade hidraulica",
     "Termistor do motor aberto",
@@ -99,7 +99,7 @@ char *ErrorListPPLeve[] = {
 
 char *ErrorListAplanPrensa[] = {
     "Erro na comunicação",
-    "Emergência Acionada",
+    "Parada Acionada",
     "Falta de fase",
     "Erro na unidade hidráulica",
     "Erro na Prensa - Térmico do Martelo",
@@ -1047,7 +1047,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = PrensaPassoFixo_Update,
         .ErrorList        = ErrorListAplanPrensa,
-        .Alertas          = 0x200, // Erro de Posicionamento
+        .Alertas          = 0x600, // Erro de Posicionamento e da Porta de Seguranca da Prensa
 	},
     { // Final
         .ID = NULL

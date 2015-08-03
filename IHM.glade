@@ -723,7 +723,7 @@
               </object>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label1">
+              <object class="GtkLabel" id="lblAbaHome">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Inicial</property>
@@ -3120,7 +3120,7 @@ Nível Inferior</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label113">
+              <object class="GtkLabel" id="lblAbaManutencao">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Manutenção</property>
@@ -3343,7 +3343,7 @@ Nível Inferior</property>
                             </child>
                             <child>
                               <object class="GtkButton" id="btnFatorMesa">
-                                <property name="label" translatable="yes">Calcular fator de correção do encoder</property>
+                                <property name="label" translatable="yes">Corrigir tamanho da peça</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
@@ -5516,7 +5516,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label2">
+              <object class="GtkLabel" id="lblAbaConfiguracao">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Config</property>
@@ -5644,7 +5644,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label7">
+              <object class="GtkLabel" id="lblAbaTarefas">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Automático</property>
@@ -6473,7 +6473,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label3">
+              <object class="GtkLabel" id="lblAbaOperar">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Manual</property>
@@ -6723,7 +6723,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label8">
+              <object class="GtkLabel" id="lblAbaLog">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Registro</property>
@@ -6798,7 +6798,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label53">
+              <object class="GtkLabel" id="lblAbaLogoff">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Sair</property>
@@ -7258,7 +7258,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label54">
+              <object class="GtkLabel" id="lblAbaCadTarefa">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Tarefa</property>
@@ -8492,7 +8492,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label55">
+              <object class="GtkLabel" id="lblAbaDebugModBUS">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">ModBus</property>
@@ -8728,7 +8728,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label82">
+              <object class="GtkLabel" id="lblAbaDataHora">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Data</property>
@@ -9010,7 +9010,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label132">
+              <object class="GtkLabel" id="lblAbaProducao">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Executando</property>
@@ -9798,7 +9798,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label138">
+              <object class="GtkLabel" id="lblAbaTecladoVirtual">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Virtual Keyboard</property>
@@ -9894,7 +9894,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label60">
+              <object class="GtkLabel" id="lblAbaMensagem">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">MessageBox</property>
@@ -9908,6 +9908,23 @@ Resultado será carregado no campo correspondente.</property>
               <object class="GtkVBox" id="vbox15">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkLabel" id="lblMaqDesligada">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Máquina Desligada!</property>
+                    <attributes>
+                      <attribute name="weight" value="bold"/>
+                      <attribute name="size" value="20000"/>
+                      <attribute name="foreground" value="#ffff00000000"/>
+                    </attributes>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
                 <child>
                   <object class="GtkTable" id="table27">
                     <property name="visible">True</property>
@@ -9989,7 +10006,7 @@ Resultado será carregado no campo correspondente.</property>
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">False</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
@@ -9998,13 +10015,12 @@ Resultado será carregado no campo correspondente.</property>
                     <property name="can_focus">False</property>
                     <property name="homogeneous">True</property>
                     <child>
-                      <object class="GtkButton" id="btnCancelar">
-                        <property name="label">gtk-quit</property>
+                      <object class="GtkButton" id="btnMaqDesligar">
+                        <property name="label">Desligar</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <property name="use_stock">True</property>
-                        <signal name="clicked" handler="gtk_main_quit" swapped="no"/>
+                        <signal name="clicked" handler="cbMaqDesligar" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -10045,7 +10061,7 @@ Resultado será carregado no campo correspondente.</property>
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>
@@ -10054,7 +10070,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="teclabel9">
+              <object class="GtkLabel" id="lblAbaLogin">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Login</property>
@@ -10268,7 +10284,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="label9">
+              <object class="GtkLabel" id="lblDadosPedido">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">DadosPedido</property>
@@ -10357,7 +10373,7 @@ Resultado será carregado no campo correspondente.</property>
               </packing>
             </child>
             <child type="tab">
-              <object class="GtkLabel" id="xlabel9">
+              <object class="GtkLabel" id="lblAbaMotivoParada">
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="label" translatable="yes">Indeterminado</property>
@@ -11795,6 +11811,42 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">False</property>
                             <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                             <child>
                               <placeholder/>
                             </child>
