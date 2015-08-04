@@ -9,7 +9,7 @@
 #include "GtkUtils.h"
 
 // Flags de operacoes da maquina
-#define MAQ_MODO_CALC_FATOR 0x0800
+#define MAQ_MODO_CALC_FATOR 0x8000
 #define MAQ_MODO_CALC_REL   0x1000
 #define MAQ_MODO_CALC_MIN   0x2000
 #define MAQ_MODO_POSIC      0x4000

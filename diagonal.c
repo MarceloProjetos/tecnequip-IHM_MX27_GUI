@@ -2,7 +2,7 @@
 
 static const int FLAG_FILA_TAMANHO = 0x0200;
 static const int FLAG_FILA_LER     = 0x0400;
-static const int FLAG_FILA_GRAVAR  = 0x0800;
+static const int FLAG_FILA_GRAVAR  = 0x2000;
 
 static const int REG_FILA_INDICE  = 18;
 static const int REG_FILA_POSICAO = 19;
@@ -99,4 +99,10 @@ void Diagonal_Auto(int ativo)
 
     close(fd);
   }
+}
+
+void cbDiagonal_LimparFila(GtkButton *button, gpointer user_data)
+{
+	FilaPecas[0] = 0;
+	FilaPecas_Gravar();
 }

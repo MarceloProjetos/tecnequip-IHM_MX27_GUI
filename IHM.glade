@@ -3542,6 +3542,43 @@ Nível Inferior</property>
                               </packing>
                             </child>
                             <child>
+                              <object class="GtkHBox" id="hbox73">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="homogeneous">True</property>
+                                <child>
+                                  <object class="GtkLabel" id="lblConfigDiagonalDistancia1">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="label" translatable="yes">Limpar a Fila de Peças</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkButton" id="btnConfigDiagonalLimparFila">
+                                    <property name="label" translatable="yes">Limpar!</property>
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">True</property>
+                                    <property name="receives_default">True</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">True</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                              </object>
+                              <packing>
+                                <property name="expand">True</property>
+                                <property name="fill">True</property>
+                                <property name="position">2</property>
+                              </packing>
+                            </child>
+                            <child>
                               <object class="GtkButton" id="btnConfigDiagonalVoltar">
                                 <property name="label" translatable="yes">Retornar às Configurações</property>
                                 <property name="visible">True</property>
@@ -3552,7 +3589,7 @@ Nível Inferior</property>
                               <packing>
                                 <property name="expand">True</property>
                                 <property name="fill">True</property>
-                                <property name="position">2</property>
+                                <property name="position">3</property>
                               </packing>
                             </child>
                           </object>

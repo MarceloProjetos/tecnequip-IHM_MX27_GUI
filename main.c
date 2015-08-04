@@ -22,6 +22,9 @@ struct MODBUS_Device mbdev;
 struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
+// Flag indicando se a maquina deve ser reinicializada ao finalizar. Se nao precisar, a maquina sera desligada!
+gboolean ihmRebootNeeded = FALSE;
+
 pthread_mutex_t mutex_ipcmq_rd   = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_ipcmq_wr   = PTHREAD_MUTEX_INITIALIZER;
 
@@ -920,22 +923,17 @@ gboolean tmrGtkUpdate(gpointer data)
           val = MaqLerInvTensao();
           sprintf(buf, "%d", val);
           gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTensao")), buf);
-//          break;
 
-//        case 1:
           val = MaqLerInvCorrente();
           sprintf(buf, "%.01f", ((float)val)/10);
           gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvCorrente")), buf);
-//          break;
 
-//        case 2:
           val = MaqLerInvTorque();
           sprintf(buf, "%d", val);
           gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTorque")), buf);
           break;
 
         case 1:
-//        case 3:
           val = MaqLerInvInput();
           for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
             sprintf(tmp, "imgManutInvEnt%02d", i);
@@ -945,14 +943,12 @@ gboolean tmrGtkUpdate(gpointer data)
 
             gtk_image_set_from_stock(GTK_IMAGE(wdg), (val>>i)&1 ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
           }
-//          break;
 
-//        case 4:
           val = MaqLerInvOutput();
-          for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as entradas
+          for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as saidas
             sprintf(tmp, "imgManutInvSai%02d", i);
             wdg = GTK_WIDGET(gtk_builder_get_object(builder, tmp));
-            if(wdg == NULL) // Acabaram as entradas
+            if(wdg == NULL) // Acabaram as saidas
               break; // Sai do loop
 
             gtk_image_set_from_stock(GTK_IMAGE(wdg), (val>>i)&1 ? "gtk-apply" : "gtk-media-record", GTK_ICON_SIZE_BUTTON);
@@ -1114,6 +1110,14 @@ void cbMaqDesligar(GtkButton *button, gpointer user_data)
 		MaqConfigFlags(MaqLerFlags() |   MAQ_MODO_LIGAR );
 	} else {
 		MaqConfigFlags(MaqLerFlags() & (~MAQ_MODO_LIGAR));
+
+		// O operador desligou a maquina. Assim devemos checar se existe atualizacao
+		int ret = (system("../checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado 8 bits, nao sei o motivo...
+		// Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
+	    if(ret == 1 || ret == 2) {
+	    	ihmRebootNeeded = TRUE;
+	    	cbDesligar(NULL, NULL);
+	    }
 	}
 
 	// Desativa o botao para nao enviar comandos seguidos. O loop principal vai reconfigurar o label e ativar o botao
@@ -1526,5 +1530,6 @@ int main(int argc, char *argv[])
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 
-  return ret;
+  // Se precisar reiniciar, retorna 99 para que o script de boot possa identificar e realizar o reboot
+  return ihmRebootNeeded ? 99 : ret;
 }
