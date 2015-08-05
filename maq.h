@@ -315,11 +315,13 @@ void     MaqGravarRegistrador(uint16_t reg, uint16_t val);
 void     MaqSetDateTime      (struct tm *t);
 void     MaqGetIpAddress     (char *iface, char *ipaddr);
 
-void                      MaqConfigModo   (uint16_t  modo);
-void                      MaqConfigFlags  (uint16_t flags);
+void     MaqConfigModo       (uint16_t  modo);
+void     MaqConfigFlags      (uint16_t flags);
 
-void                      MaqConfigProdQtd(uint16_t quant);
-void                      MaqConfigProdTam(uint16_t   tam);
+void     MaqConfigProdQtd    (uint16_t quant);
+void     MaqConfigProdTam    (uint16_t   tam);
+
+void     MaqConfigChaveGeral (gboolean ligar);
 
 void                      MaqConfigPerfil (struct strMaqParamPerfil pf);
 struct strMaqParamPerfil  MaqLerPerfil    (void);

@@ -1060,7 +1060,7 @@ MaqConfig MaqConfigDefault = {
     .Line             = "TESTE",
     .Machine          = "TESTE",
 //    .ClpAddr          = "192.168.1.254",
-    .ClpAddr          = "192.168.0.192",
+    .ClpAddr          = "192.168.2.110",
     .AbaHome          = NTB_ABA_HOME_PRENSA,
     .AbaManut         = NTB_ABA_MANUT,
     .AbaOperAuto      = NTB_ABA_PRENSAPF_PROD,
@@ -1077,7 +1077,7 @@ MaqConfig MaqConfigDefault = {
     .fncOnAuto        = NULL,
     .fncTimerUpdate   = PrensaPassoFixo_Update,
     .ErrorList        = ErrorListAplanPrensa,
-    .Alertas          = 0x200, // Erro de Posicionamento
+    .Alertas          = 0xC00, // Erro de Posicionamento
 };
 
 MaqConfig *MaqConfigCurrent = &MaqConfigDefault;
@@ -1279,6 +1279,15 @@ void MaqConfigFlags(uint16_t flags)
 {
   printf("flags = %d\n", flags);
   MaqGravarRegistrador(MAQ_REG_FLAGS, flags);
+}
+
+void MaqConfigChaveGeral(gboolean ligar)
+{
+	if(ligar) {
+		MaqConfigFlags(MaqLerFlags() |   MAQ_MODO_LIGAR );
+	} else {
+		MaqConfigFlags(MaqLerFlags() & (~MAQ_MODO_LIGAR));
+	}
 }
 
 // Funcao que sincroniza a estrutura de parametros com o clp

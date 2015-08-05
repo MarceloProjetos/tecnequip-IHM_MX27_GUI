@@ -785,8 +785,10 @@ void IPC_Update(void)
         gtk_label_set_text(lbl, tmp);
 
       // Sem energia e bateria com tensao < 3V, sistema deve desligar!
-      if(!bs.HasExternalPower && bs.BatteryVoltage < 3)
+      if(!bs.HasExternalPower && bs.BatteryVoltage < 3) {
+    	  printf("Sem energia! Desligando...\n");
         gtk_main_quit();
+      }
 
       if((WorkAreaGet() == MaqConfigCurrent->AbaManut)) {
         gtk_progress_bar_set_fraction(pgbVIN , bs.ExternalVoltage/35);
@@ -1107,12 +1109,12 @@ void cbDesligar(GtkButton *button, gpointer user_data)
 void cbMaqDesligar(GtkButton *button, gpointer user_data)
 {
 	if(MaqLerEstado() & MAQ_STATUS_DESLIGADA) {
-		MaqConfigFlags(MaqLerFlags() |   MAQ_MODO_LIGAR );
+		MaqConfigChaveGeral(TRUE);
 	} else {
-		MaqConfigFlags(MaqLerFlags() & (~MAQ_MODO_LIGAR));
+		MaqConfigChaveGeral(FALSE);
 
 		// O operador desligou a maquina. Assim devemos checar se existe atualizacao
-		int ret = (system("../checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado 8 bits, nao sei o motivo...
+		int ret = (system("~/checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado 8 bits, nao sei o motivo...
 		// Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
 	    if(ret == 1 || ret == 2) {
 	    	ihmRebootNeeded = TRUE;
@@ -1530,6 +1532,12 @@ int main(int argc, char *argv[])
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 
+  if(ihmRebootNeeded) {
+	  ret = 99;
+  }
+
+  printf("Programa finalizado. Retornando %d ao sistema.\n", ret);
+
   // Se precisar reiniciar, retorna 99 para que o script de boot possa identificar e realizar o reboot
-  return ihmRebootNeeded ? 99 : ret;
+  return ret;
 }
