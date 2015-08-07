@@ -1119,8 +1119,11 @@ void cbDesligar(GtkButton *button, gpointer user_data)
 // Desligar a Maquina
 void cbMaqDesligar(GtkButton *button, gpointer user_data)
 {
-	// Essa maquina nao possui controle de chave geral. Ignora comando!
-	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) return;
+	// Essa maquina nao possui controle de chave geral. Executa o comando antigo: desligar a ihm!!
+	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) {
+		cbDesligar(NULL, NULL);
+		return;
+	}
 
 	if(MaqEstadoChaveGeral()) {
 		MaqConfigChaveGeral(FALSE);
