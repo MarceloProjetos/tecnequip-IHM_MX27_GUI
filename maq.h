@@ -34,6 +34,7 @@ typedef struct {
 
   int            UseLogin;              ///< Flag que indica se essa maquina exige login (TRUE) ou nao (FALSE)
   int            UseIndet;              ///< Flag que indica se essa maquina pode ficar em estado indeterminado (TRUE) ou nao (FALSE)
+  int            UseChaveGeral;         ///< Flag que indica se essa maquina possui controle de Chave Geral (Capacidade de Energizar / Desenergizar o painel)
 
   int            NeedMaqInit;           ///< Flag que indica se essa maquina exige inicializacao (TRUE) ou nao (FALSE)
   int            MaqModeCV;             ///< Flag que indica se essa maquina suporta corte em movimento (TRUE) ou nao (FALSE)
@@ -321,7 +322,8 @@ void     MaqConfigFlags      (uint16_t flags);
 void     MaqConfigProdQtd    (uint16_t quant);
 void     MaqConfigProdTam    (uint16_t   tam);
 
-void     MaqConfigChaveGeral (gboolean ligar);
+void     MaqConfigChaveGeral (uint16_t ligar);
+uint16_t MaqEstadoChaveGeral(void);
 
 void                      MaqConfigPerfil (struct strMaqParamPerfil pf);
 struct strMaqParamPerfil  MaqLerPerfil    (void);

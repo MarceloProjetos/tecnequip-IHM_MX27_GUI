@@ -97,6 +97,21 @@ char *ErrorListPPLeve[] = {
     ""
 };
 
+char *ErrorListPPNormal[] = {
+    "Erro na comunicacao",
+    "Parada Acionada",
+    "Falta de fase",
+    "Erro na unidade hidraulica",
+    "Termistor do motor aberto",
+    "Erro no inversor",
+    "Erro no transformador",
+    "Erro de comunicacao - Inversor",
+    "Erro no Corte do Perfil",
+    "Erro de Posicionamento",
+    "Maquina Desativada",
+    ""
+};
+
 char *ErrorListAplanPrensa[] = {
     "Erro na comunicação",
     "Parada Acionada",
@@ -165,11 +180,12 @@ MaqIOMap MaqIOMapPrensaColN = {
       { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
       { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
       { "Térmico - Martelo"               , "images/ihm-ent-hidr-termico.png"    },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
       { "Inversor OK"                     , "images/ihm-ent-inversor-erro.png"   },
+      { "Erro no Servo"                   , "images/ihm-ent-inversor-erro.png"        },
       { "Aplanadora Fechada"              , "images/ihm-ent-.png" },
-      { "Extensao Recuada"                , "images/ihm-ent-.png" },
-      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
+      { "Pressao Ar OK"                   , "images/ihm-ent-.png" },
       { "Avança Chapa"                    , "images/ihm-ent-perfil-avancar.png"  },
       { "Recua Chapa"                     , "images/ihm-ent-perfil-recuar.png"   },
       { "Alim. Prensa OK"                 , "images/ihm-ent-.png" },
@@ -179,8 +195,7 @@ MaqIOMap MaqIOMapPrensaColN = {
       { "Bi-Manual 1"                     , "images/ihm-ent-inversor-posic.png"  },
       { "Bi-Manual 2"                     , "images/ihm-ent-.png" },
       { "Desliga Continuo"                , "images/ihm-ent-.png" },
-      { "Pressao Ar OK"                   , "images/ihm-ent-.png" },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Segurança Prensa"                , "images/ihm-ent-.png" },
   },
 
   .Output  = {
@@ -195,7 +210,7 @@ MaqIOMap MaqIOMapPrensaColN = {
       { "Habilita Servo"  , "images/ihm-manut-.png" },
       { "Reset Servo"     , "images/ihm-manut-.png" },
       { "Libera Servo"    , "images/ihm-manut-.png" },
-      { "Chave Geral"     , "images/ihm-manut-perfil-recuar.png"  },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
@@ -209,20 +224,23 @@ MaqIOMap MaqIOMapPrensaPP = {
   .Input  = {
       { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
       { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Térmico - Martelo"               , "images/ihm-ent-hidr-termico.png"    },
       { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
-      { "Erro no Servo"                   , "images/ihm-ent-inversor-erro.png"   },
+      { "Inversor OK"                     , "images/ihm-ent-inversor-erro.png"   },
       { "Aplanadora Fechada"              , "images/ihm-ent-.png" },
-      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png" },
+      { "Ext. Aplan. Recuada"             , "images/ihm-ent-.png" },
+      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
       { "Avança Chapa"                    , "images/ihm-ent-perfil-avancar.png"  },
       { "Recua Chapa"                     , "images/ihm-ent-perfil-recuar.png"   },
-      { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
       { "Alim. Prensa OK"                 , "images/ihm-ent-.png" },
-      { "Ferram. Liberada"                , "images/ihm-ent-.png" },
-      { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
-      { "Abrir Aplanadora"                , "images/ihm-ent-.png" },
-      { "Fechar Aplanadora"               , "images/ihm-ent-.png" },
-      { "Reservado"                       , "images/ihm-ent-.png" },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Ponto de Parada\nPrensa"         , "images/ihm-ent-.png" },
+      { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png" },
+      { "Ajuste - Prensa"                 , "images/ihm-ent-.png" },
+      { "Bi-Manual 1"                     , "images/ihm-ent-inversor-posic.png"  },
+      { "Bi-Manual 2"                     , "images/ihm-ent-.png" },
+      { "Desliga Continuo"                , "images/ihm-ent-.png" },
+      { "Pressao Ar OK"                   , "images/ihm-ent-.png" },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
   },
 
   .Output  = {
@@ -263,7 +281,7 @@ MaqIOMap MaqIOMapPrensaMez = {
       { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
       { "Abrir Aplanadora"                , "images/ihm-ent-.png" },
       { "Fechar Aplanadora"               , "images/ihm-ent-.png" },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Reservado"                       , "images/ihm-ent-.png" },
   },
 
@@ -283,11 +301,11 @@ MaqIOMap MaqIOMapPrensaMez = {
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
       { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
       { "Ligar Prensa"    , "images/ihm-manut-.png" },
-      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
   },
 };
 
-// Mapas de I/O da Diagonal / Travessa
+// Mapas de I/O da Perfiladeira de Coluna N
 MaqIOMap MaqIOMapColunaN = {
   .InputMask  = 0,
   .Input  = {
@@ -309,7 +327,7 @@ MaqIOMap MaqIOMapColunaN = {
       { "Próximo ao Fim"                  , "images/ihm-ent-.png" },
       { "Vel. Sinc."                      , "images/ihm-ent-inversor-posic.png"  },
       { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
   },
 
   .Output  = {
@@ -321,7 +339,7 @@ MaqIOMap MaqIOMapColunaN = {
       { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
       { "Escravo"         , "images/ihm-ent-inversor-posic.png"   },
       { "Hab. Servo"      , "images/ihm-manut-.png" },
-      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
       { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
@@ -343,7 +361,7 @@ MaqIOMap MaqIOMapTubo = {
       { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
       { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
       { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Reservado"                       , "images/ihm-ent-.png" },
       { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
       { "Reservado"                       , "images/ihm-ent-.png" },
@@ -361,7 +379,7 @@ MaqIOMap MaqIOMapTubo = {
       { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
       { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
       { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
-      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png" },
       { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
@@ -382,42 +400,42 @@ MaqIOMap MaqIOMapDiagonal = {
   .InputMask  = 0,
   .Input  = {
       { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
-      { "Térmico\nHidráulica Corte"       , "images/ihm-ent-hidr-termico.png"    },
-      { "Térmico\nHidráulica Mesa"        , "images/ihm-ent-hidr-termico.png"    },
-      { "Erro no Servo"                   , "images/ihm-ent-inversor-erro.png"    },
-      { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
+      { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
+      { "Servo OK"                        , "images/ihm-ent-inversor-erro.png"   },
+      { "Reservado"                       , "images/ihm-ent-.png" },
       { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
-      { "Fim da Mesa\nLado Direito"       , "images/ihm-ent-corte-superior.png"  },
-      { "Fim da Mesa\nLado Esquerdo"      , "images/ihm-ent-corte-inferior.png"  },
-      { "Referência - Mesa"               , "images/ihm-ent-piloto-superior.png" },
-      { "Mesa Posicionada"                , "images/ihm-ent-inversor-posic.png"  },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Reservado"                       , "images/ihm-ent-.png" },
       { "Posicionamento\nFinalizado"      , "images/ihm-ent-inversor-posic.png"  },
       { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
       { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
-      { "Sensor de Prensa\nNível Superior", "images/ihm-ent-corte-superior.png"  },
-      { "Sensor de Prensa\nNível Inferior", "images/ihm-ent-corte-inferior.png"  },
-      { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
-      { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
+      { "Sensor da Prensa\nNível Superior", "images/ihm-ent-corte-superior.png"  },
+      { "Sensor da Prensa\nNível Inferior", "images/ihm-ent-corte-inferior.png"  },
+      { "Avança Perfil"                   , "images/ihm-ent-perfil-avancar.png"  },
+      { "Recua Perfil"                    , "images/ihm-ent-perfil-recuar.png"   },
       { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
       { "Reservado"                       , "images/ihm-ent-.png" },
   },
 
   .Output  = {
-      { "Hidráulica Corte", "images/ihm-manut-hidr-ligar.png"     },
-      { "Hidráulica Mesa" , "images/ihm-manut-hidr-ligar.png"     },
+      { "Ligar hidráulica", "images/ihm-manut-hidr-ligar.png"     },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Avança corte"    , "images/ihm-manut-corte-avancar.png"  },
       { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
-      { "Ventagem corte"  , "images/ihm-manut-.png"               },
-      { "Avança prensa"   , "images/ihm-manut-piloto-avancar.png" },
-      { "Recua prensa"    , "images/ihm-manut-piloto-recuar.png"  },
-      { "Ventagem prensa" , "images/ihm-manut-.png"               },
-      { "Posicionar Mesa" , "images/ihm-manut-motor-freio.png"    },
-      { "Zerar enc. Mesa" , "images/ihm-manut-encoder-zerar.png"  },
+      { "Ventagem"        , "images/ihm-manut-hidr-ligar.png"     },
+      { "Avança prensa"   , "images/ihm-manut-corte-avancar.png"  },
+      { "Recua prensa"    , "images/ihm-manut-corte-recuar.png"   },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
       { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
-      { "Reservado Servo" , "images/ihm-manut-"                   },
-      { "Zerar enc. Servo", "images/ihm-manut-encoder-zerar.png"  },
-      { "Reservado Servo" , "images/ihm-manut-.png" },
+      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
+      { "Reservado"       , "images/ihm-manut-.png" },
       { "Reservado"       , "images/ihm-manut-.png" },
   },
 };
@@ -429,7 +447,7 @@ MaqIOMap MaqIOMapColunaMezanino = {
       { "Emergência"                      , "images/ihm-ent-emergencia.png"      },
       { "Térmico - Hidráulica"            , "images/ihm-ent-hidr-termico.png"    },
       { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
       { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
       { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
@@ -453,7 +471,7 @@ MaqIOMap MaqIOMapColunaMezanino = {
       { "Recua corte"     , "images/ihm-manut-corte-recuar.png"   },
       { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
       { "Avança piloto"   , "images/ihm-manut-piloto-avancar.png" },
-      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Freio do motor"  , "images/ihm-manut-motor-freio.png"    },
       { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
@@ -488,7 +506,7 @@ MaqIOMap MaqIOMapVigaMezanino = {
       { "Cortar Canto"                    , "images/ihm-ent-manual-corte.png"    },
       { "Sensor de Canto\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
       { "Sensor de Canto\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
-      { "Térmico - Canto"                 , "images/ihm-ent-hidr-termico.png"    },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Freio acionado"                  , "images/ihm-manut-motor-freio.png"   },
   },
 
@@ -508,6 +526,7 @@ MaqIOMap MaqIOMapVigaMezanino = {
       { "Recua canto"     , "images/ihm-manut-corte-recuar.png"   },
       { "Ventagem canto"  , "images/ihm-manut-hidr-ligar.png"     },
       { "Ligar canto"     , "images/ihm-manut-hidr-ligar.png"     },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
   },
 };
 
@@ -531,7 +550,7 @@ MaqIOMap MaqIOMapSigma = {
       { "Sensor de Canto\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
       { "Sensor de Canto\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
       { "Desbob. OK"                      , "images/ihm-manut-desbob.png"        },
-      { "Reservado"                       , "images/ihm-ent-.png" },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Reservado"                       , "images/ihm-ent-.png" },
       { "Freio acionado"                  , "images/ihm-manut-motor-freio.png"   },
   },
@@ -551,7 +570,7 @@ MaqIOMap MaqIOMapSigma = {
       { "Posicionar"      , "images/ihm-manut-perfil-posic.png"   },
       { "Zerar encoder"   , "images/ihm-manut-encoder-zerar.png"  },
       { "Desbobinador"    , "images/ihm-manut-desbob.png"         },
-      { "Reservado"       , "images/ihm-manut-.png" },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png" },
   },
 };
@@ -613,6 +632,7 @@ MaqIOMap MaqIOMapPPLeve = {
         { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
         { "Sensor de Piloto\nNível Superior", "images/ihm-ent-piloto-superior.png" },
         { "Sensor de Piloto\nNível Inferior", "images/ihm-ent-piloto-inferior.png" },
+        { "Reservado"                       , "images/ihm-ent-.png"                },
         { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png"                },
         { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
         { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
@@ -621,8 +641,7 @@ MaqIOMap MaqIOMapPPLeve = {
         { "Termistor"                       , "images/ihm-ent-.png"                },
         { "Sensor de Furo\nPrincipal"       , "images/ihm-ent-.png"                },
         { "Sensor de Furo\nAuxiliar"        , "images/ihm-ent-.png"                },
-        { "Reservado"                       , "images/ihm-ent-.png"                },
-        { "Reservado"                       , "images/ihm-ent-.png"                },
+        { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
     },
 
     .Output  = {
@@ -637,7 +656,7 @@ MaqIOMap MaqIOMapPPLeve = {
         { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
         { "Reservado"       , "images/ihm-manut-.png"               },
         { "Reservado"       , "images/ihm-manut-.png"               },
-        { "Reservado"       , "images/ihm-manut-.png"               },
+        { "Liga Chave Geral", "images/ihm-manut-.png"               },
         { "Reservado"       , "images/ihm-manut-.png"               },
         { "Reservado"       , "images/ihm-manut-.png"               },
         { "Reservado"       , "images/ihm-manut-.png"               },
@@ -665,7 +684,7 @@ MaqIOMap MaqIOMapPPPesado = {
       { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
       { "Sensor de Furo\nPrincipal"       , "images/ihm-ent-.png"                },
       { "Sensor de Furo\nAuxiliar"        , "images/ihm-ent-.png"                },
-      { "Reservado"                       , "images/ihm-ent-.png"                },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Reservado"                       , "images/ihm-ent-.png"                },
       { "Reservado"                       , "images/ihm-ent-.png"                },
   },
@@ -681,7 +700,7 @@ MaqIOMap MaqIOMapPPPesado = {
       { "Velocidade Alta" , "images/ihm-manut-.png"               },
       { "Velocidade Baixa", "images/ihm-manut-.png"               },
       { "Ligar Inversor"  , "images/ihm-manut-.png"               },
-      { "Reservado"       , "images/ihm-manut-.png"               },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png"               },
@@ -699,8 +718,8 @@ MaqIOMap MaqIOMapPPNormal = {
       { "Falta de Fase"                   , "images/ihm-ent-falta-fase.png"      },
       { "Erro no inversor"                , "images/ihm-ent-inversor-erro.png"   },
       { "Bomba Hidr. Ligada"              , "images/ihm-ent-.png"                },
-      { "Erro no inversor 2"              , "images/ihm-ent-inversor-erro.png"   },
-      { "Fim de Material"                 , "images/ihm-ent-material-fim.png"    },
+      { "Térmico\nTransformador"          , "images/ihm-ent-inversor-erro.png"   },
+      { "Termistor - Motor"               , "images/ihm-ent-material-fim.png"    },
       { "Avanço Manual"                   , "images/ihm-ent-perfil-avancar.png"  },
       { "Recuo Manual"                    , "images/ihm-ent-perfil-recuar.png"   },
       { "Corte Manual"                    , "images/ihm-ent-manual-corte.png"    },
@@ -709,7 +728,7 @@ MaqIOMap MaqIOMapPPNormal = {
       { "Sensor de Corte\nNível Superior" , "images/ihm-ent-corte-superior.png"  },
       { "Sensor de Corte\nNível Inferior" , "images/ihm-ent-corte-inferior.png"  },
       { "Placa Fusível"                   , "images/ihm-ent-.png"                },
-      { "Reservado"                       , "images/ihm-ent-.png"                },
+      { "Chave Geral Ligada"              , "images/ihm-ent-.png"                },
       { "Sensor de Furo\nPrincipal"       , "images/ihm-ent-.png"                },
       { "Sensor de Furo\nAuxiliar"        , "images/ihm-ent-.png"                },
       { "Reservado"                       , "images/ihm-ent-.png"                },
@@ -723,8 +742,8 @@ MaqIOMap MaqIOMapPPNormal = {
       { "Trava da mesa"   , "images/ihm-manut-mesa-trava.png"     },
       { "Avançar perfil"  , "images/ihm-manut-perfil-avancar.png" },
       { "Recuar perfil"   , "images/ihm-manut-perfil-recuar.png"  },
-      { "Velocidade Alta" , "images/ihm-manut-.png"               },
-      { "Velocidade Baixa", "images/ihm-manut-.png"               },
+      { "Liga Chave Geral", "images/ihm-manut-.png"               },
+      { "Reservado"       , "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png"               },
       { "Reservado"       , "images/ihm-manut-.png"               },
@@ -749,6 +768,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = TRUE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -773,6 +793,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = TRUE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -797,6 +818,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = TRUE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -821,6 +843,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = TRUE,
@@ -845,6 +868,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = NTB_ABA_CONFIG_COLN,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = TRUE,
         .MaqModeCV        = TRUE,
         .InverterComandos = TRUE,
@@ -869,6 +893,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = NTB_ABA_CONFIG_DIAGONAL,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = TRUE,
@@ -893,6 +918,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -917,6 +943,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -941,6 +968,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = TRUE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -965,6 +993,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = FALSE,
         .UseIndet         = FALSE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -989,6 +1018,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -998,7 +1028,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnOperAuto    = NULL,
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = NULL,
-        .ErrorList        = ErrorListPPLeve,
+        .ErrorList        = ErrorListPPNormal,
         .Alertas          = 0x100, // Erro de Corte
     },
 	{
@@ -1013,6 +1043,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = NTB_ABA_CONFIG_PRENSA,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -1037,6 +1068,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = NTB_ABA_CONFIG_PRENSA,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
+        .UseChaveGeral    = TRUE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -1067,6 +1099,7 @@ MaqConfig MaqConfigDefault = {
     .AbaConfigMais    = NTB_ABA_CONFIG_PRENSA,
     .UseLogin         = TRUE,
     .UseIndet         = TRUE,
+    .UseChaveGeral    = TRUE,
     .NeedMaqInit      = FALSE,
     .MaqModeCV        = FALSE,
     .InverterComandos = FALSE,
@@ -1281,13 +1314,23 @@ void MaqConfigFlags(uint16_t flags)
   MaqGravarRegistrador(MAQ_REG_FLAGS, flags);
 }
 
-void MaqConfigChaveGeral(gboolean ligar)
+void MaqConfigChaveGeral(uint16_t ligar)
 {
+	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) return;
+
 	if(ligar) {
 		MaqConfigFlags(MaqLerFlags() |   MAQ_MODO_LIGAR );
 	} else {
 		MaqConfigFlags(MaqLerFlags() & (~MAQ_MODO_LIGAR));
 	}
+}
+
+uint16_t MaqEstadoChaveGeral(void)
+{
+	// Se a maquina nao possui controle da chave geral, considera painel sempre energizado
+	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) return TRUE;
+
+	return (MaqLerEstado() & MAQ_STATUS_DESLIGADA) ? FALSE: TRUE;
 }
 
 // Funcao que sincroniza a estrutura de parametros com o clp

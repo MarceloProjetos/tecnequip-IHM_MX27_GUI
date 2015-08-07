@@ -364,6 +364,9 @@ int32_t tcp_socket = -1;
 
 MODBUS_HANDLER_TX(IHM_MB_TX)
 {
+  static time_t   timeConnectError = 0;
+  static uint16_t isConnectErrorActive = FALSE;
+
   struct timeval tv;
 
   uint32_t i, tent = 50;
@@ -372,6 +375,10 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
 #ifdef DEBUG_PC_NOETH
   return 0;
 #endif
+
+  if(isConnectErrorActive && (time(NULL) - timeConnectError) < 60) {
+	  return 0;
+  }
 
   gettimeofday(&tv, NULL);
   printf("\n%3d.%04ld - MB Send: ", (int)tv.tv_sec, (long)tv.tv_usec);
@@ -390,10 +397,14 @@ MODBUS_HANDLER_TX(IHM_MB_TX)
         return 0;
     }
   } else {
+        timeConnectError = time(NULL);
+	  	isConnectErrorActive = TRUE;
         return 0;
   }
 
-// Envia a mensagem pela ethernet
+  isConnectErrorActive = FALSE;
+
+  // Envia a mensagem pela ethernet
   send(tcp_socket, data, size, 0);
 
   while((resp=recv(tcp_socket, data, MODBUS_BUFFER_SIZE, 0))<=0 && tent--) {
@@ -975,14 +986,14 @@ gboolean tmrGtkUpdate(gpointer data)
           gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), (val>>i)&1);
         }
       } else {
-        gboolean maqDesligada = (MaqLerEstado() & MAQ_STATUS_DESLIGADA) ? TRUE : FALSE;
+        gboolean maqLigada = MaqEstadoChaveGeral();
 
         // Configura visibilidade de aviso de maquina desligada
-        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMaqDesligada")), maqDesligada);
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMaqDesligada")), !maqLigada);
 
         // Reconfigura o label do botao e ativa
         GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnMaqDesligar"));
-        gtk_button_set_label(GTK_BUTTON(wdg), maqDesligada ? "Ligar" : "Desligar");
+        gtk_button_set_label(GTK_BUTTON(wdg), maqLigada ? "Desligar" : "Ligar");
         gtk_widget_set_sensitive(wdg, TRUE);
       }
     } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
@@ -1108,9 +1119,10 @@ void cbDesligar(GtkButton *button, gpointer user_data)
 // Desligar a Maquina
 void cbMaqDesligar(GtkButton *button, gpointer user_data)
 {
-	if(MaqLerEstado() & MAQ_STATUS_DESLIGADA) {
-		MaqConfigChaveGeral(TRUE);
-	} else {
+	// Essa maquina nao possui controle de chave geral. Ignora comando!
+	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) return;
+
+	if(MaqEstadoChaveGeral()) {
 		MaqConfigChaveGeral(FALSE);
 
 		// O operador desligou a maquina. Assim devemos checar se existe atualizacao
@@ -1120,6 +1132,8 @@ void cbMaqDesligar(GtkButton *button, gpointer user_data)
 	    	ihmRebootNeeded = TRUE;
 	    	cbDesligar(NULL, NULL);
 	    }
+	} else {
+		MaqConfigChaveGeral(TRUE);
 	}
 
 	// Desativa o botao para nao enviar comandos seguidos. O loop principal vai reconfigurar o label e ativar o botao
