@@ -296,9 +296,6 @@ gboolean tmrScheduler(gpointer data)
   if(!checkedZeroHour && now->tm_hour == 0) {
     checkedZeroHour = TRUE;
 
-    // Atualiza a hora da POP-7
-    MaqSetDateTime(NULL);
-
     // Identifica inicio de um novo mes
     if(now->tm_mday == 1 && GTK_IS_CALENDAR(data)) {
       gtk_calendar_select_month(GTK_CALENDAR(data),

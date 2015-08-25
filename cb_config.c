@@ -1133,9 +1133,21 @@ struct strWAList {
 
 WAList *WA_PreviousList = NULL;
 
+int LastWA(WAList *list)
+{
+  if(list != NULL) {
+    while(list->next != NULL) {
+      list = list->next;
+    }
+
+    return list->WorkArea;
+  }
+
+  return NTB_ABA_NONE; // Por default retorna a aba indicando que nao existe aba.
+}
+
 WAList * AddWA(WAList **list, int WA)
 {
-  int i = 1;
   WAList *newWA;
 
   if(list == NULL) {
@@ -1151,7 +1163,6 @@ WAList * AddWA(WAList **list, int WA)
   } else {
     WAList *current = *list;
     while(current->next != NULL) {
-      i++;
       current = current->next;
     }
 
@@ -1163,13 +1174,11 @@ WAList * AddWA(WAList **list, int WA)
 
 int RemoveWA(WAList **list)
 {
-  int i = 0;
   int WA = MaqConfigCurrent->AbaHome; // Por default retorna a tela anterior como a aba HOME.
 
   if(list != NULL && *list != NULL) {
     WAList *current = *list, *previous = NULL;
     while(current->next != NULL) {
-      i++;
       previous = current;
       current = current->next;
     }
@@ -1213,12 +1222,12 @@ void cbNotebookWorkAreaChanged(GtkNotebook *ntb, GtkNotebookPage *page, guint ar
 void WorkAreaGoTo(int NewWorkArea)
 {
   // Se não houve mudança, retorna.
-  // Caso estiver na aba de MessageBox, nao permite mudanca.
-  // Marca a anterior como a nova e, ao sair do message box, esta nova sera selecionada.
+  // Caso estiver na aba de Espera, nao permite mudanca.
+  // Caso estiver na aba de MessageBox, permite mudanca apenas para aba de PowerDown e Espera
   if(CurrentWorkArea == NewWorkArea) {
     return;
-  } else if(CurrentWorkArea != NTB_ABA_MESSAGEBOX || NewWorkArea == NTB_ABA_ESPERA ||
-      (NewWorkArea == NTB_ABA_POWERDOWN && CurrentWorkArea != NTB_ABA_ESPERA)) {
+  } else if(CurrentWorkArea != NTB_ABA_ESPERA && (CurrentWorkArea != NTB_ABA_MESSAGEBOX ||
+		  NewWorkArea == NTB_ABA_ESPERA || NewWorkArea == NTB_ABA_POWERDOWN)) {
     // Se estiver indo para a aba HOME, exclui lista de telas anteriores e desmarca tela atual.
     if(NewWorkArea == MaqConfigCurrent->AbaHome) {
       CurrentWorkArea = NTB_ABA_NONE;
@@ -1235,7 +1244,8 @@ void WorkAreaGoTo(int NewWorkArea)
         SetMaqStatus(MAQ_STATUS_PARADA);
       }
     }
-  } else if(NewWorkArea != NTB_ABA_MESSAGEBOX) {
+  } else if(NewWorkArea != NTB_ABA_ESPERA && NewWorkArea != LastWA(WA_PreviousList)) {
+	// Nao pode mudar de aba no momento. Adiciona a nova aba na lista de anteriores e, ao sair da aba atual, a nova sera selecionada.
     AddWA(&WA_PreviousList, NewWorkArea);
   }
 }

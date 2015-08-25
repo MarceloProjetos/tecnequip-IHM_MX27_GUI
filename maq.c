@@ -943,7 +943,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
-        .UseChaveGeral    = FALSE,
+        .UseChaveGeral    = TRUE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
         .InverterComandos = FALSE,
@@ -1079,7 +1079,7 @@ MaqConfig MaqConfigList[] = {
         .fncOnAuto        = NULL,
         .fncTimerUpdate   = PrensaPassoFixo_Update,
         .ErrorList        = ErrorListAplanPrensa,
-        .Alertas          = 0x600, // Erro de Posicionamento e da Porta de Seguranca da Prensa
+        .Alertas          = 0xC00, // Erro de Posicionamento e da Porta de Seguranca da Prensa
 	},
     { // Final
         .ID = NULL
@@ -1092,7 +1092,7 @@ MaqConfig MaqConfigDefault = {
     .Line             = "TESTE",
     .Machine          = "TESTE",
 //    .ClpAddr          = "192.168.1.254",
-    .ClpAddr          = "192.168.2.110",
+    .ClpAddr          = "192.168.0.182",
     .AbaHome          = NTB_ABA_HOME_PRENSA,
     .AbaManut         = NTB_ABA_MANUT,
     .AbaOperAuto      = NTB_ABA_PRENSAPF_PROD,

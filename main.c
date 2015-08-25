@@ -691,6 +691,20 @@ void Board_Init(BoardStatus *bs)
   Board_Update(bs);
 }
 
+void LoadComboUsers(void)
+{
+  struct strDB *sDB = MSSQL_Connect();
+  char *sql = "select USUARIO from OPERADOR where ID not in (select ID from OPERADOR where NOME='SISTEMA') order by ID";
+
+  // Carregamento dos usuários cadastrados no SQL Server / MySQL no ComboBox.
+  // Se não conectou no SQL Server, tenta no MySQL local.
+  if(!(sDB && (sDB->status & DB_FLAGS_CONNECTED)))
+    sDB = &mainDB;
+
+  DB_Execute(sDB, 0, sql);
+  CarregaCombo(sDB, GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
+}
+
 // Timers
 gboolean tmrPowerDown(gpointer data)
 {
@@ -733,6 +747,45 @@ void cbPowerDownCancel(GtkButton *button, gpointer user_data)
   IPCMQ_Main_Enviar(&ipc_msg);
 
   WorkAreaGoPrevious();
+}
+
+void cbLogoff(GtkButton *button, gpointer user_data)
+{
+  Log("Saida do sistema", LOG_TIPO_SISTEMA);
+
+  LoadComboUsers();
+
+  // Grava zero em idUser para indicar que não há usuário logado
+  idUser = 0;
+
+
+  WorkAreaGoTo(NTB_ABA_LOGIN);
+}
+
+// Desligar a IHM
+void cbDesligar(GtkButton *button, gpointer user_data)
+{
+  if(MaqConfigCurrent->UseLogin && idUser != 0) {
+    cbLogoff(NULL, NULL);
+  }
+
+  gtk_main_quit();
+}
+
+// Desligar a Maquina
+void cbMaqDesligar(GtkButton *button, gpointer user_data)
+{
+	// Essa maquina nao possui controle de chave geral. Executa o comando antigo: desligar a ihm!!
+	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) {
+		cbDesligar(NULL, NULL);
+		return;
+	}
+
+	// Inverte o estado. Se ligado, desliga... E vice-versa...
+	MaqConfigChaveGeral(!MaqEstadoChaveGeral());
+
+	// Desativa o botao para nao enviar comandos seguidos. O loop principal vai reconfigurar o label e ativar o botao
+    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
 }
 
 void IPC_Update(void)
@@ -857,16 +910,40 @@ static const char *lista_botoes[] = {
 
 gboolean tmrGtkUpdate(gpointer data)
 {
-  time_t now;
   char tmp[40], *msg_error;
   uint32_t val, i;
   static uint32_t estado_init = -1;
   GtkWidget *wdg;
-  struct tm *timeptr;
   static GtkLabel *lbl = NULL;
   static GdkPixbuf *pb_on = NULL, *pb_off = NULL;
 
   static int ciclos = 0, current_status = 0, last_status = 0;
+
+  // Primeiro checa se virou o dia.
+  // Quando acontecer isso, devemos verificar se ha atualizacao do software e tambem ja atualizamos o relogio da POP
+  time_t now = time(NULL);
+  static time_t lastCall = 0;
+
+  struct tm tmNow  = *localtime(&now);
+  struct tm tmLast = *localtime(&lastCall);
+
+  if(tmNow.tm_hour == 0 && tmLast.tm_hour == 23) { // Mudou o dia!!!
+	  lastCall = now;
+
+	  printf("Executando operacao de meia-noite\n");
+	  // Atualiza a hora da POP-7
+	  MaqSetDateTime(NULL);
+
+	  // Verifica se existe atualizacao para o software da IHM
+      int ret = (system("~/checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado em 8 bits, nao sei o motivo...
+
+      // Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
+      if(ret == 1 || ret == 2) {
+        ihmRebootNeeded = TRUE;
+        cbDesligar(NULL, NULL);
+        return FALSE; // Retorna falso pois vamos reiniciar, esse timer nao deve ser executado novamente.
+      }
+  }
 
   if(!OnPowerDown) {
     if(pb_on == NULL) { // Inicializa pixbufs
@@ -888,8 +965,10 @@ gboolean tmrGtkUpdate(gpointer data)
 
           msg_error = MaqStrErro(current_status);
           Log(msg_error, LOG_TIPO_ERRO);
+
           gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);
           gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
+
           WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
         } else {
           MaqLiberar(1);
@@ -899,7 +978,7 @@ gboolean tmrGtkUpdate(gpointer data)
         MaqError(current_status);
 
         last_status = current_status;
-      } else if(current_status && WorkAreaGet() != NTB_ABA_MESSAGEBOX) {
+      } else if(current_status && WorkAreaGet() != NTB_ABA_MESSAGEBOX && WorkAreaGet() != NTB_ABA_ESPERA) {
     	  MaqLimparErro();
       }
 
@@ -914,15 +993,12 @@ gboolean tmrGtkUpdate(gpointer data)
       if(lbl == NULL)
         lbl = GTK_LABEL(gtk_builder_get_object(builder, "lblHora"));
 
-      now = time(NULL);
-      timeptr = localtime(&now);
-
       sprintf(tmp, "%02d/%02d/%d, %.2d:%.2d",
-          timeptr->tm_mday,
-          timeptr->tm_mon + 1,
-          1900 + timeptr->tm_year,
-          timeptr->tm_hour,
-          timeptr->tm_min);
+          tmNow.tm_mday,
+          tmNow.tm_mon + 1,
+          1900 + tmNow.tm_year,
+		  tmNow.tm_hour,
+		  tmNow.tm_min);
       if(strcmp(tmp, gtk_label_get_text(lbl)))
         gtk_label_set_label(lbl, tmp);
     } else if(ciclos == 1) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
@@ -1077,70 +1153,6 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
     AbrirLog();
     break;
   }
-}
-
-void LoadComboUsers(void)
-{
-  struct strDB *sDB = MSSQL_Connect();
-  char *sql = "select USUARIO from OPERADOR where ID not in (select ID from OPERADOR where NOME='SISTEMA') order by ID";
-
-  // Carregamento dos usuários cadastrados no SQL Server / MySQL no ComboBox.
-  // Se não conectou no SQL Server, tenta no MySQL local.
-  if(!(sDB && (sDB->status & DB_FLAGS_CONNECTED)))
-    sDB = &mainDB;
-
-  DB_Execute(sDB, 0, sql);
-  CarregaCombo(sDB, GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
-}
-
-void cbLogoff(GtkButton *button, gpointer user_data)
-{
-  Log("Saida do sistema", LOG_TIPO_SISTEMA);
-
-  LoadComboUsers();
-
-  // Grava zero em idUser para indicar que não há usuário logado
-  idUser = 0;
-
-
-  WorkAreaGoTo(NTB_ABA_LOGIN);
-}
-
-// Desligar a IHM
-void cbDesligar(GtkButton *button, gpointer user_data)
-{
-  if(MaqConfigCurrent->UseLogin && idUser != 0) {
-    cbLogoff(NULL, NULL);
-  }
-
-  gtk_main_quit();
-}
-
-// Desligar a Maquina
-void cbMaqDesligar(GtkButton *button, gpointer user_data)
-{
-	// Essa maquina nao possui controle de chave geral. Executa o comando antigo: desligar a ihm!!
-	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) {
-		cbDesligar(NULL, NULL);
-		return;
-	}
-
-	if(MaqEstadoChaveGeral()) {
-		MaqConfigChaveGeral(FALSE);
-
-		// O operador desligou a maquina. Assim devemos checar se existe atualizacao
-		int ret = (system("~/checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado 8 bits, nao sei o motivo...
-		// Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
-	    if(ret == 1 || ret == 2) {
-	    	ihmRebootNeeded = TRUE;
-	    	cbDesligar(NULL, NULL);
-	    }
-	} else {
-		MaqConfigChaveGeral(TRUE);
-	}
-
-	// Desativa o botao para nao enviar comandos seguidos. O loop principal vai reconfigurar o label e ativar o botao
-    gtk_widget_set_sensitive(GTK_WIDGET(button), FALSE);
 }
 
 /****************************************************************************

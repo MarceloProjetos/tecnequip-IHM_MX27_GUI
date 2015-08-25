@@ -194,6 +194,11 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-quit</property>
   </object>
+  <object class="GtkImage" id="imgDesligar1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-quit</property>
+  </object>
   <object class="GtkImage" id="imgExecIniciar">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -3034,23 +3039,8 @@ Nível Inferior</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
+                                <property name="fill">True</property>
                                 <property name="position">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkButton" id="btnDebugModBus">
-                                <property name="label" translatable="yes">Testar ModBus</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="image">imgDebugModBus1</property>
-                                <signal name="clicked" handler="cbDebugModBus" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">1</property>
                               </packing>
                             </child>
                             <child>
@@ -3059,18 +3049,18 @@ Nível Inferior</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="receives_default">True</property>
-                                <property name="image">imgDesligar</property>
+                                <property name="image">imgDesligar1</property>
                                 <signal name="clicked" handler="cbDesligar" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
-                                <property name="fill">False</property>
-                                <property name="position">2</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
                               </packing>
                             </child>
                           </object>
                           <packing>
-                            <property name="expand">False</property>
+                            <property name="expand">True</property>
                             <property name="fill">True</property>
                             <property name="position">1</property>
                           </packing>
@@ -3109,7 +3099,7 @@ Nível Inferior</property>
                     <signal name="clicked" handler="cbGoHome" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
                   </packing>
@@ -11848,6 +11838,24 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">False</property>
                             <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                             <child>
                               <placeholder/>
                             </child>
