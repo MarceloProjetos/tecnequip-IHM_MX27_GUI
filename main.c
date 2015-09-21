@@ -23,7 +23,8 @@ struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
 // Flag indicando se a maquina deve ser reinicializada ao finalizar. Se nao precisar, a maquina sera desligada!
-gboolean ihmRebootNeeded = FALSE;
+// Por padrao a IHM reinicializa pois ela deve ficar sempre ligada. Apenas desliga se escolhida essa opcao na tela de manutencao
+gboolean ihmRebootNeeded = TRUE;
 
 pthread_mutex_t mutex_ipcmq_rd   = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_ipcmq_wr   = PTHREAD_MUTEX_INITIALIZER;
@@ -768,6 +769,9 @@ void cbDesligar(GtkButton *button, gpointer user_data)
   if(MaqConfigCurrent->UseLogin && idUser != 0) {
     cbLogoff(NULL, NULL);
   }
+
+  // Devemos desligar e nao reiniciar!
+  ihmRebootNeeded = FALSE;
 
   gtk_main_quit();
 }
@@ -1561,7 +1565,7 @@ int main(int argc, char *argv[])
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 
-  if(ihmRebootNeeded) {
+  if(ihmRebootNeeded == FALSE) {
 	  ret = 99;
   }
 
