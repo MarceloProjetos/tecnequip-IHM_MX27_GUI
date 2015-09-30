@@ -4,6 +4,7 @@
 	<comment></comment>
 	<projects>
 		<project>libDB</project>
+		<project>tecnequip-libMessageQueue</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CFLAGS="-pthread -ggdb -Wall -Wcast-align -I../tecnequip-libDB"
+CFLAGS="-pthread -ggdb -Wall -Wcast-align -I../tecnequip-libDB -I../tecnequip-libMessageQueue"
 GTKFLAGS="$(pkg-config --cflags gtk+-2.0) $(pkg-config --cflags gthread-2.0)"
 GTKLIBS="$(pkg-config --libs gtk+-2.0) $(pkg-config --libs gthread-2.0)"
 
@@ -21,7 +21,7 @@ done
 
 echo Gerando executavel
 
-gcc $CFLAGS $GTKFLAGS -export-dynamic -o IHM $listObj \
-    ../tecnequip-libDB/libDB.a -lmysqlclient -lcrypt -lsybdb $GTKLIBS
+g++ $CFLAGS $GTKFLAGS -export-dynamic -o IHM $listObj \
+    ../tecnequip-libDB/libDB.a ../tecnequip-libMessageQueue/libMessageQueue.a ../jsmn/libjsmn.a -lmysqlclient -lcrypt -lsybdb $GTKLIBS -lactivemq-cpp
 
 echo Terminado!

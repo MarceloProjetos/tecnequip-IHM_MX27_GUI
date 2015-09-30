@@ -286,3 +286,8 @@ void AbrirData  (GtkEntry *entry, GCallback cb);
 int  GetUserPerm(unsigned int perm);
 
 gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data);
+
+// Funcoes de Monitoramento
+extern void monitor_Init();
+extern void monitor_SendEstado();
+extern void monitor_Set_Status(long torque, long current, long temperature);

@@ -10963,7 +10963,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="clicked" handler="gtk_main_quit" swapped="no"/>
+                        <signal name="clicked" handler="cbDesligar" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -11838,6 +11838,24 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">False</property>
                             <property name="n_rows">3</property>
                             <property name="n_columns">2</property>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                             <child>
                               <placeholder/>
                             </child>

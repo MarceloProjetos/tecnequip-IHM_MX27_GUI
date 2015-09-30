@@ -24,7 +24,7 @@ extern int idUser; // Indica usuário que logou se for diferente de zero.
 
 // Flag indicando se a maquina deve ser reinicializada ao finalizar. Se nao precisar, a maquina sera desligada!
 // Por padrao a IHM reinicializa pois ela deve ficar sempre ligada. Apenas desliga se escolhida essa opcao na tela de manutencao
-gboolean ihmRebootNeeded = TRUE;
+static gboolean ihmRebootNeeded = TRUE;
 
 pthread_mutex_t mutex_ipcmq_rd   = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t mutex_ipcmq_wr   = PTHREAD_MUTEX_INITIALIZER;
@@ -706,6 +706,31 @@ void LoadComboUsers(void)
   CarregaCombo(sDB, GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")), 0, NULL);
 }
 
+void cbLogoff(GtkButton *button, gpointer user_data)
+{
+  Log("Saida do sistema", LOG_TIPO_SISTEMA);
+
+  LoadComboUsers();
+
+  // Grava zero em idUser para indicar que não há usuário logado
+  idUser = 0;
+
+  WorkAreaGoTo(NTB_ABA_LOGIN);
+}
+
+// Desligar a IHM
+void cbDesligar(GtkButton *button, gpointer user_data)
+{
+  if(MaqConfigCurrent->UseLogin && idUser != 0) {
+    cbLogoff(NULL, NULL);
+  }
+
+  // Devemos desligar e nao reiniciar!
+  ihmRebootNeeded = FALSE;
+
+  gtk_main_quit();
+}
+
 // Timers
 gboolean tmrPowerDown(gpointer data)
 {
@@ -717,7 +742,7 @@ gboolean tmrPowerDown(gpointer data)
   if(WorkAreaGet() != NTB_ABA_POWERDOWN) {
     timeout = 30;
   } else if(!timeout--) {
-    gtk_main_quit();
+    cbDesligar(NULL, NULL);
   } else {
     sprintf(msg, "%d segundos", timeout);
     gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")), msg);
@@ -748,32 +773,6 @@ void cbPowerDownCancel(GtkButton *button, gpointer user_data)
   IPCMQ_Main_Enviar(&ipc_msg);
 
   WorkAreaGoPrevious();
-}
-
-void cbLogoff(GtkButton *button, gpointer user_data)
-{
-  Log("Saida do sistema", LOG_TIPO_SISTEMA);
-
-  LoadComboUsers();
-
-  // Grava zero em idUser para indicar que não há usuário logado
-  idUser = 0;
-
-
-  WorkAreaGoTo(NTB_ABA_LOGIN);
-}
-
-// Desligar a IHM
-void cbDesligar(GtkButton *button, gpointer user_data)
-{
-  if(MaqConfigCurrent->UseLogin && idUser != 0) {
-    cbLogoff(NULL, NULL);
-  }
-
-  // Devemos desligar e nao reiniciar!
-  ihmRebootNeeded = FALSE;
-
-  gtk_main_quit();
 }
 
 // Desligar a Maquina
@@ -828,7 +827,11 @@ void IPC_Update(void)
       break;
 
     case IPCMQ_FNC_POWER:
-      gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
+    	// Ocorreu uma queda de energia!
+    	// Devemos gravar os parametros para evitar perda de dados caso a energia nao seja reestabelecida
+        MaqGravarConfig();
+
+        gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblPowerDownMsg")),
           "30 segundos");
       WorkAreaGoTo(NTB_ABA_POWERDOWN);
 
@@ -943,8 +946,8 @@ gboolean tmrGtkUpdate(gpointer data)
 
       // Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
       if(ret == 1 || ret == 2) {
-        ihmRebootNeeded = TRUE;
         cbDesligar(NULL, NULL);
+        ihmRebootNeeded = TRUE;
         return FALSE; // Retorna falso pois vamos reiniciar, esse timer nao deve ser executado novamente.
       }
   }
@@ -1006,25 +1009,31 @@ gboolean tmrGtkUpdate(gpointer data)
       if(strcmp(tmp, gtk_label_get_text(lbl)))
         gtk_label_set_label(lbl, tmp);
     } else if(ciclos == 1) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      if(WorkAreaGet() == MaqConfigCurrent->AbaManut && !MaqInvSyncOK()) {
+      if(!MaqInvSyncOK()) {
         int        val;
         char       buf[10];
         static int CurrentInfo = 0;
 
         switch(CurrentInfo++) {
-        case 0:
-          val = MaqLerInvTensao();
-          sprintf(buf, "%d", val);
-          gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTensao")), buf);
+        case 0: {
+        	uint16_t tensao, corrente, torque;
 
-          val = MaqLerInvCorrente();
-          sprintf(buf, "%.01f", ((float)val)/10);
-          gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvCorrente")), buf);
+        	tensao = MaqLerInvTensao();
+            sprintf(buf, "%d", tensao);
+            gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTensao")), buf);
 
-          val = MaqLerInvTorque();
-          sprintf(buf, "%d", val);
-          gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTorque")), buf);
-          break;
+            corrente = MaqLerInvCorrente();
+            sprintf(buf, "%.01f", ((float)corrente)/10);
+            gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvCorrente")), buf);
+
+            torque = MaqLerInvTorque();
+            sprintf(buf, "%d", torque);
+            gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTorque")), buf);
+
+//            monitor_Set_Status(torque, corrente, tensao);
+
+			break;
+        }
 
         case 1:
           val = MaqLerInvInput();
@@ -1090,6 +1099,14 @@ gboolean tmrGtkUpdate(gpointer data)
         }
       } else if(currentWorkArea == MaqConfigCurrent->AbaHome && MaqConfigCurrent->fncTimerUpdate != NULL) {
         (MaqConfigCurrent->fncTimerUpdate)();
+      }
+
+      // Envia mensagem de estado a cada 3 minutos
+      static long next_message = 0;
+      long now = time(NULL);
+      if(next_message == 0 || next_message < now) {
+    	  next_message = now + 10800; // 10800 = 3 minutos
+//    	  monitor_SendEstado();
       }
     } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
@@ -1210,8 +1227,6 @@ void * ihm_update(void *args)
       } else if(!OnPowerDown && !Board_HasExternalPower(&bs) && !StayON) {
         OnPowerDown = 1;
         printf("Sistema sem energia\n");
-
-        MaqGravarConfig();
 
         ipc_msg.fnc   = NULL;
         ipc_msg.res   = NULL;
@@ -1493,6 +1508,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblIpAddress")), host);
 
   if(MaqInit()) {
+//	monitor_Init(); // Inicia o sistema de monitoramento
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 
@@ -1565,12 +1581,11 @@ int main(int argc, char *argv[])
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 
+  // Se flag de reebot for falsa, indica que devemos desligar. startx nao retorna ao sistema o nosso valor de retorno!
+  // Sendo assim, precisamos criar um arquivo para indicar que a IHM deve ser desligada
   if(ihmRebootNeeded == FALSE) {
-	  ret = 99;
+	  close(open("need_poweroff", O_CREAT | O_NOCTTY | O_NONBLOCK | O_WRONLY, 0666));
   }
 
-  printf("Programa finalizado. Retornando %d ao sistema.\n", ret);
-
-  // Se precisar reiniciar, retorna 99 para que o script de boot possa identificar e realizar o reboot
   return ret;
 }
