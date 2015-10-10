@@ -1009,7 +1009,7 @@ gboolean tmrGtkUpdate(gpointer data)
       if(strcmp(tmp, gtk_label_get_text(lbl)))
         gtk_label_set_label(lbl, tmp);
     } else if(ciclos == 1) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      if(!MaqInvSyncOK()) {
+      if(WorkAreaGet() == MaqConfigCurrent->AbaManut && !MaqInvSyncOK()) {
         int        val;
         char       buf[10];
         static int CurrentInfo = 0;
@@ -1030,7 +1030,7 @@ gboolean tmrGtkUpdate(gpointer data)
             sprintf(buf, "%d", torque);
             gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTorque")), buf);
 
-//            monitor_Set_Status(torque, corrente, tensao);
+            //monitor_Set_Status(torque, corrente, tensao);
 
 			break;
         }
@@ -1104,9 +1104,9 @@ gboolean tmrGtkUpdate(gpointer data)
       // Envia mensagem de estado a cada 3 minutos
       static long next_message = 0;
       long now = time(NULL);
-      if(next_message == 0 || next_message < now) {
-    	  next_message = now + 10800; // 10800 = 3 minutos
-//    	  monitor_SendEstado();
+      if(next_message < now) {
+    	  next_message = now + 180; // 180 = 3 minutos
+    	  //monitor_SendEstado();
       }
     } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
@@ -1339,6 +1339,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   char *campos_log       [] = { "Data", "Usuário", "Evento", "" };
   char *campos_PrensaProg[] = { "Número", "Nome", "Singelo", "Quantidade", "" };
   char *campos_tarefa    [] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
+  char *campos_materiais [] = { "Código", "Em uso?", "Espessura", "Largura", "Local", "" };
 
   /* init threads */
   g_thread_init (NULL);
@@ -1384,6 +1385,11 @@ uint32_t IHM_Init(int argc, char *argv[])
   TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwPrensaProg")), campos_PrensaProg,
       GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_PrensaProg)/sizeof(campos_PrensaProg[0]))-1,
           G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+
+  // Configura TreeView da tela de Materiais
+  TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")), campos_materiais,
+    GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_materiais)/sizeof(campos_materiais[0]))-1,
+        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
 
   // Atualiza o label que indica a versao do programa
   char strversion[100];
@@ -1508,7 +1514,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblIpAddress")), host);
 
   if(MaqInit()) {
-//	monitor_Init(); // Inicia o sistema de monitoramento
+	//monitor_Init(); // Inicia o sistema de monitoramento
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 

@@ -686,8 +686,12 @@ void AbrirProgParam(void)
         sprintf(tmp, "%d", num_ciclos);
         obj = gtk_entry_new_with_max_length(10); // Tamanho de um int
         gtk_buildable_set_name(GTK_BUILDABLE(obj), "entProgParamQtd");
+
         gtk_entry_set_text(GTK_ENTRY(obj), tmp);
-        g_signal_connect ((gpointer) obj, "focus-in-event", G_CALLBACK(cbFocusIn), NULL);
+        gtk_entry_set_icon_from_stock (GTK_ENTRY(obj), GTK_ENTRY_ICON_PRIMARY, "gtk-select-font");
+        gtk_entry_set_icon_activatable(GTK_ENTRY(obj), GTK_ENTRY_ICON_PRIMARY, TRUE);
+
+        g_signal_connect ((gpointer) obj, "icon-press-event", G_CALLBACK(cbIconPress), NULL);
 
         ProgParam->qtd = obj;
 
@@ -734,7 +738,10 @@ void AbrirProgParam(void)
         sprintf(tmp, "entProgParam%02d", i);
         gtk_buildable_set_name(GTK_BUILDABLE(obj), tmp);
 
-        g_signal_connect ((gpointer) obj, "focus-in-event", G_CALLBACK(cbFocusIn), NULL);
+        gtk_entry_set_icon_from_stock (GTK_ENTRY(obj), GTK_ENTRY_ICON_PRIMARY, "gtk-select-font");
+        gtk_entry_set_icon_activatable(GTK_ENTRY(obj), GTK_ENTRY_ICON_PRIMARY, TRUE);
+
+        g_signal_connect ((gpointer) obj, "icon-press-event", G_CALLBACK(cbIconPress), NULL);
 
         (*ObjList)->obj = obj;
 

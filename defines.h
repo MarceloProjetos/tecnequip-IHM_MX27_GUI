@@ -167,6 +167,8 @@ typedef uint16_t u16;
 #define NTB_ABA_PRENSA_PROD    23
 #define NTB_ABA_PRENSA_CADPROG 24
 #define NTB_ABA_PRENSAPF_PROD  25 // Prensa de Passo Fixo - diferente da prensa normal, onde se programam os passos
+#define NTB_ABA_MATERIAL       26
+#define NTB_ABA_MATERIAL_ADD   27
 #define NTB_ABA_NONE           99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
@@ -285,7 +287,7 @@ extern uint32_t OnPowerDown;
 void AbrirData  (GtkEntry *entry, GCallback cb);
 int  GetUserPerm(unsigned int perm);
 
-gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data);
+void cbIconPress (GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer user_data);
 
 // Funcoes de Monitoramento
 extern void monitor_Init();

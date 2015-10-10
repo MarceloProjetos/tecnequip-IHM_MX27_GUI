@@ -3246,11 +3246,12 @@ Nível Inferior</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">●</property>
                                             <property name="invisible_char_set">True</property>
-                                            <property name="primary_icon_activatable">False</property>
+                                            <property name="primary_icon_stock">gtk-select-font</property>
+                                            <property name="primary_icon_activatable">True</property>
                                             <property name="secondary_icon_activatable">False</property>
                                             <property name="primary_icon_sensitive">True</property>
                                             <property name="secondary_icon_sensitive">True</property>
-                                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="left_attach">1</property>
@@ -3264,11 +3265,12 @@ Nível Inferior</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">●</property>
                                             <property name="invisible_char_set">True</property>
-                                            <property name="primary_icon_activatable">False</property>
+                                            <property name="primary_icon_stock">gtk-select-font</property>
+                                            <property name="primary_icon_activatable">True</property>
                                             <property name="secondary_icon_activatable">False</property>
                                             <property name="primary_icon_sensitive">True</property>
                                             <property name="secondary_icon_sensitive">True</property>
-                                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="left_attach">1</property>
@@ -3284,11 +3286,12 @@ Nível Inferior</property>
                                             <property name="can_focus">True</property>
                                             <property name="invisible_char">●</property>
                                             <property name="invisible_char_set">True</property>
-                                            <property name="primary_icon_activatable">False</property>
+                                            <property name="primary_icon_stock">gtk-select-font</property>
+                                            <property name="primary_icon_activatable">True</property>
                                             <property name="secondary_icon_activatable">False</property>
                                             <property name="primary_icon_sensitive">True</property>
                                             <property name="secondary_icon_sensitive">True</property>
-                                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                           </object>
                                           <packing>
                                             <property name="left_attach">1</property>
@@ -3466,11 +3469,12 @@ Nível Inferior</property>
                                     <property name="visible">True</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">•</property>
-                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                    <property name="primary_icon_activatable">True</property>
                                     <property name="secondary_icon_activatable">False</property>
                                     <property name="primary_icon_sensitive">True</property>
                                     <property name="secondary_icon_sensitive">True</property>
-                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -3508,7 +3512,8 @@ Nível Inferior</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">●</property>
                                     <property name="invisible_char_set">True</property>
-                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                    <property name="primary_icon_activatable">True</property>
                                     <property name="secondary_icon_activatable">False</property>
                                     <property name="primary_icon_sensitive">True</property>
                                     <property name="secondary_icon_sensitive">True</property>
@@ -3516,7 +3521,7 @@ Nível Inferior</property>
                                     <property name="climb_rate">1</property>
                                     <property name="snap_to_ticks">True</property>
                                     <property name="numeric">True</property>
-                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -3772,11 +3777,12 @@ Resultado será carregado no campo correspondente.</property>
                                                     <property name="can_focus">True</property>
                                                     <property name="invisible_char">•</property>
                                                     <property name="invisible_char_set">True</property>
-                                                    <property name="primary_icon_activatable">False</property>
+                                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                                    <property name="primary_icon_activatable">True</property>
                                                     <property name="secondary_icon_activatable">False</property>
                                                     <property name="primary_icon_sensitive">True</property>
                                                     <property name="secondary_icon_sensitive">True</property>
-                                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                                   </object>
                                                   <packing>
                                                     <property name="left_attach">1</property>
@@ -3882,16 +3888,16 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">•</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
-                                        <property name="x_options"/>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -3901,7 +3907,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">•</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -3909,14 +3916,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -3926,7 +3932,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">•</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -3934,14 +3941,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">2</property>
                                         <property name="bottom_attach">3</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -3965,7 +3971,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">•</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -3974,14 +3981,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="digits">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">3</property>
                                         <property name="bottom_attach">4</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4005,7 +4011,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">•</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4013,14 +4020,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">4</property>
                                         <property name="bottom_attach">5</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4229,11 +4235,12 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">•</property>
                                     <property name="invisible_char_set">True</property>
-                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                    <property name="primary_icon_activatable">True</property>
                                     <property name="secondary_icon_activatable">False</property>
                                     <property name="primary_icon_sensitive">True</property>
                                     <property name="secondary_icon_sensitive">True</property>
-                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4249,11 +4256,12 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">•</property>
                                     <property name="invisible_char_set">True</property>
-                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                    <property name="primary_icon_activatable">True</property>
                                     <property name="secondary_icon_activatable">False</property>
                                     <property name="primary_icon_sensitive">True</property>
                                     <property name="secondary_icon_sensitive">True</property>
-                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4336,11 +4344,12 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">•</property>
                                     <property name="invisible_char_set">True</property>
-                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                    <property name="primary_icon_activatable">True</property>
                                     <property name="secondary_icon_activatable">False</property>
                                     <property name="primary_icon_sensitive">True</property>
                                     <property name="secondary_icon_sensitive">True</property>
-                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4431,6 +4440,7 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">3</property>
                                     <property name="row_spacing">3</property>
+                                    <property name="homogeneous">True</property>
                                     <child>
                                       <object class="GtkLabel" id="lblConfigPerfAcelManual">
                                         <property name="visible">True</property>
@@ -4477,7 +4487,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4485,14 +4496,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">2</property>
                                         <property name="bottom_attach">3</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4502,7 +4512,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4511,14 +4522,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="digits">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4528,7 +4538,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4537,12 +4548,11 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="digits">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4584,6 +4594,7 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="n_columns">2</property>
                                     <property name="column_spacing">3</property>
                                     <property name="row_spacing">3</property>
+                                    <property name="homogeneous">True</property>
                                     <child>
                                       <object class="GtkLabel" id="lblConfigPerfAcelAuto">
                                         <property name="visible">True</property>
@@ -4630,7 +4641,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4638,14 +4650,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">2</property>
                                         <property name="bottom_attach">3</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4655,7 +4666,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4664,14 +4676,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="digits">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4681,7 +4692,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4690,12 +4702,11 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="digits">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4734,6 +4745,7 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="can_focus">False</property>
                                     <property name="n_rows">2</property>
                                     <property name="n_columns">2</property>
+                                    <property name="homogeneous">True</property>
                                     <child>
                                       <object class="GtkLabel" id="lblConfigPerfReducao">
                                         <property name="visible">True</property>
@@ -4758,7 +4770,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4767,12 +4780,11 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="digits">2</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4782,7 +4794,8 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
@@ -4790,14 +4803,13 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="climb_rate">1</property>
                                         <property name="snap_to_ticks">True</property>
                                         <property name="numeric">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
                                         <property name="right_attach">2</property>
                                         <property name="top_attach">1</property>
                                         <property name="bottom_attach">2</property>
-                                        <property name="x_options">GTK_EXPAND</property>
                                         <property name="y_options"/>
                                       </packing>
                                     </child>
@@ -4872,11 +4884,12 @@ Resultado será carregado no campo correspondente.</property>
                                     <property name="can_focus">True</property>
                                     <property name="invisible_char">●</property>
                                     <property name="invisible_char_set">True</property>
-                                    <property name="primary_icon_activatable">False</property>
+                                    <property name="primary_icon_stock">gtk-select-font</property>
+                                    <property name="primary_icon_activatable">True</property>
                                     <property name="secondary_icon_activatable">False</property>
                                     <property name="primary_icon_sensitive">True</property>
                                     <property name="secondary_icon_sensitive">True</property>
-                                    <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="left_attach">1</property>
@@ -4990,11 +5003,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5010,11 +5024,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5129,11 +5144,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5264,11 +5280,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5282,11 +5299,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5303,11 +5321,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="visibility">False</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5323,11 +5342,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -5924,11 +5944,12 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -5941,11 +5962,12 @@ Resultado será carregado no campo correspondente.</property>
                                         <property name="can_focus">True</property>
                                         <property name="invisible_char">●</property>
                                         <property name="invisible_char_set">True</property>
-                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="primary_icon_stock">gtk-select-font</property>
+                                        <property name="primary_icon_activatable">True</property>
                                         <property name="secondary_icon_activatable">False</property>
                                         <property name="primary_icon_sensitive">True</property>
                                         <property name="secondary_icon_sensitive">True</property>
-                                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                       </object>
                                       <packing>
                                         <property name="left_attach">1</property>
@@ -6066,11 +6088,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -6083,11 +6106,12 @@ Resultado será carregado no campo correspondente.</property>
                                 <property name="can_focus">True</property>
                                 <property name="invisible_char">●</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -6889,11 +6913,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">●</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -6915,7 +6940,6 @@ Resultado será carregado no campo correspondente.</property>
                             <property name="can_focus">True</property>
                             <property name="wrap_mode">word</property>
                             <property name="accepts_tab">False</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -7009,11 +7033,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -7057,11 +7082,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="can_focus">True</property>
                         <property name="invisible_char">●</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -7274,7 +7300,7 @@ Resultado será carregado no campo correspondente.</property>
                     </child>
                   </object>
                   <packing>
-                    <property name="expand">False</property>
+                    <property name="expand">True</property>
                     <property name="fill">True</property>
                     <property name="position">1</property>
                   </packing>
@@ -8595,11 +8621,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">5</property>
                         <property name="invisible_char">●</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -8667,11 +8694,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">5</property>
                         <property name="invisible_char">●</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -9995,11 +10023,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">●</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10153,11 +10182,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10174,11 +10204,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10221,11 +10252,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10242,11 +10274,12 @@ Resultado será carregado no campo correspondente.</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10555,11 +10588,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10577,11 +10611,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10625,11 +10660,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="visibility">False</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10646,11 +10682,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10771,11 +10808,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -10792,11 +10830,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="max_length">20</property>
                         <property name="invisible_char">•</property>
                         <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
                         <property name="secondary_icon_activatable">False</property>
                         <property name="primary_icon_sensitive">True</property>
                         <property name="secondary_icon_sensitive">True</property>
-                        <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -12126,6 +12165,186 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <child>
                               <placeholder/>
                             </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -12232,11 +12451,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                 <property name="max_length">20</property>
                                 <property name="invisible_char">•</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -12251,11 +12471,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                 <property name="max_length">20</property>
                                 <property name="invisible_char">•</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -12272,11 +12493,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                 <property name="max_length">20</property>
                                 <property name="invisible_char">•</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -12315,11 +12537,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                 <property name="max_length">20</property>
                                 <property name="invisible_char">•</property>
                                 <property name="invisible_char_set">True</property>
-                                <property name="primary_icon_activatable">False</property>
+                                <property name="primary_icon_stock">gtk-select-font</property>
+                                <property name="primary_icon_activatable">True</property>
                                 <property name="secondary_icon_activatable">False</property>
                                 <property name="primary_icon_sensitive">True</property>
                                 <property name="secondary_icon_sensitive">True</property>
-                                <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                                <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                               </object>
                               <packing>
                                 <property name="left_attach">1</property>
@@ -13180,11 +13403,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">•</property>
                             <property name="invisible_char_set">True</property>
-                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_stock">gtk-select-font</property>
+                            <property name="primary_icon_activatable">True</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">True</property>
                             <property name="secondary_icon_sensitive">True</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -13285,11 +13509,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">•</property>
                             <property name="invisible_char_set">True</property>
-                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_stock">gtk-select-font</property>
+                            <property name="primary_icon_activatable">True</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">True</property>
                             <property name="secondary_icon_sensitive">True</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -13530,11 +13755,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">•</property>
                             <property name="invisible_char_set">True</property>
-                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_stock">gtk-select-font</property>
+                            <property name="primary_icon_activatable">True</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">True</property>
                             <property name="secondary_icon_sensitive">True</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -13549,11 +13775,12 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">•</property>
                             <property name="invisible_char_set">True</property>
-                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_stock">gtk-select-font</property>
+                            <property name="primary_icon_activatable">True</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">True</property>
                             <property name="secondary_icon_sensitive">True</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -13707,12 +13934,13 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">•</property>
                             <property name="invisible_char_set">True</property>
-                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_stock">gtk-select-font</property>
+                            <property name="primary_icon_activatable">True</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">True</property>
                             <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjPrensaProgRepeticoes</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -13727,13 +13955,14 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <property name="can_focus">True</property>
                             <property name="invisible_char">•</property>
                             <property name="invisible_char_set">True</property>
-                            <property name="primary_icon_activatable">False</property>
+                            <property name="primary_icon_stock">gtk-select-font</property>
+                            <property name="primary_icon_activatable">True</property>
                             <property name="secondary_icon_activatable">False</property>
                             <property name="primary_icon_sensitive">True</property>
                             <property name="secondary_icon_sensitive">True</property>
                             <property name="adjustment">adjPrensaProgAvanco</property>
                             <property name="digits">1</property>
-                            <signal name="focus-in-event" handler="cbFocusIn" swapped="no"/>
+                            <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                           </object>
                           <packing>
                             <property name="left_attach">1</property>
@@ -14178,6 +14407,311 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
               </object>
               <packing>
                 <property name="position">25</property>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox69">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkScrolledWindow" id="scrolledwindow1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="shadow_type">in</property>
+                    <child>
+                      <object class="GtkTreeView" id="tvwMaterial">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkHBox" id="hbox74">
+                    <property name="height_request">100</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="border_width">3</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkButton" id="btnMaterialSelect">
+                        <property name="label">Selecionar</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btnMaterialAdicionar">
+                        <property name="label">gtk-add</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="cbMaterialAdd" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btnTransferirMaterial">
+                        <property name="label">Transferir</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btnMaterialVoltar">
+                        <property name="label">gtk-go-back</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="cbGoHome" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">26</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="lblAbaMaterial">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Cadastro de Materiais</property>
+              </object>
+              <packing>
+                <property name="position">26</property>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox70">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkTable" id="table40">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="border_width">3</property>
+                    <property name="n_rows">4</property>
+                    <property name="n_columns">2</property>
+                    <property name="column_spacing">3</property>
+                    <property name="row_spacing">3</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="entCadMaterialCodigo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="max_length">20</property>
+                        <property name="invisible_char">●</property>
+                        <property name="invisible_char_set">True</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
+                        <property name="secondary_icon_activatable">False</property>
+                        <property name="primary_icon_sensitive">True</property>
+                        <property name="secondary_icon_sensitive">True</property>
+                        <property name="primary_icon_tooltip_text" translatable="yes">Abrir Teclado</property>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="lblCadMaterialCodigo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">Código</property>
+                      </object>
+                      <packing>
+                        <property name="x_options">GTK_FILL</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHSeparator" id="hseparator3">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                        <property name="x_options">GTK_FILL</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="lblCadMaterialEspessura">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">Espessura (mm)</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="x_options">GTK_FILL</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="lblCadMaterialLargura">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">0</property>
+                        <property name="label" translatable="yes">Largura (mm)</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="x_options">GTK_FILL</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="entCadMaterialEspessura">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">●</property>
+                        <property name="invisible_char_set">True</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
+                        <property name="secondary_icon_activatable">False</property>
+                        <property name="primary_icon_sensitive">True</property>
+                        <property name="secondary_icon_sensitive">True</property>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="enCadMaterialEspessura">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">●</property>
+                        <property name="invisible_char_set">True</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
+                        <property name="secondary_icon_activatable">False</property>
+                        <property name="primary_icon_sensitive">True</property>
+                        <property name="secondary_icon_sensitive">True</property>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkHBox" id="hbox76">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkButton" id="btnCadMaterialAplicar">
+                        <property name="label">gtk-apply</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btnCadMaterialVoltar">
+                        <property name="label">gtk-go-back</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="cbGoPrevious" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">27</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="lblAbaAdicionarMaterial">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Adicionar Material</property>
+              </object>
+              <packing>
+                <property name="position">27</property>
                 <property name="tab_fill">False</property>
               </packing>
             </child>

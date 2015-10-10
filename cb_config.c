@@ -1282,27 +1282,14 @@ void cbGoManut(GtkButton *button, gpointer user_data)
   WorkAreaGoTo(MaqConfigCurrent->AbaManut);
 }
 
-gboolean cbFocusIn(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+void cbIconPress (GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer user_data)
 {
-  VKData vkdata;
-  static int ignorar = 0;
+	VKData vkdata;
 
-  if(WorkAreaGet() == NTB_ABA_VIRTUAL_KB) {
-    gtk_widget_grab_focus(GTK_WIDGET(gtk_builder_get_object(builder, "txvVirtualKeyboard")));
-    return FALSE;
-  }
-
-  if(!ignorar) {
-    ignorar = 1;
-    vkdata.type = VK_TYPE_WIDGET;
-    vkdata.obj.widget = widget;
-    AbrirVirtualKeyboard(&vkdata);
-    WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
-    return TRUE;
-  }
-
-  ignorar = 0;
-  return FALSE;
+	vkdata.type = VK_TYPE_WIDGET;
+	vkdata.obj.widget = GTK_WIDGET(entry);
+	AbrirVirtualKeyboard(&vkdata);
+	WorkAreaGoTo(NTB_ABA_VIRTUAL_KB);
 }
 
 // Funcoes que aumentam/reduzem horas e minutos.
