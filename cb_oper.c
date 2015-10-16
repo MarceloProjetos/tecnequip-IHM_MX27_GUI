@@ -97,6 +97,9 @@ void LogProd(struct strTask *Task, int LogMode)
         MSSQL_DateFromTimeT(time(NULL), agora), Task->QtdProd - QtdProdStart, MAQ_LINHA, MAQ_MAQUINA);
 
     sprintf(evento, "Produzida(s) %d peca(s)", Task->QtdProd - QtdProdStart);
+
+    // Registra consumo de material
+    material_registraConsumo(GetMaterialInUse(), Task->QtdProd - QtdProdStart, Task->Tamanho + maq_param.corte.tam_faca);
   }
 
   MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
@@ -736,6 +739,12 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
   GtkWidget *wdg;
   struct strTask *Task = (struct strTask *)user_data;
   char tmp[30], sql[300];
+  struct strMaterial *material = GetMaterialInUse();
+
+  if(material == NULL) {
+    ShowMessageBox("Nenhum material selecionado!", FALSE);
+    return;
+  }
 
   if(MaqConfigCurrent->NeedMaqInit && !(MaqLerEstado() & MAQ_STATUS_INITOK)) {
     MessageBox("Máquina não inicializada!");

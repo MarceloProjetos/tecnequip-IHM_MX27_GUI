@@ -103,7 +103,13 @@ void AbrirLog()
 
 // Selecionando o item do combobox faz com que a lista de eventos seja carregada.
   gtk_combo_box_set_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLogFiltro")), 0);
-  CarregaListaLogs(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
+
+  TV_Limpar(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
+}
+
+void cbLogBuscar(GtkButton *button, gpointer user_data)
+{
+	CarregaListaLogs(GTK_WIDGET(gtk_builder_get_object(builder, "tvwLog")));
 }
 
 void cbLogVoltar(GtkButton *button, gpointer user_data)

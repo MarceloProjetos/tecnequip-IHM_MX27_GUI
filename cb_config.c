@@ -1263,8 +1263,11 @@ int WorkAreaGet()
 
 void cbMessageBoxOk(GtkButton *button, gpointer user_data)
 {
-  MaqLimparErro();
-  WorkAreaGoPrevious();
+	if(gtk_widget_get_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMessageBoxErro")))) {
+		MaqLimparErro();
+	}
+
+	WorkAreaGoPrevious();
 }
 
 void cbGoPrevious(GtkButton *button, gpointer user_data)

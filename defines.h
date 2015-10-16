@@ -286,6 +286,7 @@ extern uint32_t OnPowerDown;
 // Prototipos de Funcoes
 void AbrirData  (GtkEntry *entry, GCallback cb);
 int  GetUserPerm(unsigned int perm);
+void ShowMessageBox(char *msg, int modoErro);
 
 void cbIconPress (GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer user_data);
 
@@ -293,3 +294,55 @@ void cbIconPress (GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *even
 extern void monitor_Init();
 extern void monitor_SendEstado();
 extern void monitor_Set_Status(long torque, long current, long temperature);
+
+/*** Definicoes de Materiais ***/
+
+#define max(a,b) ((a) > (b) ? (a) : (b))
+#define min(a,b) ((a) < (b) ? (a) : (b))
+#define CTOI(x) (min(max(0, x - '0'), 9))
+
+/*** Estruturas de materiais ***/
+struct strMaterial {
+	// ID do material no banco de dados
+	int  id;
+
+	// Codigo do material
+	char codigo[21]; // Campo no banco: VARCHAR(20)
+
+	// Flag que indica se o material esta selecionado para uso (TRUE) ou nao (FALSE)
+	int  inUse;
+
+	// Largura e espessura para efeito de calculo de consumo de material (em Kg)
+	int  largura;
+	int  espessura;
+
+	// Local de armazenamento do material
+	char local[21]; // Campo no banco: VARCHAR(20)
+
+	// Peso do material
+	int  peso;
+
+	// Ponteiro para o proximo material
+	struct strMaterial *Next;
+};
+
+// Enumeracao com os tipos de materiais
+//enum enumTipoEstoque {
+
+//};
+
+// Funcoes da lista de materiais
+struct strMaterial * AllocNewMaterial(void);
+void ClearMaterials(void);
+struct strMaterial * GetMaterial(unsigned int idx);
+struct strMaterial * GetMaterialInUse(void);
+
+// Funcoes para trabalhar com os materiais
+int material_checaDigitoVerificador(char *strCodigo);
+void material_select(struct strMaterial *material);
+void material_registraConsumo(struct strMaterial *material, unsigned int qtd, unsigned int tam);
+
+// Funcoes de tela
+void CarregaComboLocais(GtkComboBox *cmb);
+void InsertMaterial(void);
+void CarregaListaMateriais(GtkWidget *tvw);

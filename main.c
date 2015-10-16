@@ -692,6 +692,15 @@ void Board_Init(BoardStatus *bs)
   Board_Update(bs);
 }
 
+void ShowMessageBox(char *msg, int modoErro)
+{
+    gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMessageBoxErro")), modoErro == TRUE);
+    gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMessageBoxInfo")), modoErro == FALSE);
+
+	gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg);
+    WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
+}
+
 void LoadComboUsers(void)
 {
   struct strDB *sDB = MSSQL_Connect();
@@ -974,9 +983,8 @@ gboolean tmrGtkUpdate(gpointer data)
           Log(msg_error, LOG_TIPO_ERRO);
 
           gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), msg_error);
-          gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMessageBox")), msg_error);
 
-          WorkAreaGoTo(NTB_ABA_MESSAGEBOX);
+          ShowMessageBox(msg_error, TRUE);
         } else {
           MaqLiberar(1);
           gtk_label_set_label(GTK_LABEL(gtk_builder_get_object(builder, "lblMensagens" )), MSG_SEM_ERRO);
@@ -1339,7 +1347,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   char *campos_log       [] = { "Data", "Usuário", "Evento", "" };
   char *campos_PrensaProg[] = { "Número", "Nome", "Singelo", "Quantidade", "" };
   char *campos_tarefa    [] = { "Número", "Cliente", "Pedido", "Modelo", "Total", "Produzidas", "Tamanho", "Data", "Comentários", "" };
-  char *campos_materiais [] = { "Código", "Em uso?", "Espessura", "Largura", "Local", "" };
+  char *campos_materiais [] = { "Número", "Código", "Em uso?", "Espessura", "Largura", "Peso", "Local", "" };
 
   /* init threads */
   g_thread_init (NULL);
@@ -1389,7 +1397,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   // Configura TreeView da tela de Materiais
   TV_Config(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")), campos_materiais,
     GTK_TREE_MODEL(gtk_list_store_new((sizeof(campos_materiais)/sizeof(campos_materiais[0]))-1,
-        G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
+    		G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING)));
 
   // Atualiza o label que indica a versao do programa
   char strversion[100];
