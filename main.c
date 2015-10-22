@@ -1158,6 +1158,7 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
     aba = MaqConfigCurrent->AbaManut;
   } else if(idx == NTB_ABA_OPERAR) {
 	  aba = MaqConfigCurrent->AbaOperAuto;
+	  CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
   } else {
 	  aba = idx;
   }

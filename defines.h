@@ -99,7 +99,7 @@ typedef uint16_t u16;
 #define MAQ_STATUS_MANUTENCAO    5
 
 // Tempo máximo de inatividade permitido
-#define MAQ_IDLE_TIMEOUT 30
+#define MAQ_IDLE_TIMEOUT 300
 
 // Definicao de mascara de erro para Maquina Desativada
 #define MAQ_ERRO_DESATIVADA 0x0400
@@ -302,19 +302,36 @@ extern void monitor_Set_Status(long torque, long current, long temperature);
 #define CTOI(x) (min(max(0, x - '0'), 9))
 
 /*** Estruturas de materiais ***/
+// Enumeracao com os tipos de materiais
+enum enumTipoEstoque {
+	enumTipoEstoque_Revenda              =  0,
+	enumTipoEstoque_MateriaPrima         =  1,
+	enumTipoEstoque_Embalagem            =  2,
+	enumTipoEstoque_ProdutoEmProcesso    =  3,
+	enumTipoEstoque_ProdutoAcabado       =  4,
+	enumTipoEstoque_Subproduto           =  5,
+	enumTipoEstoque_ProdutoIntermediario =  6,
+	enumTipoEstoque_MaterialUsoConsumo   =  7,
+	enumTipoEstoque_AtivoImobilizado     =  8,
+	enumTipoEstoque_Servicos             =  9,
+	enumTipoEstoque_OutrosInsumos        = 10,
+	enumTipoEstoque_Outros               = 99,
+};
+
 struct strMaterial {
 	// ID do material no banco de dados
 	int  id;
 
 	// Codigo do material
 	char codigo[21]; // Campo no banco: VARCHAR(20)
+	enum enumTipoEstoque tipo; // Tipo de material
 
 	// Flag que indica se o material esta selecionado para uso (TRUE) ou nao (FALSE)
 	int  inUse;
 
 	// Largura e espessura para efeito de calculo de consumo de material (em Kg)
 	int  largura;
-	int  espessura;
+	float espessura;
 
 	// Local de armazenamento do material
 	char local[21]; // Campo no banco: VARCHAR(20)
@@ -322,27 +339,36 @@ struct strMaterial {
 	// Peso do material
 	int  peso;
 
+	// Comprimento do material
+	int  tamanho;
+
+	// Numero de pecas no lote
+	int  quantidade;
+
+	// ID da tarefa que foi utilizada para gerar esse material
+	int idTarefa;
+
 	// Ponteiro para o proximo material
 	struct strMaterial *Next;
 };
-
-// Enumeracao com os tipos de materiais
-//enum enumTipoEstoque {
-
-//};
 
 // Funcoes da lista de materiais
 struct strMaterial * AllocNewMaterial(void);
 void ClearMaterials(void);
 struct strMaterial * GetMaterial(unsigned int idx);
 struct strMaterial * GetMaterialInUse(void);
+struct strMaterial * GetMaterialByTask(int idTask);
 
 // Funcoes para trabalhar com os materiais
-int material_checaDigitoVerificador(char *strCodigo);
+int material_getDV(char *strCodigo, enum enumTipoEstoque tipo);
+int material_checaDV(char *strCodigo, int dv, enum enumTipoEstoque tipo);
 void material_select(struct strMaterial *material);
-void material_registraConsumo(struct strMaterial *material, unsigned int qtd, unsigned int tam);
+void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam);
 
 // Funcoes de tela
 void CarregaComboLocais(GtkComboBox *cmb);
 void InsertMaterial(void);
 void CarregaListaMateriais(GtkWidget *tvw);
+void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDetails, int (*fnc)(struct strMaterial, int, int, void *), void *data);
+void GravarMaterial(struct strMaterial material);
+gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck);

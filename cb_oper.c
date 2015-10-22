@@ -99,7 +99,7 @@ void LogProd(struct strTask *Task, int LogMode)
     sprintf(evento, "Produzida(s) %d peca(s)", Task->QtdProd - QtdProdStart);
 
     // Registra consumo de material
-    material_registraConsumo(GetMaterialInUse(), Task->QtdProd - QtdProdStart, Task->Tamanho + maq_param.corte.tam_faca);
+    material_registraConsumo(GetMaterialInUse(), GetMaterialByTask(Task->ID), Task->QtdProd - QtdProdStart, Task->Tamanho + maq_param.corte.tam_faca);
   }
 
   MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
@@ -733,21 +733,73 @@ void cbCancelarDadosPedido(GtkButton *button, gpointer user_data)
   LimparDadosPedido();
 }
 
+int cbExecutar(struct strMaterial material, int dv, int isCancel, void *data)
+{
+	char tmp[100];
+	int qtd, tam;
+	struct strTask *Task = (struct strTask *)data;
+
+	// Se a operacao foi cancelada, retorna para a tela inicial
+	if(isCancel) {
+		WorkAreaGoTo(MaqConfigCurrent->AbaHome);
+		return FALSE;
+	}
+
+	// Checa se os dados são válidos.
+	if(!ChecarMaterial(material, dv, FALSE)) {
+		return FALSE;
+	}
+
+	material.idTarefa = Task->ID;
+	GravarMaterial(material);
+
+	qtd = Task->Qtd - Task->QtdProd;
+	tam = Task->Tamanho;
+
+	sprintf(tmp, "%d", qtd);
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal")), tmp);
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo")), tmp);
+
+	sprintf(tmp, "%d", tam);
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPos" )), tmp);
+
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd")), "0");
+
+	MaqConfigProdQtd(qtd);
+	MaqConfigProdTam(tam);
+
+	sprintf(tmp, "Produzindo %d peças de %d mm", qtd, tam);
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), tmp);
+	LogProd(Task, LOGPROD_START);
+
+	MaqConfigModo(MAQ_MODO_AUTO);
+	g_timeout_add(1000, tmrExec, (gpointer)Task);
+
+	// Configura o estado da máquina
+	SetMaqStatus(MAQ_STATUS_PRODUZINDO);
+
+	gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecParar" )), TRUE);
+	WorkAreaGoTo(NTB_ABA_EXECUTAR);
+
+	// Retorna falso pois nao queremos que a tela de cadastro de materiais execute acao nenhuma.
+	return FALSE;
+}
+
 void cbExecTarefa(GtkButton *button, gpointer user_data)
 {
-  int qtd, tam, DadosOK = 0;
+  int DadosOK = 0;
   GtkWidget *wdg;
   struct strTask *Task = (struct strTask *)user_data;
   char tmp[30], sql[300];
-  struct strMaterial *material = GetMaterialInUse();
-
-  if(material == NULL) {
-    ShowMessageBox("Nenhum material selecionado!", FALSE);
-    return;
-  }
+  struct strMaterial *material = GetMaterialInUse(), *materialProduzido;
 
   if(MaqConfigCurrent->NeedMaqInit && !(MaqLerEstado() & MAQ_STATUS_INITOK)) {
     MessageBox("Máquina não inicializada!");
+    return;
+  }
+
+  if(material == NULL) {
+    ShowMessageBox("Nenhum material selecionado!", FALSE);
     return;
   }
 
@@ -792,33 +844,23 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
     DB_Execute(&mainDB, 0, sql);
   }
 
-  qtd = Task->Qtd - Task->QtdProd;
-  tam = Task->Tamanho;
+  materialProduzido = GetMaterialByTask(Task->ID);
 
-  sprintf(tmp, "%d", qtd);
-  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal")), tmp);
-  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo")), tmp);
+  if(materialProduzido == NULL) {
+	  materialProduzido = material;
 
-  sprintf(tmp, "%d", tam);
-  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPos" )), tmp);
+	  // Sem registro para esta tarefa. Usa o cadastro do material
+	  materialProduzido->codigo[0] = 0;
+	  materialProduzido->peso      = 0;
+	  materialProduzido->idTarefa  = Task->ID;
+	  materialProduzido->tipo = enumTipoEstoque_ProdutoEmProcesso;
+  } else if(materialProduzido->espessura != material->espessura || materialProduzido->largura != material->largura) {
+	  MessageBox("Material Selecionado Está Incorreto!");
+	  WorkAreaGoPrevious();
+	  return;
+  }
 
-  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd")), "0");
-
-  MaqConfigProdQtd(qtd);
-  MaqConfigProdTam(tam);
-
-  sprintf(sql, "Produzindo %d peças de %d mm", qtd, tam);
-  gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecMsg")), sql);
-  LogProd(Task, LOGPROD_START);
-
-  MaqConfigModo(MAQ_MODO_AUTO);
-  g_timeout_add(1000, tmrExec, (gpointer)Task);
-
-  // Configura o estado da máquina
-  SetMaqStatus(MAQ_STATUS_PRODUZINDO);
-
-  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecParar" )), TRUE);
-  WorkAreaGoTo(NTB_ABA_EXECUTAR);
+  AbrirCadastroMaterial(materialProduzido, FALSE, FALSE, cbExecutar, Task);
 }
 
 void cbExecParar(GtkButton *button, gpointer user_data)
