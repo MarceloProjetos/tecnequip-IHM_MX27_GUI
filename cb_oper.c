@@ -98,8 +98,10 @@ void LogProd(struct strTask *Task, int LogMode)
 
     sprintf(evento, "Produzida(s) %d peca(s)", Task->QtdProd - QtdProdStart);
 
-    // Registra consumo de material
-    material_registraConsumo(GetMaterialInUse(), GetMaterialByTask(Task->ID), Task->QtdProd - QtdProdStart, Task->Tamanho + maq_param.corte.tam_faca);
+    // Registra consumo de material, se a maquina usar o controle de material
+    if(MaqConfigCurrent && MaqConfigCurrent->UseMaterial) {
+    	material_registraConsumo(GetMaterialInUse(), GetMaterialByTask(Task->ID), Task->QtdProd - QtdProdStart, Task->Tamanho, maq_param.corte.tam_faca);
+    }
   }
 
   MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
@@ -189,6 +191,7 @@ void ConfigBotoesTarefa(GtkWidget *wdg, gboolean modo)
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecTarefa"   )), modo);
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnEditarTarefa" )), modo && Task && (Task->Origem == TRF_ORIGEM_MANUAL));
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRemoverTarefa")), modo && Task && (Task->Origem == TRF_ORIGEM_MANUAL));
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnAbrirMaterial")), MaqConfigCurrent->UseMaterial);
 }
 
 void CarregaComboModelosTarefa(GtkComboBox *cmb)
@@ -745,13 +748,15 @@ int cbExecutar(struct strMaterial material, int dv, int isCancel, void *data)
 		return FALSE;
 	}
 
-	// Checa se os dados são válidos.
-	if(!ChecarMaterial(material, dv, FALSE)) {
-		return FALSE;
-	}
+	if(MaqConfigCurrent->UseMaterial) {
+		// Checa se os dados são válidos.
+		if(!ChecarMaterial(material, dv, FALSE)) {
+			return FALSE;
+		}
 
-	material.idTarefa = Task->ID;
-	GravarMaterial(material);
+		material.idTarefa = Task->ID;
+		GravarMaterial(material);
+	}
 
 	qtd = Task->Qtd - Task->QtdProd;
 	tam = Task->Tamanho;
@@ -791,16 +796,20 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
   GtkWidget *wdg;
   struct strTask *Task = (struct strTask *)user_data;
   char tmp[30], sql[300];
-  struct strMaterial *material = GetMaterialInUse(), *materialProduzido;
+  struct strMaterial *material = NULL, *materialProduzido;
 
   if(MaqConfigCurrent->NeedMaqInit && !(MaqLerEstado() & MAQ_STATUS_INITOK)) {
     MessageBox("Máquina não inicializada!");
     return;
   }
 
-  if(material == NULL) {
-    ShowMessageBox("Nenhum material selecionado!", FALSE);
-    return;
+  if(MaqConfigCurrent->UseMaterial) {
+	  material = GetMaterialInUse();
+
+	  if(material == NULL) {
+		ShowMessageBox("Nenhum material selecionado!", FALSE);
+		return;
+	  }
   }
 
   if(button != NULL) { // Operacao normal
@@ -844,23 +853,28 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
     DB_Execute(&mainDB, 0, sql);
   }
 
-  materialProduzido = GetMaterialByTask(Task->ID);
+  if(MaqConfigCurrent->UseMaterial) {
+	  materialProduzido = GetMaterialByTask(Task->ID);
 
-  if(materialProduzido == NULL) {
-	  materialProduzido = material;
+	  if(materialProduzido == NULL) {
+		  materialProduzido = material;
 
-	  // Sem registro para esta tarefa. Usa o cadastro do material
-	  materialProduzido->codigo[0] = 0;
-	  materialProduzido->peso      = 0;
-	  materialProduzido->idTarefa  = Task->ID;
-	  materialProduzido->tipo = enumTipoEstoque_ProdutoEmProcesso;
-  } else if(materialProduzido->espessura != material->espessura || materialProduzido->largura != material->largura) {
-	  MessageBox("Material Selecionado Está Incorreto!");
-	  WorkAreaGoPrevious();
-	  return;
+		  // Sem registro para esta tarefa. Usa o cadastro do material
+		  materialProduzido->codigo[0] = 0;
+		  materialProduzido->peso      = 0;
+		  materialProduzido->idTarefa  = Task->ID;
+		  materialProduzido->tipo = enumTipoEstoque_ProdutoEmProcesso;
+	  } else if(materialProduzido->espessura != material->espessura || materialProduzido->largura != material->largura) {
+		  MessageBox("Material Selecionado Está Incorreto!");
+		  WorkAreaGoPrevious();
+		  return;
+	  }
+
+	  AbrirCadastroMaterial(materialProduzido, FALSE, FALSE, cbExecutar, Task);
+  } else {
+	  struct strMaterial dummy = { 0 };
+	  cbExecutar(dummy, 0, FALSE, (void *)Task);
   }
-
-  AbrirCadastroMaterial(materialProduzido, FALSE, FALSE, cbExecutar, Task);
 }
 
 void cbExecParar(GtkButton *button, gpointer user_data)

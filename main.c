@@ -1038,7 +1038,7 @@ gboolean tmrGtkUpdate(gpointer data)
             sprintf(buf, "%d", torque);
             gtk_entry_set_text(GTK_ENTRY(gtk_builder_get_object(builder, "entManutInvTorque")), buf);
 
-            //monitor_Set_Status(torque, corrente, tensao);
+            monitor_Set_Status(torque, corrente, tensao);
 
 			break;
         }
@@ -1113,8 +1113,8 @@ gboolean tmrGtkUpdate(gpointer data)
       static long next_message = 0;
       long now = time(NULL);
       if(next_message < now) {
-    	  next_message = now + 180; // 180 = 3 minutos
-    	  //monitor_SendEstado();
+    	  next_message = now + 30; // 180 = 3 minutos
+    	  monitor_SendEstado();
       }
     } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
@@ -1523,7 +1523,7 @@ uint32_t IHM_Init(int argc, char *argv[])
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblIpAddress")), host);
 
   if(MaqInit()) {
-	//monitor_Init(); // Inicia o sistema de monitoramento
+	monitor_Init(); // Inicia o sistema de monitoramento
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 

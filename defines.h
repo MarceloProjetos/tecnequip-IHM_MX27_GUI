@@ -290,11 +290,6 @@ void ShowMessageBox(char *msg, int modoErro);
 
 void cbIconPress (GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEvent *event, gpointer user_data);
 
-// Funcoes de Monitoramento
-extern void monitor_Init();
-extern void monitor_SendEstado();
-extern void monitor_Set_Status(long torque, long current, long temperature);
-
 /*** Definicoes de Materiais ***/
 
 #define max(a,b) ((a) > (b) ? (a) : (b))
@@ -337,7 +332,7 @@ struct strMaterial {
 	char local[21]; // Campo no banco: VARCHAR(20)
 
 	// Peso do material
-	int  peso;
+	float peso;
 
 	// Comprimento do material
 	int  tamanho;
@@ -363,7 +358,7 @@ struct strMaterial * GetMaterialByTask(int idTask);
 int material_getDV(char *strCodigo, enum enumTipoEstoque tipo);
 int material_checaDV(char *strCodigo, int dv, enum enumTipoEstoque tipo);
 void material_select(struct strMaterial *material);
-void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam);
+void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam, unsigned int tamPerda);
 
 // Funcoes de tela
 void CarregaComboLocais(GtkComboBox *cmb);
@@ -372,3 +367,10 @@ void CarregaListaMateriais(GtkWidget *tvw);
 void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDetails, int (*fnc)(struct strMaterial, int, int, void *), void *data);
 void GravarMaterial(struct strMaterial material);
 gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck);
+
+// Funcoes de Monitoramento
+extern void monitor_Init();
+extern void monitor_SendEstado();
+extern void monitor_Set_Status(long torque, long current, long temperature);
+extern void monitor_enviaMsgMatCadastro(struct strMaterial *material);
+extern void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda);

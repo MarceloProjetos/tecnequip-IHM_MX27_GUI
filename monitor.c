@@ -11,24 +11,92 @@
 #include <jsonQueue.h>
 
 // Strings de conexao com o servidor e as filas / topicos
-#define URI_BROKER       "tcp://127.0.0.1:61616"
-#define URI_QUEUE_ESTADO "status"
+#define URI_BROKER         "tcp://127.0.0.1:61616"
+#define URI_QUEUE_ESTADO   "IHM-STATUS"
+#define URI_QUEUE_MATERIAL "IHM-MATERIAL"
 
 // Nomes dos objetos da mensagem
-#define MSG_NAME_MODE               "modo"
-#define MSG_NAME_USER               "usuario"
-#define MSG_NAME_STATUS             "status"
-#define MSG_NAME_PARAM              "parametros"
-#define MSG_NAME_STATUS_TORQUE      "torque"
-#define MSG_NAME_STATUS_CURRENT     "corrente"
-#define MSG_NAME_STATUS_TEMPERATURE "temperatura"
-#define MSG_NAME_STATUS_UP_TIME     "uptime"
-#define MSG_NAME_PARAM_IPIHM        "ip_ihm"
-#define MSG_NAME_PARAM_IPCLP        "ip_clp"
-#define MSG_NAME_PARAM_MAQ_NAME     "maquina"
+#define MSG_NAME_MODE                   "modo"
+#define MSG_NAME_DATETIME               "datahora"
+#define MSG_NAME_USER                   "operador"
+#define MSG_NAME_PARAM                  "parametros"
+#define MSG_NAME_STATUS_TORQUE_MAX      "torque_maximo"
+#define MSG_NAME_STATUS_CURRENT_MAX     "corrente_maxima"
+#define MSG_NAME_STATUS_TEMPERATURE_MAX "temperatura_maxima"
+#define MSG_NAME_STATUS_TORQUE_AVG      "torque_medio"
+#define MSG_NAME_STATUS_CURRENT_AVG     "corrente_media"
+#define MSG_NAME_STATUS_TEMPERATURE_AVG "temperatura_media"
+#define MSG_NAME_STATUS_UP_TIME         "tempo"
+#define MSG_NAME_PARAM_MAQ_NAME         "maquina"
+
+#define MSG_NAME_VALOR_MEDIDA           "medida"
+#define MSG_NAME_VALOR_UNIDADE          "unidade"
+#define MSG_NAME_VALOR_VALOR            "valor"
+
+#define MSG_NAME_MATCAD_MATERIAL        "materiais"
+#define MSG_NAME_MATCAD_CODIGO          "codigo"
+#define MSG_NAME_MATCAD_MOVIMENTACAO    "movimentacao"
+#define MSG_NAME_MATCAD_DESCRICAO       "descricao"
+#define MSG_NAME_MATCAD_TRACKING        "rastreamento"
+#define MSG_NAME_MATCAD_TRACKING_TYPE   "tipo"
+#define MSG_NAME_MATCAD_TRACKING_NUMBER "numero"
+#define MSG_NAME_MATCAD_INUSE           "emUso"
+#define MSG_NAME_MATCAD_MEDIDA          "medidas"
+#define MSG_NAME_MATCAD_LARGURA         "largura"
+#define MSG_NAME_MATCAD_ESPESSURA       "espessura"
+#define MSG_NAME_MATCAD_LOCAL           "local"
+#define MSG_NAME_MATCAD_PESO            "peso"
+#define MSG_NAME_MATCAD_TAMANHO         "tamanho"
+#define MSG_NAME_MATCAD_QUANTIDADE      "quantidade"
 
 // Fila STATUS do sistema de monitoramento
 static struct jsonQueue *jqMonitorStatus = NULL;
+
+// Fila do sistema de controle de materiais
+static struct jsonQueue *jqMaterial = NULL;
+
+// Estrutura, Enumeracoes e Uniao que juntas armazenam uma variavel de qualquer tipo
+enum enumValueType {
+	enumValueType_Long = 0,
+	enumValueType_Float,
+	enumValueType_String
+};
+
+enum enumValueUnit {
+	enumValueUnit_Unit = 0,
+	enumValueUnit_Kg,
+	enumValueUnit_Mm,
+	enumValueUnit_Celsius,
+	enumValueUnit_Amper,
+	enumValueUnit_Percent
+};
+
+union uniValor {
+	long   lVal;
+	float  fVal;
+	char  *sVal;
+};
+
+struct strValor {
+	char                *nome;
+	enum  enumValueType  type;
+	enum  enumValueUnit  unit;
+	union uniValor       valor;
+};
+
+// Enumeracao com os tipos de movimentacao de material
+enum enumMaterialTipoMovimentacao {
+	enumMaterialTipoMovimentacao_ConsumoProprio     = 0,
+	enumMaterialTipoMovimentacao_SaidaMovEntreDep   ,
+	enumMaterialTipoMovimentacao_EntradaMovEntreDep ,
+	enumMaterialTipoMovimentacao_Devolucao          ,
+	enumMaterialTipoMovimentacao_EntradaAjuste      ,
+	enumMaterialTipoMovimentacao_Expedicao          ,
+	enumMaterialTipoMovimentacao_Perda              ,
+	enumMaterialTipoMovimentacao_Producao           ,
+	enumMaterialTipoMovimentacao_Recebimento        ,
+	enumMaterialTipoMovimentacao_SaidaAjuste
+};
 
 // Estrutura com os dados de monitoramento da maquina
 static struct {
@@ -126,16 +194,185 @@ void monitor_Init(void)
 
 	monitor.estado.status.startTime = time(NULL);
 
+	MaqGetIpAddress("eth0", monitor.estado.param.ip_ihm);
+
 	// Cria fila de Status
 	jqMonitorStatus = jsonQueue_New();
 	jsonQueue_SetBroker  (jqMonitorStatus, URI_BROKER      , TRUE );
 	jsonQueue_SetProducer(jqMonitorStatus, URI_QUEUE_ESTADO, FALSE);
 	jsonQueue_SetConsumer(jqMonitorStatus, ""              , TRUE );
 
-	MaqGetIpAddress("eth0", monitor.estado.param.ip_ihm);
+	// Cria fila de Materiais
+	jqMaterial = jsonQueue_New();
+	jsonQueue_SetBroker  (jqMaterial, URI_BROKER        , TRUE );
+	jsonQueue_SetProducer(jqMaterial, URI_QUEUE_MATERIAL, FALSE);
+	jsonQueue_SetConsumer(jqMaterial, ""                , TRUE );
 
-	// Inicia a fila
+	// Inicia as filas
 	jsonQueue_Start(jqMonitorStatus);
+	jsonQueue_Start(jqMaterial);
+}
+
+/*** Funcoes para montar as mensagens ***/
+
+// Funcao que retorna os dados de identificacao de uma IHM na mensagem
+struct jsonMessageElem * monitor_getMsgHeader(void)
+{
+	struct jsonMessageElem *jMsg, *rootMsg;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Elemento ID da Maquina
+	rootMsg = jsonMessage_ElemNewFull(MSG_NAME_PARAM_MAQ_NAME     , FALSE);
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(rootMsg), MaqConfigCurrent->ID);
+
+	// Elemento DataHora
+	char tmp[100];
+	time_t now;
+
+	now = time(NULL);
+	strftime (tmp, 100, "%Y-%m-%dT%H:%M:%S%z", localtime(&now));
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_DATETIME, FALSE));
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), tmp);
+
+	// Elemento User
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_USER, FALSE));
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), (monitor.estado.user == NULL) ? "" : monitor.estado.user);
+
+	return rootMsg;
+}
+
+// Funcao que retorna os dados de identificacao de uma IHM na mensagem
+struct jsonMessageElem * monitor_getMsgValue(struct strValor valor)
+{
+	struct jsonMessageElem *jMsg, *rootMsg;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Elemento com o nome do valor
+	rootMsg = jsonMessage_ElemNewFull(MSG_NAME_VALOR_MEDIDA, FALSE);
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(rootMsg), valor.nome);
+
+	// Elemento com a unidade utilizada
+	char *unit;
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_VALOR_UNIDADE, FALSE));
+	switch(valor.unit) {
+	default:
+	case enumValueUnit_Unit   : unit = "un"; break;
+	case enumValueUnit_Percent: unit = "%" ; break;
+	case enumValueUnit_Mm     : unit = "mm"; break;
+	case enumValueUnit_Kg     : unit = "kg"; break;
+	case enumValueUnit_Celsius: unit = "C" ; break;
+	case enumValueUnit_Amper  : unit = "A" ; break;
+	}
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), unit);
+
+	// Agora o elemento com o valor em si
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_VALOR_VALOR, FALSE));
+	switch(valor.type) {
+		case enumValueType_Long  : jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), valor.valor.lVal); break;
+		case enumValueType_Float : jsonMessage_DataSetReal  (jsonMessage_ElemGetData(jMsg), valor.valor.fVal); break;
+		case enumValueType_String: jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), valor.valor.sVal); break;
+	}
+
+	return rootMsg;
+}
+
+// Funcao que retorna os dados de um material na mensagem
+struct jsonMessageElem * monitor_getMsgMaterial(struct strMaterial *material, enum enumMaterialTipoMovimentacao tipoMov)
+{
+	char tmp[100];
+	struct strValor valor;
+	struct jsonMessageElem *jMsg, *rootMsg, *parentMsg;
+
+	// Fila nao existe!! Retorna...
+	if(material == NULL) return NULL;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Elemento Movimentacao
+	char *tmpMov;
+	rootMsg = jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MOVIMENTACAO, FALSE);
+	switch(tipoMov) {
+	case enumMaterialTipoMovimentacao_ConsumoProprio    : tmpMov = "CO"; break;
+	case enumMaterialTipoMovimentacao_SaidaMovEntreDep  : tmpMov = "D1"; break;
+	case enumMaterialTipoMovimentacao_EntradaMovEntreDep: tmpMov = "D2"; break;
+	case enumMaterialTipoMovimentacao_Devolucao         : tmpMov = "DE"; break;
+	case enumMaterialTipoMovimentacao_EntradaAjuste     : tmpMov = "EI"; break;
+	case enumMaterialTipoMovimentacao_Expedicao         : tmpMov = "EX"; break;
+	case enumMaterialTipoMovimentacao_Perda             : tmpMov = "PE"; break;
+	case enumMaterialTipoMovimentacao_Producao          : tmpMov = "PR"; break;
+	case enumMaterialTipoMovimentacao_Recebimento       : tmpMov = "RE"; break;
+	case enumMaterialTipoMovimentacao_SaidaAjuste       : tmpMov = "SI"; break;
+	}
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(rootMsg), tmpMov);
+
+	// Elemento Numero de Rastreamento
+	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_TRACKING, FALSE));
+
+	sprintf(tmp, "%02d", material->tipo);
+	jMsg    = jsonMessage_ElemNewFull(MSG_NAME_MATCAD_TRACKING_TYPE, FALSE);
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), tmp);
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), jMsg);
+
+	jMsg = jsonMessage_ElemAppend(jMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_TRACKING_NUMBER, FALSE));
+	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), atol(material->codigo));
+
+	// Elemento Codigo
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_CODIGO, FALSE));
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), "");
+
+	// Elemento Descricao
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_DESCRICAO, FALSE));
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), "");
+
+	// Elemento Em Uso
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_INUSE, FALSE));
+	jsonMessage_DataSetBoolean(jsonMessage_ElemGetData(jMsg), material->inUse);
+
+	// Elemento Local
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_LOCAL, FALSE));
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), material->local);
+
+	// Elemento pai do array com todas as medidas
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MEDIDA, TRUE));
+
+	// Elemento Largura
+	valor.nome       = MSG_NAME_MATCAD_LARGURA;
+	valor.type       = enumValueType_Long;
+	valor.unit       = enumValueUnit_Mm;
+	valor.valor.lVal = material->largura;
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(jMsg), monitor_getMsgValue(valor));
+
+	// Elemento Espessura
+	valor.nome       = MSG_NAME_MATCAD_ESPESSURA;
+	valor.type       = enumValueType_Float;
+	valor.unit       = enumValueUnit_Mm;
+	valor.valor.fVal = material->espessura;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
+
+	// Elemento Quantidade
+	valor.nome       = MSG_NAME_MATCAD_QUANTIDADE;
+	valor.type       = enumValueType_Long;
+	valor.unit       = enumValueUnit_Unit;
+	valor.valor.lVal = material->quantidade;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
+
+	// Elemento Tamanho
+	valor.nome       = MSG_NAME_MATCAD_TAMANHO;
+	valor.type       = enumValueType_Long;
+	valor.unit       = enumValueUnit_Mm;
+	valor.valor.lVal = material->tamanho;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
+
+	// Elemento Peso
+	valor.nome       = MSG_NAME_MATCAD_PESO;
+	valor.type       = enumValueType_Float;
+	valor.unit       = enumValueUnit_Kg;
+	valor.valor.fVal = material->peso;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
+
+	return rootMsg;
 }
 
 /*** Funcoes para comunicação com o sistema de monitoramento ***/
@@ -143,8 +380,9 @@ void monitor_Init(void)
 // Funcao para montar a mensagem de estado e enviar para a fila
 void monitor_SendEstado(void)
 {
+	struct strValor valor;
 	long avg_torque = 0, avg_current = 0, avg_temperature = 0;
-	struct jsonMessageElem *jMsg, *rootMsg, *parentMsg;
+	struct jsonMessageElem *jMsg, *rootMsg;
 
 	// Fila nao existe!! Retorna...
 	if(jqMonitorStatus == NULL) return;
@@ -165,60 +403,108 @@ void monitor_SendEstado(void)
 
 	/*** Agora montamos a mensagem ***/
 
+	// Recebe o cabecalho da mensagem: ID da maquina e usuario conectado
+	rootMsg = monitor_getMsgHeader();
+
 	// Elemento Operation Mode
-	rootMsg = jsonMessage_ElemNewFull(MSG_NAME_MODE, FALSE);
-	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(rootMsg), monitor.estado.opmode);
-
-	// Elemento User
-	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_USER, FALSE));
-	jsonMessage_DataSetString(jsonMessage_ElemGetData(parentMsg), monitor.estado.user);
-
-	// Elemento Status
-	parentMsg = jsonMessage_ElemAppend(parentMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS, FALSE));
-
-	// Elemento Torque
-	jMsg = jsonMessage_ElemNewFull(MSG_NAME_STATUS_TORQUE, TRUE);
-	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), monitor.estado.status.torque.max);
-	jsonMessage_DataSetNumber(jsonMessage_ElemAppendDataNew(jMsg), avg_torque);
-
-	// Configura o elemento de torque como o dado de status
-	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), jMsg);
-
-	// Elemento Corrente
-	jMsg = jsonMessage_ElemAppend(jMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_CURRENT, TRUE));
-	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), monitor.estado.status.current.max);
-	jsonMessage_DataSetNumber(jsonMessage_ElemAppendDataNew(jMsg), avg_current);
-
-	// Elemento Temperatura
-	jMsg = jsonMessage_ElemAppend(jMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_TEMPERATURE, TRUE));
-	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), monitor.estado.status.temperature.max);
-	jsonMessage_DataSetNumber(jsonMessage_ElemAppendDataNew(jMsg), avg_temperature);
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MODE, FALSE));
+	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), monitor.estado.opmode);
 
 	// Elemento Uptime
-	jMsg = jsonMessage_ElemAppend(jMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_UP_TIME, FALSE));
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_UP_TIME, FALSE));
 	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), time(NULL) - monitor.estado.status.startTime);
 
 	// Elemento Parametros
-	parentMsg = jsonMessage_ElemAppend(parentMsg, jsonMessage_ElemNewFull(MSG_NAME_PARAM, FALSE));
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_PARAM, TRUE));
 
-	if(MaqConfigCurrent != NULL) {
-		// Elemento IP_IHM
-		jMsg = jsonMessage_ElemNewFull(MSG_NAME_PARAM_IPIHM, FALSE);
-		jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), monitor.estado.param.ip_ihm);
+	// Elemento Torque
+	valor.nome       = MSG_NAME_STATUS_TORQUE_MAX;
+	valor.type       = enumValueType_Long;
+	valor.unit       = enumValueUnit_Percent;
+	valor.valor.lVal = monitor.estado.status.torque.max;
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(jMsg), monitor_getMsgValue(valor));
 
-		// Configura o elemento de IP_IHM como o dado de parametros
-		jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), jMsg);
+	valor.nome       = MSG_NAME_STATUS_TORQUE_AVG;
+	valor.valor.lVal = avg_torque;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
 
-		// Elemento IP_CLP
-		jMsg = jsonMessage_ElemAppend(jMsg, jsonMessage_ElemNewFull(MSG_NAME_PARAM_IPCLP, FALSE));
-		jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), MaqConfigCurrent->ClpAddr);
+	// Elemento Corrente
+	valor.nome       = MSG_NAME_STATUS_CURRENT_MAX;
+	valor.type       = enumValueType_Long;
+	valor.unit       = enumValueUnit_Amper;
+	valor.valor.lVal = monitor.estado.status.current.max;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
 
-		// Elemento Nome da Maquina
-		jMsg = jsonMessage_ElemAppend(jMsg, jsonMessage_ElemNewFull(MSG_NAME_PARAM_MAQ_NAME, FALSE));
-		jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), MaqConfigCurrent->Name);
-	}
+	valor.nome       = MSG_NAME_STATUS_CURRENT_AVG;
+	valor.valor.lVal = avg_current;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
+
+	// Elemento Corrente
+	valor.nome       = MSG_NAME_STATUS_TEMPERATURE_MAX;
+	valor.type       = enumValueType_Long;
+	valor.unit       = enumValueUnit_Celsius;
+	valor.valor.lVal = monitor.estado.status.temperature.max;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
+
+	valor.nome       = MSG_NAME_STATUS_TEMPERATURE_AVG;
+	valor.valor.lVal = avg_temperature;
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(jMsg), monitor_getMsgValue(valor));
 
 	// Mensagem pronta! Agora a enviamos
 	jsonQueue_PutMessage(jqMonitorStatus, rootMsg);
 	jsonQueue_Work(jqMonitorStatus);
+}
+
+// Envia a mensagem informando do cadastro de um material
+void monitor_enviaMsgMatCadastro(struct strMaterial *material)
+{
+	struct jsonMessageElem *jMsg, *rootMsg;
+
+	// Fila nao existe!! Retorna...
+	if(jqMaterial == NULL || material == NULL) return;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Recebe o cabecalho da mensagem: ID da maquina e usuario conectado
+	rootMsg = monitor_getMsgHeader();
+
+	// Cria o objeto com array de materiais
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
+
+	// Agora anexa o material
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(jMsg), monitor_getMsgMaterial(material, enumMaterialTipoMovimentacao_Recebimento));
+
+	// Mensagem pronta! Agora a enviamos
+	jsonQueue_PutMessage(jqMaterial, rootMsg);
+	jsonQueue_Work(jqMaterial);
+}
+
+// Envia a mensagem informando do cadastro de um material
+void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda)
+{
+	struct jsonMessageElem *rootMsg, *parentMsg;
+
+	// Fila nao existe!! Retorna...
+	if(jqMaterial == NULL || material == NULL || materialProd == NULL) return;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Recebe o cabecalho da mensagem: ID da maquina e usuario conectado
+	rootMsg = monitor_getMsgHeader();
+
+	// Cria o objeto com array de materiais
+	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
+
+	// Agora anexa o material produzido
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(materialProd, enumMaterialTipoMovimentacao_Producao));
+
+	// E entao anexa o material consumido
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(material, enumMaterialTipoMovimentacao_ConsumoProprio));
+
+	// Por fim anexa o material perdido
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialPerda, enumMaterialTipoMovimentacao_Perda));
+
+	// Mensagem pronta! Agora a enviamos
+	jsonQueue_PutMessage(jqMaterial, rootMsg);
+	jsonQueue_Work(jqMaterial);
 }

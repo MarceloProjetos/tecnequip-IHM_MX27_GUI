@@ -691,7 +691,7 @@ void AbrirProgParam(void)
         gtk_entry_set_icon_from_stock (GTK_ENTRY(obj), GTK_ENTRY_ICON_PRIMARY, "gtk-select-font");
         gtk_entry_set_icon_activatable(GTK_ENTRY(obj), GTK_ENTRY_ICON_PRIMARY, TRUE);
 
-        g_signal_connect ((gpointer) obj, "icon-press-event", G_CALLBACK(cbIconPress), NULL);
+        g_signal_connect ((gpointer) obj, "icon-press", G_CALLBACK(cbIconPress), NULL);
 
         ProgParam->qtd = obj;
 
@@ -1065,6 +1065,8 @@ void SalvaPassoPrograma(void)
   ProgData.Passos[index].Portas  = atoi(LerValorWidget("ckbPrensaProgPorta1"));
   ProgData.Passos[index].Portas |= atoi(LerValorWidget("ckbPrensaProgPorta2")) << 1;
   ProgData.Passos[index].Portas |= atoi(LerValorWidget("ckbPrensaProgPorta3")) << 2;
+  ProgData.Passos[index].Portas |= atoi(LerValorWidget("ckbPrensaProgPorta4")) << 3;
+  ProgData.Passos[index].Portas |= atoi(LerValorWidget("ckbPrensaProgPorta5")) << 4;
 
   ProgData.Passos[index].PedirAvanco = atoi(LerValorWidget("rbtPrensaProgPedirAvancoSim"));
 
@@ -1147,6 +1149,12 @@ void CarregaPassoPrograma(int index)
 
   sprintf(tmp, "%d", (ProgData.Passos[index].Portas & 0x04) != 0);
   GravarValorWidget("ckbPrensaProgPorta3", tmp);
+
+  sprintf(tmp, "%d", (ProgData.Passos[index].Portas & 0x08) != 0);
+  GravarValorWidget("ckbPrensaProgPorta4", tmp);
+
+  sprintf(tmp, "%d", (ProgData.Passos[index].Portas & 0x10) != 0);
+  GravarValorWidget("ckbPrensaProgPorta5", tmp);
 
   GravarValorWidget(ProgData.Passos[index].PedirAvanco ?
       "rbtPrensaProgPedirAvancoSim" : "rbtPrensaProgPedirAvancoNao", "1");
@@ -1478,6 +1486,23 @@ int ProgPrensa_Init(void)
 						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
                                 { 0, 0, 0, 0, NULL, NULL } }
         );
+
+    if(MAQ_ID_IS(MAQ_ID_APLAN_MEZANINO)) {
+    	// Configura os nomes dos labels para a aplanadora de mezanino
+    	gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta1")), "Estampo"   );
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta2")), "Guilhotina");
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta3")), "Extra"     );
+
+        // A aplanadora de mezanino possui apenas 3 portas. Oculta as restantes
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "ckbPrensaProgPorta4")), FALSE);
+        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "ckbPrensaProgPorta5")), FALSE);
+    } else {
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta1")), "Porta 1");
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta2")), "Porta 2");
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta3")), "Porta 3");
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta4")), "Porta 4");
+        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta5")), "Porta 5");
+    }
 
 	return 1;
 }

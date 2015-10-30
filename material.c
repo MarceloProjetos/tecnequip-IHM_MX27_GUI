@@ -198,20 +198,24 @@ void material_select(struct strMaterial *material)
 	}
 }
 
-void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam)
+void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tamPeca, unsigned int tamPerda)
 {
 	// Se material for nulo, quantidade ou tamanho forem zero, nao ha como registrar o consumo
-	if(materialConsumido == NULL || materialProduzido == NULL || qtd == 0 || tam == 0) return;
+	if(materialConsumido == NULL || materialProduzido == NULL || qtd == 0 || (tamPeca == 0 && tamPerda == 0)) return;
 
 	// Peso em gramas por metro. Como a medida eh em milimetros e o peso final deve ser em  KG / metro, precisamos dividir por 1000 por duas vezes ou 1.000.000
-	const float pesoGramasPorCm3 = 7.85;
+	const float pesoGramasPorCm3 = 7.856;
 
-	unsigned int pesoKgConsumido = (unsigned int)((pesoGramasPorCm3 * qtd * tam * materialProduzido->espessura * materialProduzido->largura) / 1000000UL);
+	float pesoKgProduzido = (pesoGramasPorCm3 * qtd * tamPeca  * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
+	float pesoKgPerda     = (pesoGramasPorCm3 * qtd * tamPerda * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
+	float pesoKgConsumido = pesoKgProduzido + pesoKgPerda;
 
 	// TODO: Peso nao pode ficar negativo! Por isso consideramos como peso consumido apenas o que restava de bobina.
 	// Mas de onde veio esse excesso de material?? Precisamos tratar isso futuramente...
 	if(materialConsumido->peso < pesoKgConsumido) {
 		pesoKgConsumido = materialConsumido->peso;
+		// Recalcula a perda para "fechar a conta". Melhor solucao ate o momento...
+		pesoKgPerda = pesoKgConsumido - pesoKgProduzido;
 	}
 
 	// Atualiza as propriedades do material consumido
@@ -219,19 +223,34 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 
 	// Atualiza as propriedades do material produzido
 	materialProduzido->quantidade += qtd;
-	materialProduzido->tamanho     = tam;
+	materialProduzido->tamanho     = tamPeca;
 	materialProduzido->peso       += pesoKgConsumido;
 
 	GravarMaterial(*materialConsumido);
 	GravarMaterial(*materialProduzido);
 
 	// Se o material acabou: Desmarca o material, obrigando a utilizacao de um novo material
-	if(materialConsumido->peso == 0) {
+	if(materialConsumido->peso <= 0.0) {
 		material_select(NULL);
 	}
-}
 
-#define TRF_TEXT_SIZE 10
+	// Agora enviamos a mensagem informando da producao. Devemos trabalhar nos dados para adequar ao esperado pelo sistema
+	// entao utilizamos novas variaveis para isso.
+	struct strMaterial matProduto = *materialProduzido, matConsumo = *materialConsumido, matPerda = *materialConsumido;
+
+	// Primeiro adequamos o material produzido.
+	// Devemos enviar apenas o que foi produzido nesse momento e nao o total
+	matProduto.quantidade = qtd;
+	matProduto.peso       = pesoKgProduzido;
+
+	// Agora adequamos o material consumido.
+	matConsumo.peso       = pesoKgConsumido;
+
+	// Por ultimo, as perdas.
+	matPerda  .peso       = pesoKgPerda;
+
+	monitor_enviaMsgMatProducao(&matConsumo, &matProduto, &matPerda);
+}
 
 void ConfigBotoesMaterial(GtkWidget *wdg, struct strMaterial *material)
 {
@@ -290,7 +309,7 @@ void InsertMaterial(void)
   currItem->espessura  = atof(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "espessura" )));
   currItem->inUse      = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "inUse"     )));
   strcpy(currItem->local    , DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "lCod"      )));
-  currItem->peso       = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "peso"      )));
+  currItem->peso       = atof(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "peso"      )));
   currItem->tamanho    = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "tamanho"   )));
   currItem->quantidade = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "quantidade")));
   currItem->idTarefa   = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "idTarefa"  )));
@@ -306,7 +325,7 @@ void GravarMaterial(struct strMaterial material)
 	DB_GetNextRow(&mainDB, 2);
 
 	if(material.id != 0) {
-		sprintf(sql, "update material set codigo='%s', espessura='%f', largura='%d', idLocal='%d', peso='%d', tipo='%d', quantidade='%d', "
+		sprintf(sql, "update material set codigo='%s', espessura='%f', largura='%d', idLocal='%d', peso='%f', tipo='%d', quantidade='%d', "
 			  "tamanho='%d', idTarefa='%d' where id='%d'",
 			  material.codigo, material.espessura, material.largura, atoi(DB_GetData(&mainDB, 2, 0)), material.peso,
 			  material.tipo, material.quantidade, material.tamanho, material.idTarefa, material.id);
@@ -314,7 +333,7 @@ void GravarMaterial(struct strMaterial material)
 		DB_Execute(&mainDB, 0, sql);
 	} else {
 		sprintf(sql, "insert into material (codigo, espessura, largura, idLocal, peso, tipo, quantidade, tamanho, idTarefa)"
-				" values ('%s', '%f', '%d', '%d', '%d', '%d', '%d', '%d', '%d')",
+				" values ('%s', '%f', '%d', '%d', '%f', '%d', '%d', '%d', '%d')",
 				material.codigo, material.espessura, material.largura, atoi(DB_GetData(&mainDB, 2, 0)),
 				material.peso, material.tipo, material.quantidade, material.tamanho, material.idTarefa);
 
@@ -361,7 +380,7 @@ void CarregaListaMateriais(GtkWidget *tvw)
       }
     }
 
-    // Insere uma nova tarefa a partir do registro atual
+    // Insere um novo material a partir do registro atual
     InsertMaterial();
 
     TV_Adicionar(tvw, valores);
@@ -380,13 +399,12 @@ gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck)
   char *msg = NULL;
 
   // Limites
-  const int   peso_max      = 5500;
+  const float peso_max      = 5500.0;
   const int   largura_min   = 10 , largura_max   = 500;
   const float espessura_min = 1.0, espessura_max = 5.0;
 
   // Verifica se o material ja existe
   sprintf(sql, "select id from material where codigo='%s' and tipo=%d and (idTarefa = 0 or idTarefa != %d)", material.codigo, material.tipo, material.idTarefa);
-  printf("Buscando material com mesmo codigo. SQL = %s\n", sql);
   DB_Execute(&mainDB, 1, sql);
   if(DB_GetNextRow(&mainDB, 1) > 0) {
 	  materialExiste = TRUE;
@@ -402,10 +420,10 @@ gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck)
   } else if(materialExiste) { // Material ja cadastrado!
     msg = "Este material já foi cadastrado!";
   } else if(isFullCheck) {
-	  if(material.peso < 1) { // Deve ser múltiplo do passo e maior que zero.
+	  if(material.peso < 1.0) { // Deve ser múltiplo do passo e maior que zero.
 		msg = "O peso deve ser maior que zero!";
 	  } else if(material.peso > peso_max) { // Verifica se peso supera o limite
-			sprintf(tmp, "O peso deve ser menor ou igual a %d", peso_max);
+			sprintf(tmp, "O peso deve ser menor ou igual a %d", (int)peso_max);
 			msg = tmp;
 	  } else if(DB_GetData(&mainDB, 1, 0) == NULL) {
 		  // Apenas precaucao. Isso nunca deveria acontecer!
@@ -519,8 +537,8 @@ int AplicarMaterial()
 
   switch(material.tipo) {
 	  default:
-	  case enumTipoEstoque_MateriaPrima     : material.peso = atoi(valores[ 4]); break;
-	  case enumTipoEstoque_ProdutoEmProcesso: material.peso = atoi(valores[10]); break;
+	  case enumTipoEstoque_MateriaPrima     : material.peso = (float)atoi(valores[ 4]); break;
+	  case enumTipoEstoque_ProdutoEmProcesso: material.peso = (float)atoi(valores[10]); break;
   }
 
   if(userAplicarMaterial == NULL) {
@@ -543,6 +561,7 @@ int AplicarMaterial()
 
 	  if(resp == GTK_RESPONSE_YES) {
 		  GravarMaterial(material);
+		  monitor_enviaMsgMatCadastro(&material);
 	  }
   } else {
 	  return (*userAplicarMaterial)(material, atoi(valores[7]), FALSE, userData);
@@ -593,7 +612,7 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 		sprintf(valor[3], "%d", material->largura);
 
 		// Peso em kg (Aba de materia prima)
-		sprintf(valor[4], "%d", material->peso);
+		sprintf(valor[4], "%d", (int)material->peso);
 
 		// Quantidade
 		sprintf(valor[5], "%d", material->quantidade);
@@ -602,7 +621,7 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 		sprintf(valor[6], "%d", material->tamanho);
 
 		// Peso em kg (Aba de produto em processo)
-		sprintf(valor[7], "%d", material->peso);
+		sprintf(valor[7], "%d", (int)material->peso);
 
 		// Id da Tarefa
 		sprintf(valor[8], "%d", material->idTarefa);
@@ -724,7 +743,7 @@ void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
 
 	// E entao seleciona esse material
 	material = GetMaterial(atoi(val) - 1);
-	material_registraConsumo(material, GetMaterialByTask(204), 3, 2500);
+	material_registraConsumo(material, GetMaterialByTask(204), 3, 2500, 10);
 }
 
 #define NTB_ABA_MATERIAL_MATERIAPRIMA    0

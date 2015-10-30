@@ -35,6 +35,7 @@ typedef struct {
   int            UseLogin;              ///< Flag que indica se essa maquina exige login (TRUE) ou nao (FALSE)
   int            UseIndet;              ///< Flag que indica se essa maquina pode ficar em estado indeterminado (TRUE) ou nao (FALSE)
   int            UseChaveGeral;         ///< Flag que indica se essa maquina possui controle de Chave Geral (Capacidade de Energizar / Desenergizar o painel)
+  int            UseMaterial;           ///< Flag que indica se essa maquina utiliza o controle de material
 
   int            NeedMaqInit;           ///< Flag que indica se essa maquina exige inicializacao (TRUE) ou nao (FALSE)
   int            MaqModeCV;             ///< Flag que indica se essa maquina suporta corte em movimento (TRUE) ou nao (FALSE)
@@ -233,6 +234,7 @@ int         MaqConfig_GetActive (void);
 #define MAQ_ID_BANHO          "IhmBanho"
 #define MAQ_ID_APLAN_PP       "IhmAplanPP"
 #define MAQ_ID_APLAN_COLUNA_N "IhmAplanN"
+#define MAQ_ID_APLAN_GARRA    "IhmAplanGarra"
 
 #define MAQ_ID_IS(id) ((MaqConfigCurrent != NULL) ? (!strcmp(MaqConfigCurrent->ID, id)) : FALSE)
 
