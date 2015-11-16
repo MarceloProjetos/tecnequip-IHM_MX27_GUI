@@ -83,6 +83,9 @@ typedef uint16_t u16;
 #define SENHA_MASTER          "wFF9jghA.pg"
 #define LEMBRETE_SENHA_MASTER "Senha default"
 
+// Tamanho maximo do nome do usuario
+#define MAX_USERNAME_SIZE 20
+
 // Definição de tipo de log
 #define LOG_TIPO_TODOS   0
 #define LOG_TIPO_SISTEMA 1
@@ -97,6 +100,8 @@ typedef uint16_t u16;
 #define MAQ_STATUS_MANUAL        3
 #define MAQ_STATUS_SETUP         4
 #define MAQ_STATUS_MANUTENCAO    5
+#define MAQ_STATUS_DESENERGIZADA 6
+#define MAQ_STATUS_DESLIGADA     7
 
 // Tempo máximo de inatividade permitido
 #define MAQ_IDLE_TIMEOUT 300
@@ -283,6 +288,9 @@ int  IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg);
 // Variavel indicando que a tela de desligamento esta ativada
 extern uint32_t OnPowerDown;
 
+// Variavel com a hora de desligamento anterior
+extern time_t system_Shutdown;
+
 // Prototipos de Funcoes
 void AbrirData  (GtkEntry *entry, GCallback cb);
 int  GetUserPerm(unsigned int perm);
@@ -372,5 +380,8 @@ gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck);
 extern void monitor_Init();
 extern void monitor_SendEstado();
 extern void monitor_Set_Status(long torque, long current, long temperature);
+extern void monitor_Set_User(char *user);
+extern void monitor_Set_OpMode(unsigned int opmode, time_t when);
+extern void monitor_Clear_Status(void);
 extern void monitor_enviaMsgMatCadastro(struct strMaterial *material);
 extern void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda);

@@ -983,8 +983,8 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
     else
       lembrete = LEMBRETE_SENHA_MASTER;
   } else {
-    sprintf(sql, "select O.*, P.PERMISSAO as pPERMISSAO from OPERADOR as O, PERFIL as P where O.PERFIL=P.ID and O.USUARIO='%s'",
-      LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"))));
+	char *user = LerComboAtivo(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser")));
+    sprintf(sql, "select O.*, P.PERMISSAO as pPERMISSAO from OPERADOR as O, PERFIL as P where O.PERFIL=P.ID and O.USUARIO='%s'", user);
 
     DB_Execute(sDB, 0, sql);
     if(DB_GetNextRow(sDB, 0)>0) {
@@ -1001,6 +1001,9 @@ void cbLoginOk(GtkButton *button, gpointer user_data)
 
         // Carrega permissão
         tmpPerm = DB_GetData(sDB, 0, DB_GetFieldNumber(sDB, 0, "pPERMISSAO"));
+
+        // Salva o nome do usuario logado
+        monitor_Set_User(user);
 
         if(UserPerm != NULL)
           free(UserPerm); // Desaloca permissão anterior

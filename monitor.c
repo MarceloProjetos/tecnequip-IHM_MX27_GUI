@@ -13,7 +13,7 @@
 // Strings de conexao com o servidor e as filas / topicos
 #define URI_BROKER         "tcp://127.0.0.1:61616"
 #define URI_QUEUE_ESTADO   "IHM-STATUS"
-#define URI_QUEUE_MATERIAL "IHM-MATERIAL"
+#define URI_QUEUE_MATERIAL "IHM-MATERIAL-MOVIMENTACAO"
 
 // Nomes dos objetos da mensagem
 #define MSG_NAME_MODE                   "modo"
@@ -27,7 +27,7 @@
 #define MSG_NAME_STATUS_CURRENT_AVG     "corrente_media"
 #define MSG_NAME_STATUS_TEMPERATURE_AVG "temperatura_media"
 #define MSG_NAME_STATUS_UP_TIME         "tempo"
-#define MSG_NAME_PARAM_MAQ_NAME         "maquina"
+#define MSG_NAME_PARAM_MAQ_NAME         "ihm"
 
 #define MSG_NAME_VALOR_MEDIDA           "medida"
 #define MSG_NAME_VALOR_UNIDADE          "unidade"
@@ -37,7 +37,7 @@
 #define MSG_NAME_MATCAD_CODIGO          "codigo"
 #define MSG_NAME_MATCAD_MOVIMENTACAO    "movimentacao"
 #define MSG_NAME_MATCAD_DESCRICAO       "descricao"
-#define MSG_NAME_MATCAD_TRACKING        "rastreamento"
+#define MSG_NAME_MATCAD_TRACKING        "lote"
 #define MSG_NAME_MATCAD_TRACKING_TYPE   "tipo"
 #define MSG_NAME_MATCAD_TRACKING_NUMBER "numero"
 #define MSG_NAME_MATCAD_INUSE           "emUso"
@@ -46,7 +46,7 @@
 #define MSG_NAME_MATCAD_ESPESSURA       "espessura"
 #define MSG_NAME_MATCAD_LOCAL           "local"
 #define MSG_NAME_MATCAD_PESO            "peso"
-#define MSG_NAME_MATCAD_TAMANHO         "tamanho"
+#define MSG_NAME_MATCAD_TAMANHO         "comprimento"
 #define MSG_NAME_MATCAD_QUANTIDADE      "quantidade"
 
 // Fila STATUS do sistema de monitoramento
@@ -103,8 +103,8 @@ static struct {
 
 	struct  {
 
-		int   opmode;
-		char *user;
+		unsigned int  opmode;
+		char user[MAX_USERNAME_SIZE + 1];
 
 		struct {
 
@@ -184,15 +184,34 @@ void monitor_Set_Status(long torque, long current, long temperature)
 	monitor.estado.status.temperature.sum += temperature;
 }
 
+// Funcao que inicializa a estrutura de status do monitor
+void monitor_Set_User(char *user)
+{
+	strcpy(monitor.estado.user, user);
+}
+
+void monitor_Set_OpMode(unsigned int opmode, time_t when)
+{
+	// Envia o estado atual
+	monitor_SendEstado();
+
+	// Atualiza o modo
+	monitor.estado.status.startTime = when;
+	monitor.estado.opmode = opmode;
+
+	// Envia a mensagem com o estado atualizado
+	monitor_SendEstado();
+}
+
 // Funcao para inicializar a estrutura de monitoramento
 void monitor_Init(void)
 {
-	monitor.estado.opmode = MAQ_STATUS_PARADA;
-	monitor.estado.user   = NULL;
+	monitor.estado.opmode  = MAQ_STATUS_DESLIGADA;
+	monitor.estado.user[0] = 0;
 
 	monitor_Clear_Status();
 
-	monitor.estado.status.startTime = time(NULL);
+	monitor.estado.status.startTime = system_Shutdown;
 
 	MaqGetIpAddress("eth0", monitor.estado.param.ip_ihm);
 
@@ -399,6 +418,22 @@ void monitor_SendEstado(void)
 
 	if(monitor.estado.status.temperature.count > 0) {
 		avg_temperature = monitor.estado.status.temperature.sum / monitor.estado.status.temperature.count;
+	}
+
+	/*** Verificando horario inicial do estado. Nunca pode ser de um dia anterior ao atual! ***/
+	time_t startOfDay, now = time(NULL);
+	struct tm *tmNow = localtime(&now);
+	if(tmNow != NULL) {
+		// Zera a hora pra receber os segundos referentes ao inicio do dia
+		tmNow->tm_hour = 0;
+		tmNow->tm_min  = 0;
+		tmNow->tm_sec  = 0;
+
+		startOfDay = mktime(tmNow);
+
+		if(monitor.estado.status.startTime < startOfDay) {
+			monitor.estado.status.startTime = startOfDay;
+		}
 	}
 
 	/*** Agora montamos a mensagem ***/

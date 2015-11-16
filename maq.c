@@ -754,7 +754,7 @@ MaqIOMap MaqIOMapPPNormal = {
   },
 };
 
-// Funcoes de parametros de maquinas
+// Funcoes de parametros de maquinas. IP da maquina = IP do CLP + 1
 MaqConfig MaqConfigList[] = {
     { // Porta-Palete Pesado
         .ID               = MAQ_ID_PERF_PP_PESADO,
@@ -1131,7 +1131,7 @@ MaqConfig MaqConfigDefault = {
     .Line             = "TESTE",
     .Machine          = "TESTE",
 //    .ClpAddr          = "192.168.1.254",
-    .ClpAddr          = "192.168.0.200",
+    .ClpAddr          = "192.168.0.198",
     .AbaHome          = NTB_ABA_HOME,
     .AbaManut         = NTB_ABA_MANUT,
 	.AbaOperAuto      = NTB_ABA_OPERAR,
@@ -1370,7 +1370,7 @@ uint16_t MaqEstadoChaveGeral(void)
 	// Se a maquina nao possui controle da chave geral, considera painel sempre energizado
 	if(MaqConfigCurrent == NULL || !MaqConfigCurrent->UseChaveGeral) return TRUE;
 
-	return (MaqLerEstado() & MAQ_STATUS_DESLIGADA) ? FALSE: TRUE;
+	return (MaqLerEstado() & MAQ_STATUS_GERAL_OFF) ? FALSE: TRUE;
 }
 
 // Funcao que sincroniza a estrutura de parametros com o clp

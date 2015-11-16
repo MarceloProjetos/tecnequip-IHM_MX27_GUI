@@ -22,6 +22,8 @@ struct MODBUS_Device mbdev;
 struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
+time_t system_Shutdown; // Variavel com a hora de desligamento da maquina
+
 // Flag indicando se a maquina deve ser reinicializada ao finalizar. Se nao precisar, a maquina sera desligada!
 // Por padrao a IHM reinicializa pois ela deve ficar sempre ligada. Apenas desliga se escolhida essa opcao na tela de manutencao
 static gboolean ihmRebootNeeded = TRUE;
@@ -475,7 +477,7 @@ int IPCMQ_Threads_Receber(struct strIPCMQ_Message *msg)
 }
 
 // Funções para configuração do estado da máquina
-unsigned int CurrentStatus = MAQ_STATUS_INDETERMINADO;
+unsigned int CurrentStatus = MAQ_STATUS_DESLIGADA;
 time_t LastStatusChange = 0;
 
 void SetMaqStatus(unsigned int NewStatus)
@@ -524,6 +526,12 @@ void SetMaqStatus(unsigned int NewStatus)
 
   case MAQ_STATUS_MANUTENCAO:
     break;
+
+  case MAQ_STATUS_DESENERGIZADA:
+    break;
+
+  case MAQ_STATUS_DESLIGADA:
+    break;
   }
 
   // Registra o estado da máquina no sistema
@@ -554,6 +562,9 @@ void SetMaqStatus(unsigned int NewStatus)
   } else if(WorkAreaGet() == MaqConfigCurrent->AbaHome || WorkAreaGet() == NTB_ABA_TAREFA) {
     WorkAreaGoTo(NTB_ABA_INDETERMINADO); // Atingiu timeout em tela home ou tarefa, podemos mudar para a tela de definição de parada
   }
+
+  // Atualiza o estado da maquina na estrutura de monitoramento
+  monitor_Set_OpMode(NewStatus, t);
 
   // Atualiza o estado atual para o novo estado
   CurrentStatus = NewStatus;
@@ -692,6 +703,34 @@ void Board_Init(BoardStatus *bs)
   Board_Update(bs);
 }
 
+/*** Funcoes para ler e gravar parametros do sistema ***/
+
+#define PARAM_SHUTDOWN "shutdown"
+
+void lerParamSistema(void)
+{
+  char *nomeParam;
+
+  DB_Execute(&mainDB, 0, "select Nome, valLong, valDouble from ParamSistema");
+
+  while(DB_GetNextRow(&mainDB, 0)>0) {
+	  nomeParam = DB_GetData(&mainDB, 0, 0);
+	  if(!strcmp(nomeParam, PARAM_SHUTDOWN)) {
+		  system_Shutdown = atol(DB_GetData(&mainDB, 0, 1));
+	  }
+  }
+}
+
+void gravarParamSistema(void)
+{
+  char sql[500];
+
+  sprintf(sql, "update ParamSistema set valLong=%ld where Nome='%s'", (long)system_Shutdown, PARAM_SHUTDOWN);
+  DB_Execute(&mainDB, 0, sql);
+}
+
+/*** Fim das Funcoes para ler e gravar parametros do sistema ***/
+
 void ShowMessageBox(char *msg, int modoErro)
 {
     gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMessageBoxErro")), modoErro == TRUE);
@@ -721,8 +760,9 @@ void cbLogoff(GtkButton *button, gpointer user_data)
 
   LoadComboUsers();
 
-  // Grava zero em idUser para indicar que não há usuário logado
+  // Grava zero em idUser e limpa o nome do monitor para indicar que não há usuário logado
   idUser = 0;
+  monitor_Set_User("");
 
   WorkAreaGoTo(NTB_ABA_LOGIN);
 }
@@ -944,14 +984,14 @@ gboolean tmrGtkUpdate(gpointer data)
   struct tm tmLast = *localtime(&lastCall);
 
   if(tmNow.tm_hour == 0 && tmLast.tm_hour == 23) { // Mudou o dia!!!
-	  lastCall = now;
-
 	  printf("Executando operacao de meia-noite\n");
-	  // Atualiza a hora da POP-7
+
+      // Atualiza a hora da POP-7
 	  MaqSetDateTime(NULL);
 
 	  // Verifica se existe atualizacao para o software da IHM
       int ret = (system("~/checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado em 8 bits, nao sei o motivo...
+      printf("Retorno da checagem de atualizacao: %d\n", ret);
 
       // Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
       if(ret == 1 || ret == 2) {
@@ -960,6 +1000,7 @@ gboolean tmrGtkUpdate(gpointer data)
         return FALSE; // Retorna falso pois vamos reiniciar, esse timer nao deve ser executado novamente.
       }
   }
+  lastCall = now;
 
   if(!OnPowerDown) {
     if(pb_on == NULL) { // Inicializa pixbufs
@@ -999,7 +1040,8 @@ gboolean tmrGtkUpdate(gpointer data)
 
       // Se status não for indeterminado, parada ou produzindo e atingiu o tempo limite, entra em estado indeterminado
       if(CurrentStatus != MAQ_STATUS_INDETERMINADO && CurrentStatus != MAQ_STATUS_PARADA &&
-         CurrentStatus != MAQ_STATUS_PRODUZINDO && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT &&
+         CurrentStatus != MAQ_STATUS_DESLIGADA     && CurrentStatus != MAQ_STATUS_DESENERGIZADA &&
+         CurrentStatus != MAQ_STATUS_PRODUZINDO    && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT &&
          MaqConfigCurrent->UseIndet) {
         SetMaqStatus(MAQ_STATUS_INDETERMINADO);
       }
@@ -1071,7 +1113,7 @@ gboolean tmrGtkUpdate(gpointer data)
           break;
         }
       }
-    } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+    } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       if(WorkAreaGet() == MaqConfigCurrent->AbaManut) {
         val = MaqLerSaidas();
         for(i=0;;i++) { // Loop eterno, finaliza quando acabarem as saidas
@@ -1083,17 +1125,25 @@ gboolean tmrGtkUpdate(gpointer data)
           gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(wdg), (val>>i)&1);
         }
       } else {
+    	static gboolean ultMaqLigada = FALSE, isFirst = TRUE;
         gboolean maqLigada = MaqEstadoChaveGeral();
 
-        // Configura visibilidade de aviso de maquina desligada
-        gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMaqDesligada")), !maqLigada);
+        if(ultMaqLigada != maqLigada || isFirst) {
+        	isFirst = FALSE;
+        	SetMaqStatus(maqLigada ? MAQ_STATUS_PARADA : MAQ_STATUS_DESENERGIZADA);
 
-        // Reconfigura o label do botao e ativa
-        GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnMaqDesligar"));
-        gtk_button_set_label(GTK_BUTTON(wdg), maqLigada ? "Desligar" : "Ligar");
-        gtk_widget_set_sensitive(wdg, TRUE);
+        	// Configura visibilidade de aviso de maquina desligada
+            gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMaqDesligada")), !maqLigada);
+
+            // Reconfigura o label do botao e ativa
+            GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnMaqDesligar"));
+            gtk_button_set_label(GTK_BUTTON(wdg), maqLigada ? "Desligar" : "Ligar");
+            gtk_widget_set_sensitive(wdg, TRUE);
+        }
+
+        ultMaqLigada = maqLigada;
       }
-    } else if(ciclos == 2) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+    } else if(ciclos == 3) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       int currentWorkArea = WorkAreaGet();
       if(currentWorkArea == MaqConfigCurrent->AbaManut) {
         val = MaqLerEntradas() ^ MaqConfigCurrent->IOMap->InputMask;
@@ -1109,12 +1159,17 @@ gboolean tmrGtkUpdate(gpointer data)
         (MaqConfigCurrent->fncTimerUpdate)();
       }
 
-      // Envia mensagem de estado a cada 3 minutos
+      // Envia mensagem de estado a cada 30 segundos
       static long next_message = 0;
       long now = time(NULL);
       if(next_message < now) {
-    	  next_message = now + 30; // 180 = 3 minutos
+    	  next_message = now + 30; // Proxima mensagem 30 segundos apos o horario atual
     	  monitor_SendEstado();
+    	  monitor_Clear_Status();
+
+    	  // Atualiza a hora de desligamento do sistema para que, caso haja um desligamento inesperado, a hora seja a mais atualizada possivel
+    	  system_Shutdown = now;
+    	  gravarParamSistema();
       }
     } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
       val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
@@ -1192,7 +1247,7 @@ void cbFunctionKey(GtkButton *button, gpointer user_data)
 void * ihm_update(void *args)
 {
   BoardStatus bs, *newbs =(BoardStatus *)args;
-  uint32_t ciclos = 0;
+  uint32_t ciclos = 0, espera_BoardUpdate = 0;
   int32_t  batt_level, curr_batt_level = -2;
   int StayON = 0, waiting_bs_reply = 0, waiting_batt_reply = 0;
   uint32_t ChangedBS = 0, LedState = 0;
@@ -1206,8 +1261,12 @@ void * ihm_update(void *args)
    ***************************************************************************/
   while (1) {
     usleep(500);
-    /*** Loop de checagem de mensagens vindas da CPU LPC2109 ***/
-    Board_Update(newbs);
+
+    /*** Loop de checagem de mensagens vindas da CPU OMAP ***/
+    if(espera_BoardUpdate++ > 1000) {
+    	espera_BoardUpdate = 0;
+    	Board_Update(newbs);
+    }
 
     if(newbs->Temperature      != bs.Temperature      ||
        newbs->ExternalVoltage  != bs.ExternalVoltage  ||
@@ -1490,6 +1549,8 @@ uint32_t IHM_Init(int argc, char *argv[])
   if(dbok) { // Se inicializar o banco, entra no loop do GTK.
     // Carregamento no ComboBox dos usuários cadastrados no MySQL.
     LoadComboUsers();
+    // Carrega parametros do sistema
+    lerParamSistema();
   } else {
     GtkComboBox *cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbLoginUser"));
 
@@ -1499,8 +1560,8 @@ uint32_t IHM_Init(int argc, char *argv[])
     gtk_combo_box_set_active(cmb, 0);
   }
 
-  // Configura o estado inicial da máquina
-  SetMaqStatus(MAQ_STATUS_PARADA);
+  // Inicia o sistema de monitoramento
+  monitor_Init();
 
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);
@@ -1523,18 +1584,19 @@ uint32_t IHM_Init(int argc, char *argv[])
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblIpAddress")), host);
 
   if(MaqInit()) {
-	monitor_Init(); // Inicia o sistema de monitoramento
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)
   }
 
-  // Configura o estado final da máquina para PARADA pois ela está sendo desligada.
-  SetMaqStatus(MAQ_STATUS_PARADA);
+  // Configura o estado final da máquina para DESLIGADA pois ela está sendo desligada.
+  system_Shutdown = time(NULL);
+  SetMaqStatus(MAQ_STATUS_DESLIGADA);
 
 // A partir deste ponto iniciam os desligamentos. Em caso de erro na inicializacao, o programa
 // salta para o label correspondente a etapa que falhou para desfazer o que ja havia sido feito
 
 fim_config: // Encerrando por erro de configuracao
   MaqGravarConfig();
+  gravarParamSistema();
 
   DB_Close(&mainDB);
 

@@ -125,7 +125,7 @@ int         MaqConfig_GetActive (void);
 #define MAQ_STATUS_PRONTA     0x0004
 #define MAQ_STATUS_PRS_LIGADA 0x0040
 #define MAQ_STATUS_INITOK     0x0040
-#define MAQ_STATUS_DESLIGADA  0x8000
+#define MAQ_STATUS_GERAL_OFF  0x8000
 
 // Mascara para sincronizacao com CLPs
 #define MAQ_SYNC_PERFIL  0x01
