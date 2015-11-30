@@ -315,7 +315,7 @@ gboolean tmrExecProg(gpointer data)
     MaqConfigModo(MAQ_MODO_MANUAL);
 
     // Configura o estado da máquina
-    SetMaqStatus(MAQ_STATUS_MANUAL);
+    SetMaqStatus((qtdprod == 0) ? MAQ_STATUS_PARADA : MAQ_STATUS_SETUP);
 
     if(progID > 0 && qtdprod >= 0) {
       // Executa a instrução SQL necessária para atualizar a quantidade restante.
@@ -777,7 +777,7 @@ void cbProgramaSelecionado(GtkComboBox *combobox, gpointer user_data)
 void CmdManual(uint16_t cmd)
 {
 	atividade++;
-	SetMaqStatus(MAQ_STATUS_MANUAL);
+	SetMaqStatus(MAQ_STATUS_SETUP);
 
 	if(cmd == MAQ_PRS_LIGAR || cmd == MAQ_PRS_DESLIGAR || cmd == MAQ_PRS_PARAR) {
 		MaqPrsManual  (cmd);

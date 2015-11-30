@@ -10,7 +10,7 @@ rm -rf *.o
 echo Atualizando numero de versao
 build=$(sed -ne "s/.*BUILD_NUMBER \(.*\)/\1/p" version.h)
 echo "#define BUILD_NUMBER $(expr $build + 1)" > version.h
-echo "#define BUILD_DATE \"$(date)\"" >> version.h
+echo "#define BUILD_DATE \"$(date +"%d/%m/%Y %H:%M:%S")\"" >> version.h
 
 for fileC in $(ls *.c); do
 	echo Compilando $fileC

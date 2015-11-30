@@ -97,11 +97,6 @@ void LogProd(struct strTask *Task, int LogMode)
         MSSQL_DateFromTimeT(time(NULL), agora), Task->QtdProd - QtdProdStart, MAQ_LINHA, MAQ_MAQUINA);
 
     sprintf(evento, "Produzida(s) %d peca(s)", Task->QtdProd - QtdProdStart);
-
-    // Registra consumo de material, se a maquina usar o controle de material
-    if(MaqConfigCurrent && MaqConfigCurrent->UseMaterial) {
-    	material_registraConsumo(GetMaterialInUse(), GetMaterialByTask(Task->ID), Task->QtdProd - QtdProdStart, Task->Tamanho, maq_param.corte.tam_faca);
-    }
   }
 
   MSSQL_Execute(0, sql, MSSQL_USE_SYNC);
@@ -115,6 +110,7 @@ void LogProd(struct strTask *Task, int LogMode)
 gboolean tmrExec(gpointer data)
 {
   static int qtd, iniciando = 1;
+  static unsigned int LastQtd;
   char tmp[30], sql[300];
   int qtdprod, status;
   struct strTask *Task = (struct strTask *)data;
@@ -125,16 +121,26 @@ gboolean tmrExec(gpointer data)
     qtd = atoi(gtk_label_get_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecTotal" ))));
     lblProd  = GTK_LABEL(gtk_builder_get_object(builder, "lblExecProd" ));
     lblSaldo = GTK_LABEL(gtk_builder_get_object(builder, "lblExecSaldo"));
+
+    // Estamos iniciando. LastQtd deve  receber a quantidade total para enviar as mensagens conforme as pecas forem produzidas
+    LastQtd = qtd;
   }
 
   qtdprod = MaqLerProdQtd(); // Retorna quantidade de pecas restantes.
+
+  // Envia mensagem informando da(s) peca(s) produzida(s)
+  // Registra consumo de material, se a maquina usar o controle de material
+  if(MaqConfigCurrent && MaqConfigCurrent->UseMaterial && LastQtd != qtdprod) {
+	  material_registraConsumo(GetMaterialInUse(), GetMaterialByTask(Task->ID), LastQtd - qtdprod, Task->Tamanho, maq_param.corte.tam_faca);
+	  LastQtd = qtdprod;
+  }
 
   if((MaqLerEstado() & MAQ_MODO_MASK) == MAQ_MODO_MANUAL) {
     iniciando = 1;
     MaqConfigModo(MAQ_MODO_MANUAL);
 
     // Configura o estado da máquina
-    SetMaqStatus(MAQ_STATUS_MANUAL);
+    SetMaqStatus((qtdprod == 0) ? MAQ_STATUS_PARADA : MAQ_STATUS_SETUP);
 
     // Carrega a quantidade de peças da tarefa
     qtd = Task->Qtd;
@@ -144,11 +150,6 @@ gboolean tmrExec(gpointer data)
 
     // Atualiza a tarefa com a quantidade produzida
     Task->QtdProd = qtdprod;
-
-//      if(status == CV_ST_ESPERA)
-//    MessageBox("Tarefa executada sem erros!");
-//      else
-//        MessageBox("Erro encontrado enquanto produzindo!");
 
     if(qtdprod >= qtd) // Quantidade produzida maior ou igual ao total
       status = TRF_ESTADO_FINAL;
@@ -749,13 +750,34 @@ int cbExecutar(struct strMaterial material, int dv, int isCancel, void *data)
 	}
 
 	if(MaqConfigCurrent->UseMaterial) {
+		struct strMaterial *materialTask;
 		// Checa se os dados são válidos.
 		if(!ChecarMaterial(material, dv, FALSE)) {
 			return FALSE;
 		}
 
+		// Se chegou aqui o material pode ter o codigo da etiqueta atual ou um novo codigo.
+		// Quando o operador digita um novo codigo para substituir um existente, todos os dados do material ainda se referem ao codigo antigo.
+		// Sendo assim devemos verificar se o codigo do material recebido eh o mesmo que o codigo atual da tarefa.
+		// Se for identificado um codigo diferente do atual, indica que vamos trocar o codigo e portanto devemos limpar as propriedades do material.
+		materialTask = GetMaterialByTask(Task->ID);
+		if(materialTask != NULL && strcmp(materialTask->codigo, material.codigo)) {
+			// Codigo mudou! Devemos limpar o material para que ele nao herde os dados da etiqueta anterior...
+			material.id         = 0; // Devemos tambem zerar o id para que seja gravado um novo material e nao atualizado o atual
+			material.peso       = 0.0;
+			material.quantidade = 0;
+		}
+
+		char sql[500];
+		sprintf(sql, "select M.codigo from modelos as M, tarefas as T where T.id='%d' and T.ID_Modelo = M.id", Task->ID);
+		printf("Buscando codigo. SQL = '%s'\n", sql);
+		DB_Execute(&mainDB, 0, sql);
+		DB_GetNextRow(&mainDB, 0);
+		strcpy(material.produto, DB_GetData(&mainDB, 0, 0));
+		printf("Produto = '%s'\n", material.produto);
+
 		material.idTarefa = Task->ID;
-		GravarMaterial(material);
+		GravarMaterial(&material);
 	}
 
 	qtd = Task->Qtd - Task->QtdProd;
@@ -857,13 +879,14 @@ void cbExecTarefa(GtkButton *button, gpointer user_data)
 	  materialProduzido = GetMaterialByTask(Task->ID);
 
 	  if(materialProduzido == NULL) {
-		  materialProduzido = material;
+		  materialProduzido = AllocNewMaterial();
 
 		  // Sem registro para esta tarefa. Usa o cadastro do material
-		  materialProduzido->codigo[0] = 0;
-		  materialProduzido->peso      = 0;
-		  materialProduzido->idTarefa  = Task->ID;
-		  materialProduzido->tipo = enumTipoEstoque_ProdutoEmProcesso;
+		  strcpy(materialProduzido->local, material->local);
+		  materialProduzido->espessura   = material->espessura;
+		  materialProduzido->largura     = material->largura;
+		  materialProduzido->idTarefa    = Task->ID;
+		  materialProduzido->tipo        = enumTipoEstoque_ProdutoEmProcesso;
 	  } else if(materialProduzido->espessura != material->espessura || materialProduzido->largura != material->largura) {
 		  MessageBox("Material Selecionado Está Incorreto!");
 		  WorkAreaGoPrevious();
@@ -929,7 +952,7 @@ gboolean cbMaquinaButtonPress(GtkWidget *widget, GdkEventButton *event, gpointer
 void OperarManual(unsigned int operacao)
 {
   // Configura o estado da máquina
-  SetMaqStatus(MAQ_STATUS_MANUAL);
+  SetMaqStatus(MAQ_STATUS_SETUP);
 
   // Configura a máquina para modo manual.
   MaqConfigModo(MAQ_MODO_MANUAL);

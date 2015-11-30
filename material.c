@@ -226,8 +226,8 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 	materialProduzido->tamanho     = tamPeca;
 	materialProduzido->peso       += pesoKgConsumido;
 
-	GravarMaterial(*materialConsumido);
-	GravarMaterial(*materialProduzido);
+	GravarMaterial(materialConsumido);
+	GravarMaterial(materialProduzido);
 
 	// Se o material acabou: Desmarca o material, obrigando a utilizacao de um novo material
 	if(materialConsumido->peso <= 0.0) {
@@ -279,22 +279,22 @@ void CarregaComboTipos(GtkComboBox *cmb)
 		CarregaItemCombo(cmb, "0 - Mercadoria Para Revenda");
 		CarregaItemCombo(cmb, "1 - Matéria Prima"          );
 		CarregaItemCombo(cmb, "2 - Embalagem"              );
-		CarregaItemCombo(cmb, "3 - Produto em Processo"    );
+		CarregaItemCombo(cmb, "3 - Produto"                );
 		CarregaItemCombo(cmb, "4 - Produto Acabado"        );
-		CarregaItemCombo(cmb, "5 - Subproduto"             );
-		CarregaItemCombo(cmb, "6 - Produto Intermediário"  );
-		CarregaItemCombo(cmb, "7 - Material Uso e Consumo" );
-		CarregaItemCombo(cmb, "8 - Ativo Imobilizado"      );
-		CarregaItemCombo(cmb, "9 - Serviços"               );
-		CarregaItemCombo(cmb, "10 - Outros Insumos"        );
-		CarregaItemCombo(cmb, "99 - Outros"                );
+		CarregaItemCombo(cmb, "5 - Sucata"                 );
+//		CarregaItemCombo(cmb, "6 - Produto Intermediário"  );
+//		CarregaItemCombo(cmb, "7 - Material Uso e Consumo" );
+//		CarregaItemCombo(cmb, "8 - Ativo Imobilizado"      );
+//		CarregaItemCombo(cmb, "9 - Serviços"               );
+//		CarregaItemCombo(cmb, "10 - Outros Insumos"        );
+//		CarregaItemCombo(cmb, "99 - Outros"                );
 	}
 
 	// Configura o tipo Materia Prima como padrao
 	gtk_combo_box_set_active(cmb, 1);
 }
 
-void InsertMaterial(void)
+struct strMaterial *InsertMaterial(void)
 {
   struct strMaterial *currItem;
 
@@ -302,42 +302,57 @@ void InsertMaterial(void)
   currItem = AllocNewMaterial();
 
   // Salva dados do material
-  currItem->id         = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "mID"       )));
-  strcpy(currItem->codigo   , DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "mCod"      )));
-  currItem->tipo       = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "tipo"      )));
-  currItem->largura    = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "largura"   )));
-  currItem->espessura  = atof(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "espessura" )));
-  currItem->inUse      = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "inUse"     )));
-  strcpy(currItem->local    , DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "lCod"      )));
-  currItem->peso       = atof(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "peso"      )));
-  currItem->tamanho    = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "tamanho"   )));
-  currItem->quantidade = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "quantidade")));
-  currItem->idTarefa   = atoi(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "idTarefa"  )));
+  currItem->id         = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "mID"       )));
+  strcpy(currItem->codigo   ,          DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "mCod"      )));
+  strcpy(currItem->produto  ,          DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "modProduto")));
+  strcpy(currItem->descricao,          DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "modNome"   )));
+  currItem->tipo       = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "tipo"      )));
+  currItem->largura    = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "largura"   )));
+  currItem->espessura  = StringToFloat(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "espessura" )));
+  currItem->inUse      = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "inUse"     )));
+  strcpy(currItem->local    ,          DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "lCod"      )));
+  currItem->peso       = StringToFloat(DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "peso"      )));
+  currItem->tamanho    = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "tamanho"   )));
+  currItem->quantidade = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "quantidade")));
+  currItem->idTarefa   = atoi         (DB_GetData(&mainDB, 1, DB_GetFieldNumber(&mainDB, 1, "idTarefa"  )));
+
+  return currItem;
 }
 
-void GravarMaterial(struct strMaterial material)
+void GravarMaterial(struct strMaterial *material)
 {
-	char sql[800];
+	char sql[800], stringEspessura[100], stringPeso[100];
+
+	// Se material for nulo, retorna sem fazer nada
+	if(material == NULL) return;
 
 	// Carrega o ID do local selecionado
-	sprintf(sql, "select id from local where codigo='%s'", material.local);
+	sprintf(sql, "select id from local where codigo='%s'", material->local);
 	DB_Execute(&mainDB, 2, sql);
 	DB_GetNextRow(&mainDB, 2);
 
-	if(material.id != 0) {
-		sprintf(sql, "update material set codigo='%s', espessura='%f', largura='%d', idLocal='%d', peso='%f', tipo='%d', quantidade='%d', "
+	floatToString(stringEspessura, material->espessura);
+	floatToString(stringPeso     , material->peso     );
+
+	if(material->id != 0) {
+		sprintf(sql, "update material set codigo='%s', espessura='%s', largura='%d', idLocal='%d', peso='%s', tipo='%d', quantidade='%d', "
 			  "tamanho='%d', idTarefa='%d' where id='%d'",
-			  material.codigo, material.espessura, material.largura, atoi(DB_GetData(&mainDB, 2, 0)), material.peso,
-			  material.tipo, material.quantidade, material.tamanho, material.idTarefa, material.id);
+			  material->codigo, stringEspessura, material->largura, atoi(DB_GetData(&mainDB, 2, 0)), stringPeso,
+			  material->tipo, material->quantidade, material->tamanho, material->idTarefa, material->id);
 
 		DB_Execute(&mainDB, 0, sql);
 	} else {
 		sprintf(sql, "insert into material (codigo, espessura, largura, idLocal, peso, tipo, quantidade, tamanho, idTarefa)"
-				" values ('%s', '%f', '%d', '%d', '%f', '%d', '%d', '%d', '%d')",
-				material.codigo, material.espessura, material.largura, atoi(DB_GetData(&mainDB, 2, 0)),
-				material.peso, material.tipo, material.quantidade, material.tamanho, material.idTarefa);
+				" values ('%s', '%s', '%d', '%d', '%s', '%d', '%d', '%d', '%d')",
+				material->codigo, stringEspessura, material->largura, atoi(DB_GetData(&mainDB, 2, 0)),
+				stringPeso, material->tipo, material->quantidade, material->tamanho, material->idTarefa);
 
 		DB_Execute(&mainDB, 0, sql);
+
+		// Agora busca o maior id, ou seja, o id do elemento que acabamos de adicionar para atualizar na estrutura do material
+		DB_Execute(&mainDB, 0, "select max(id) from material");
+		DB_GetNextRow(&mainDB, 0);
+		material->id = atoi(DB_GetData(&mainDB, 0, 0));
 	}
 }
 
@@ -346,6 +361,7 @@ void CarregaListaMateriais(GtkWidget *tvw)
   int i, ItemIndex = 1;
   const int tam = 7;
   char *valores[tam+1];
+  struct strMaterial *material;
 
   valores[tam] = NULL;
 
@@ -356,8 +372,8 @@ void CarregaListaMateriais(GtkWidget *tvw)
   TV_Limpar(tvw);
 
   // Carrega os materiais do MySQL
-  DB_Execute(&mainDB, 1, "select m.id as mID, m.codigo as mCod, m.inUse, m.largura, m.espessura, m.peso, l.codigo as lCod, m.tamanho, m.quantidade, m.tipo, m.idTarefa"
-		  " from material as m, local as l where l.id = m.idLocal and (m.peso > 0 or tipo = 3) order by mID");
+  DB_Execute(&mainDB, 1, "select m.id as mID, m.codigo as mCod, m.inUse, m.espessura, m.largura, m.peso, l.codigo as lCod, m.tamanho, m.quantidade, m.tipo, m.idTarefa, md.codigo as modProduto,"
+		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso > 0 or tipo = 3) order by mID");
   while(DB_GetNextRow(&mainDB, 1)>0)
     {
     valores[0] = (char*)malloc(10);
@@ -381,9 +397,12 @@ void CarregaListaMateriais(GtkWidget *tvw)
     }
 
     // Insere um novo material a partir do registro atual
-    InsertMaterial();
+    material = InsertMaterial();
 
-    TV_Adicionar(tvw, valores);
+    // Adicionar na lista apenas se for materia prima
+    if(material != NULL && material->tipo == enumTipoEstoque_MateriaPrima) {
+    	TV_Adicionar(tvw, valores);
+    }
 
     free(valores[0]); // Indice
     free(valores[2]); // Em Uso
@@ -404,7 +423,7 @@ gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck)
   const float espessura_min = 1.0, espessura_max = 5.0;
 
   // Verifica se o material ja existe
-  sprintf(sql, "select id from material where codigo='%s' and tipo=%d and (idTarefa = 0 or idTarefa != %d)", material.codigo, material.tipo, material.idTarefa);
+  sprintf(sql, "select id from material where codigo='%s' and tipo=%d and (idTarefa = 0 or id != %d)", material.codigo, material.tipo, material.id);
   DB_Execute(&mainDB, 1, sql);
   if(DB_GetNextRow(&mainDB, 1) > 0) {
 	  materialExiste = TRUE;
@@ -497,6 +516,7 @@ void IniciarDadosMaterial()
 
 int AplicarMaterial()
 {
+  int   ret = TRUE;
   char *valores[15];
   struct strMaterial material;
   gint resp = GTK_RESPONSE_YES;
@@ -537,8 +557,8 @@ int AplicarMaterial()
 
   switch(material.tipo) {
 	  default:
-	  case enumTipoEstoque_MateriaPrima     : material.peso = (float)atoi(valores[ 4]); break;
-	  case enumTipoEstoque_ProdutoEmProcesso: material.peso = (float)atoi(valores[10]); break;
+	  case enumTipoEstoque_MateriaPrima     : material.peso = atof(valores[ 4]); break;
+	  case enumTipoEstoque_ProdutoEmProcesso: material.peso = atof(valores[10]); break;
   }
 
   if(userAplicarMaterial == NULL) {
@@ -560,14 +580,15 @@ int AplicarMaterial()
 	  }
 
 	  if(resp == GTK_RESPONSE_YES) {
-		  GravarMaterial(material);
+		  GravarMaterial(&material);
 		  monitor_enviaMsgMatCadastro(&material);
 	  }
   } else {
-	  return (*userAplicarMaterial)(material, atoi(valores[7]), FALSE, userData);
+	  ret = (*userAplicarMaterial)(material, atoi(valores[7]), FALSE, userData);
+	  CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
   }
 
-  return TRUE;
+  return ret;
 }
 
 // Funcao para abrir a tela de cadastro de material conforme o modo solicitado
@@ -599,8 +620,12 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 			valor[i] = (char *)(malloc(100));
 		}
 
-		// Numero do material (Indice na lista)
-		strcpy(valor[0], "---");
+		// Numero do material (Id no banco)
+		if(material->id != 0) {
+			sprintf(valor[0], "%d", material->id);
+		} else {
+			strcpy(valor[0], "---");
+		}
 
 		// Codigo do material
 		strcpy(valor[1], material->codigo);
@@ -612,7 +637,7 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 		sprintf(valor[3], "%d", material->largura);
 
 		// Peso em kg (Aba de materia prima)
-		sprintf(valor[4], "%d", (int)material->peso);
+		sprintf(valor[4], "%f", material->peso);
 
 		// Quantidade
 		sprintf(valor[5], "%d", material->quantidade);
@@ -621,7 +646,7 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 		sprintf(valor[6], "%d", material->tamanho);
 
 		// Peso em kg (Aba de produto em processo)
-		sprintf(valor[7], "%d", (int)material->peso);
+		sprintf(valor[7], "%f", material->peso);
 
 		// Id da Tarefa
 		sprintf(valor[8], "%d", material->idTarefa);
@@ -734,7 +759,7 @@ void cbMaterialAdd(GtkButton *button, gpointer user_data)
 
 // Funcao para adicionar um novo material
 void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
-{
+{/*
 	char val[20];
 	struct strMaterial *material;
 
@@ -743,7 +768,7 @@ void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
 
 	// E entao seleciona esse material
 	material = GetMaterial(atoi(val) - 1);
-	material_registraConsumo(material, GetMaterialByTask(204), 3, 2500, 10);
+	material_registraConsumo(material, GetMaterialByTask(204), 3, 2500, 10);*/
 }
 
 #define NTB_ABA_MATERIAL_MATERIAPRIMA    0

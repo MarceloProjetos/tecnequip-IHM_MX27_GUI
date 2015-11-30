@@ -564,7 +564,7 @@ void SetMaqStatus(unsigned int NewStatus)
   }
 
   // Atualiza o estado da maquina na estrutura de monitoramento
-  monitor_Set_OpMode(NewStatus, t);
+  monitor_Set_OpMode(NewStatus);
 
   // Atualiza o estado atual para o novo estado
   CurrentStatus = NewStatus;
@@ -701,6 +701,40 @@ void Board_Init(BoardStatus *bs)
   }
 
   Board_Update(bs);
+}
+
+// Funcao que converte float para string, trocando a virgula do separador por ponto
+char *floatToString(char *dst, float val)
+{
+    char *pos_comma;
+
+    sprintf(dst, "%f", val);
+    pos_comma = strchr(dst, ',');
+    if(pos_comma != NULL) *pos_comma = '.';
+
+    return dst;
+}
+
+// Funcao que converte float para string, trocando a virgula do separador por ponto
+float StringToFloat(char *val)
+{
+	float result;
+    char *pos_comma;
+
+    // Se string nula, retorna zero
+    if(val == NULL) return 0.0;
+
+    char *src = (char *)malloc(strlen(val) + 1);
+    strcpy(src, val);
+
+    pos_comma = strchr(src, '.');
+    if(pos_comma != NULL) *pos_comma = ',';
+
+    result = atof(src);
+
+    free(src);
+
+    return result;
 }
 
 /*** Funcoes para ler e gravar parametros do sistema ***/
@@ -964,6 +998,22 @@ static const char *lista_botoes[] = {
     "",
 };
 
+gboolean doUpdate(void)
+{
+	// Verifica se existe atualizacao para o software da IHM
+	int ret = (system("~/checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado em 8 bits, nao sei o motivo...
+	printf("Retorno da checagem de atualizacao: %d\n", ret);
+
+	// Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
+	if(ret == 1 || ret == 2) {
+		cbDesligar(NULL, NULL);
+		ihmRebootNeeded = TRUE;
+		return TRUE; // Atualizacao disponivel!
+	}
+
+	return FALSE; // Sistema atualizado ou erro durante verificacao
+}
+
 gboolean tmrGtkUpdate(gpointer data)
 {
   char tmp[40], *msg_error;
@@ -990,13 +1040,7 @@ gboolean tmrGtkUpdate(gpointer data)
 	  MaqSetDateTime(NULL);
 
 	  // Verifica se existe atualizacao para o software da IHM
-      int ret = (system("~/checkUpdate.sh IHM")) >> 8; // Retorno vem deslocado em 8 bits, nao sei o motivo...
-      printf("Retorno da checagem de atualizacao: %d\n", ret);
-
-      // Se retornou 1 ou 2, existe atualizacao disponivel. Outros valores indicam erro ou sistema atualizado
-      if(ret == 1 || ret == 2) {
-        cbDesligar(NULL, NULL);
-        ihmRebootNeeded = TRUE;
+      if(doUpdate()) {
         return FALSE; // Retorna falso pois vamos reiniciar, esse timer nao deve ser executado novamente.
       }
   }
@@ -1039,11 +1083,9 @@ gboolean tmrGtkUpdate(gpointer data)
       }
 
       // Se status não for indeterminado, parada ou produzindo e atingiu o tempo limite, entra em estado indeterminado
-      if(CurrentStatus != MAQ_STATUS_INDETERMINADO && CurrentStatus != MAQ_STATUS_PARADA &&
-         CurrentStatus != MAQ_STATUS_DESLIGADA     && CurrentStatus != MAQ_STATUS_DESENERGIZADA &&
-         CurrentStatus != MAQ_STATUS_PRODUZINDO    && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT &&
-         MaqConfigCurrent->UseIndet) {
-        SetMaqStatus(MAQ_STATUS_INDETERMINADO);
+      if((CurrentStatus == MAQ_STATUS_SETUP || CurrentStatus == MAQ_STATUS_MANUTENCAO) &&
+    		  MaqConfigCurrent->UseIndet && (time(NULL) - LastStatusChange) > MAQ_IDLE_TIMEOUT) {
+	  	  SetMaqStatus(MAQ_STATUS_INDETERMINADO);
       }
 
       // Atualiza a hora da tela inicial
@@ -1128,6 +1170,9 @@ gboolean tmrGtkUpdate(gpointer data)
     	static gboolean ultMaqLigada = FALSE, isFirst = TRUE;
         gboolean maqLigada = MaqEstadoChaveGeral();
 
+        GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnMaqDesligar"));
+        gtk_widget_set_sensitive(wdg, TRUE);
+
         if(ultMaqLigada != maqLigada || isFirst) {
         	isFirst = FALSE;
         	SetMaqStatus(maqLigada ? MAQ_STATUS_PARADA : MAQ_STATUS_DESENERGIZADA);
@@ -1135,10 +1180,22 @@ gboolean tmrGtkUpdate(gpointer data)
         	// Configura visibilidade de aviso de maquina desligada
             gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMaqDesligada")), !maqLigada);
 
-            // Reconfigura o label do botao e ativa
-            GtkWidget *wdg = GTK_WIDGET(gtk_builder_get_object(builder, "btnMaqDesligar"));
+            // Reconfigura o label do botao
             gtk_button_set_label(GTK_BUTTON(wdg), maqLigada ? "Desligar" : "Ligar");
-            gtk_widget_set_sensitive(wdg, TRUE);
+        }
+
+        // Se a maquina estiver desligada e nenhum usuario logado, verifica por update a cada 15 minutos
+        if(!maqLigada && idUser == 0) {
+        	// Nao precisamos inicializar. O maximo que vai acontecer eh a maquina procurar atualizacao a primeira vez que a chave geral for desligada
+        	static time_t lastCheck = 0;
+
+        	if(time(NULL) > lastCheck + 900) { // 900 = 15 minutos
+        		lastCheck = time(NULL);
+
+        		if(doUpdate()) {
+        			return FALSE; // Retorna falso pois vamos reiniciar, esse timer nao deve ser executado novamente.
+        		}
+        	}
         }
 
         ultMaqLigada = maqLigada;
@@ -1160,10 +1217,12 @@ gboolean tmrGtkUpdate(gpointer data)
       }
 
       // Envia mensagem de estado a cada 30 segundos
-      static long next_message = 0;
-      long now = time(NULL);
-      if(next_message < now) {
-    	  next_message = now + 30; // Proxima mensagem 30 segundos apos o horario atual
+      static long last_message = 0;
+      long now = time(NULL), time_diff;
+      time_diff = now - last_message;
+
+      if(time_diff < 0 || time_diff > 30) {  // Proxima mensagem 30 segundos apos o horario atual
+    	  last_message = now;
     	  monitor_SendEstado();
     	  monitor_Clear_Status();
 
@@ -1559,6 +1618,9 @@ uint32_t IHM_Init(int argc, char *argv[])
     CarregaItemCombo(cmb, "Master");
     gtk_combo_box_set_active(cmb, 0);
   }
+
+  // system_Shutdown agora nao deve enviar periodos longos. Entao carrega a hora atual nele
+  system_Shutdown = time(NULL);
 
   // Inicia o sistema de monitoramento
   monitor_Init();

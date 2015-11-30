@@ -329,6 +329,12 @@ struct strMaterial {
 	char codigo[21]; // Campo no banco: VARCHAR(20)
 	enum enumTipoEstoque tipo; // Tipo de material
 
+	// Codigo do produto
+	char produto[101]; // Campo no banco: VARCHAR(100)
+
+	// Descricao do produto
+	char descricao[101]; // Campo no banco: VARCHAR(100)
+
 	// Flag que indica se o material esta selecionado para uso (TRUE) ou nao (FALSE)
 	int  inUse;
 
@@ -370,10 +376,10 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 
 // Funcoes de tela
 void CarregaComboLocais(GtkComboBox *cmb);
-void InsertMaterial(void);
+struct strMaterial *InsertMaterial(void);
 void CarregaListaMateriais(GtkWidget *tvw);
 void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDetails, int (*fnc)(struct strMaterial, int, int, void *), void *data);
-void GravarMaterial(struct strMaterial material);
+void GravarMaterial(struct strMaterial *material);
 gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck);
 
 // Funcoes de Monitoramento
@@ -381,7 +387,11 @@ extern void monitor_Init();
 extern void monitor_SendEstado();
 extern void monitor_Set_Status(long torque, long current, long temperature);
 extern void monitor_Set_User(char *user);
-extern void monitor_Set_OpMode(unsigned int opmode, time_t when);
+extern void monitor_Set_OpMode(unsigned int opmode);
 extern void monitor_Clear_Status(void);
 extern void monitor_enviaMsgMatCadastro(struct strMaterial *material);
 extern void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda);
+
+// Funcoes uteis
+extern char *floatToString(char *dst, float val);
+extern float StringToFloat(char *val);

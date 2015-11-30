@@ -712,6 +712,7 @@ void cbConfigModeloSelecionado(GtkComboBox *combobox, gpointer user_data)
 
   char *lst_campos[] =
     {
+      "entModCodigo", "codigo",
       "entModPasso" , "passo",
       "entModTamMax", "tam_max",
       "entModTamMin", "tam_min",
@@ -773,9 +774,10 @@ void FinalizaInserirModelo(VKData *vkdata, int result)
       }
     else // O modelo não existe. Realizando inserção.
       {
-      sprintf(sql, "insert into modelos (nome, pilotar, passo, tam_max, tam_min, estado) "
-             "values ('%s', '%d', '%s', '%s', '%s', '%d')",
-             vkdata->obj.pchar.buffer, BuscaStringLista(md->opt_piloto, md->valores[1], FALSE), md->valores[2], md->valores[3], md->valores[4], MOD_ESTADO_ATIVO);
+      sprintf(sql, "insert into modelos (nome, codigo, pilotar, passo, tam_max, tam_min, estado) "
+             "values ('%s', '%s', '%d', '%s', '%s', '%s', '%d')",
+             vkdata->obj.pchar.buffer, md->valores[5], BuscaStringLista(md->opt_piloto, md->valores[1], FALSE),
+			 md->valores[2], md->valores[3], md->valores[4], MOD_ESTADO_ATIVO);
       DB_Execute(&mainDB, 0, sql);
 
       obj = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbModNome"));
@@ -796,7 +798,7 @@ void FinalizaInserirModelo(VKData *vkdata, int result)
 void cbAplicarModelo(GtkButton *button, gpointer user_data)
 {
   char sql[400];
-  static char *valores[30] = { "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
+  static char *valores[30] = { "", "", "", "", "" }, *opt_piloto[] = { "Não", "Sim", "" };
   char *campos[] =
     {
     "cmbModNome",
@@ -804,6 +806,7 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
     "entModPasso",
     "entModTamMax",
     "entModTamMin",
+    "entModCodigo",
     ""
     };
   static ModData md = { valores, opt_piloto };
@@ -829,8 +832,8 @@ void cbAplicarModelo(GtkButton *button, gpointer user_data)
 
     if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_YES)
       {
-      sprintf(sql, "update modelos set pilotar='%d', passo='%s', tam_max='%s', tam_min='%s' where nome='%s'",
-        BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], valores[0]);
+      sprintf(sql, "update modelos set codigo='%s', pilotar='%d', passo='%s', tam_max='%s', tam_min='%s' where nome='%s'",
+        valores[5], BuscaStringLista(opt_piloto, valores[1], FALSE), valores[2], valores[3], valores[4], valores[0]);
       DB_Execute(&mainDB, 0, sql);
 
       gtk_combo_box_set_active(GTK_COMBO_BOX(obj), 0);

@@ -26,7 +26,9 @@
 #define MSG_NAME_STATUS_TORQUE_AVG      "torque_medio"
 #define MSG_NAME_STATUS_CURRENT_AVG     "corrente_media"
 #define MSG_NAME_STATUS_TEMPERATURE_AVG "temperatura_media"
+#define MSG_NAME_STATUS_SEQUENCE        "sequencia"
 #define MSG_NAME_STATUS_UP_TIME         "tempo"
+#define MSG_NAME_STATUS_BUILD           "versao"
 #define MSG_NAME_PARAM_MAQ_NAME         "ihm"
 
 #define MSG_NAME_VALOR_MEDIDA           "medida"
@@ -127,6 +129,7 @@ static struct {
 			} temperature;
 
 			long startTime;
+			long sequence;
 
 		} status;
 
@@ -190,13 +193,13 @@ void monitor_Set_User(char *user)
 	strcpy(monitor.estado.user, user);
 }
 
-void monitor_Set_OpMode(unsigned int opmode, time_t when)
+void monitor_Set_OpMode(unsigned int opmode)
 {
 	// Envia o estado atual
 	monitor_SendEstado();
 
 	// Atualiza o modo
-	monitor.estado.status.startTime = when;
+	monitor.estado.status.startTime = time(NULL);
 	monitor.estado.opmode = opmode;
 
 	// Envia a mensagem com o estado atualizado
@@ -212,6 +215,7 @@ void monitor_Init(void)
 	monitor_Clear_Status();
 
 	monitor.estado.status.startTime = system_Shutdown;
+	monitor.estado.status.sequence  = 0;
 
 	MaqGetIpAddress("eth0", monitor.estado.param.ip_ihm);
 
@@ -339,11 +343,11 @@ struct jsonMessageElem * monitor_getMsgMaterial(struct strMaterial *material, en
 
 	// Elemento Codigo
 	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_CODIGO, FALSE));
-	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), "");
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), material->produto);
 
 	// Elemento Descricao
 	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_DESCRICAO, FALSE));
-	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), "");
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), material->descricao);
 
 	// Elemento Em Uso
 	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_INUSE, FALSE));
@@ -399,6 +403,7 @@ struct jsonMessageElem * monitor_getMsgMaterial(struct strMaterial *material, en
 // Funcao para montar a mensagem de estado e enviar para a fila
 void monitor_SendEstado(void)
 {
+	char buf[1024];
 	struct strValor valor;
 	long avg_torque = 0, avg_current = 0, avg_temperature = 0;
 	struct jsonMessageElem *jMsg, *rootMsg;
@@ -445,9 +450,22 @@ void monitor_SendEstado(void)
 	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MODE, FALSE));
 	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), monitor.estado.opmode);
 
+	// Elemento Sequencia
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_SEQUENCE, FALSE));
+	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), monitor.estado.status.sequence++);
+
 	// Elemento Uptime
+	long time_diff = now - monitor.estado.status.startTime;
+//	if(time_diff < 0) time_diff = 0; // Nao permite enviar mensagem com tempo negativo
+
 	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_UP_TIME, FALSE));
-	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), time(NULL) - monitor.estado.status.startTime);
+	jsonMessage_DataSetNumber(jsonMessage_ElemGetData(jMsg), time_diff);
+	monitor.estado.status.startTime = now;
+
+	// Elemento Versao
+	sprintf(buf, "%d de %s", BUILD_NUMBER, BUILD_DATE);
+	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_STATUS_BUILD, FALSE));
+	jsonMessage_DataSetString(jsonMessage_ElemGetData(jMsg), buf);
 
 	// Elemento Parametros
 	jMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_PARAM, TRUE));

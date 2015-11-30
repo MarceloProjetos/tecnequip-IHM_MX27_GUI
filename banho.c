@@ -18,6 +18,20 @@
 #define MAQ_ESTADO_ESGUICHO2 0x4000
 #define MAQ_ESTADO_ESGUICHO3 0x8000
 
+// Funcao que retorna o modo da maquina conforme as flags ativadas
+unsigned int getMaqStatus(uint16_t flags)
+{
+	if(!(flags & MAQ_MODO_AUTO)) {
+		return MAQ_STATUS_PARADA;
+	} else if(flags & MAQ_ESGUICHO_MODO_AUTO) {
+		return MAQ_STATUS_PRODUZINDO;
+	} else if(flags & MAQ_AQUEC_MODO_AUTO) {
+		return MAQ_STATUS_SETUP;
+	}
+
+	return MAQ_STATUS_INDETERMINADO;
+}
+
 void MaqConfigAquec(uint16_t modo)
 {
   uint16_t modo_atual = MaqLerFlags();
@@ -29,6 +43,9 @@ void MaqConfigAquec(uint16_t modo)
   }
 
   MaqConfigFlags(modo_atual);
+
+  // Configura o modo da maquina
+  SetMaqStatus(getMaqStatus(modo_atual));
 }
 
 void MaqConfigEsguicho(uint16_t modo)
@@ -42,6 +59,9 @@ void MaqConfigEsguicho(uint16_t modo)
   }
 
   MaqConfigFlags(modo_atual);
+
+  // Configura o modo da maquina
+  SetMaqStatus(getMaqStatus(modo_atual));
 }
 
 void MaqConfigEsguichoCentral(uint16_t estado)
@@ -452,6 +472,9 @@ void cbModoAlterado(GtkToggleButton *togglebutton, gpointer user_data)
   ModoAuto = gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(gtk_builder_get_object(builder, "rdbBanhoModoAuto" )));
   gtk_notebook_set_current_page(GTK_NOTEBOOK(wdg), ModoAuto);
   MaqConfigModo(ModoAuto ? MAQ_MODO_AUTO : MAQ_MODO_MANUAL);
+
+  // Configura o modo da maquina
+  SetMaqStatus(ModoAuto ? MAQ_STATUS_PARADA : MAQ_STATUS_MANUAL);
 }
 
 void HabilitaEsguichoManual(uint32_t ativo)

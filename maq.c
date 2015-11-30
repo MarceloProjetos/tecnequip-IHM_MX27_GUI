@@ -846,7 +846,7 @@ MaqConfig MaqConfigList[] = {
         .AbaConfigMais    = 0,
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
-        .UseChaveGeral    = FALSE,
+        .UseChaveGeral    = TRUE,
 		.UseMaterial      = FALSE,
         .NeedMaqInit      = FALSE,
         .MaqModeCV        = FALSE,
@@ -873,7 +873,7 @@ MaqConfig MaqConfigList[] = {
         .UseLogin         = TRUE,
         .UseIndet         = TRUE,
         .UseChaveGeral    = TRUE,
-		.UseMaterial      = FALSE,
+		.UseMaterial      = TRUE,
         .NeedMaqInit      = TRUE,
         .MaqModeCV        = TRUE,
         .InverterComandos = TRUE,
@@ -1605,11 +1605,8 @@ int ParamDB_Save(struct strParamDB *ParamDB, unsigned int mask)
     }
 
     if(ParamDB[i].ValFloat != NULL) {
-      char *pos_comma;
       campo_val = "VALOR_FLOAT";
-      sprintf(val, "%f", *ParamDB[i].ValFloat);
-      pos_comma = strchr(val, ',');
-      if(pos_comma != NULL) *pos_comma = '.';
+      floatToString(val, *ParamDB[i].ValFloat);
     }
 
     erro_insert = 0;
