@@ -548,14 +548,45 @@ void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMateria
 	// Cria o objeto com array de materiais
 	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
 
-	// Agora anexa o material produzido
-	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(materialProd, enumMaterialTipoMovimentacao_Producao));
+	// Agora anexa o material consumido
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(material, enumMaterialTipoMovimentacao_ConsumoProprio));
 
-	// E entao anexa o material consumido
-	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(material, enumMaterialTipoMovimentacao_ConsumoProprio));
+	// E entao anexa o material produzido
+	if(materialProd->peso > 0.0f) {
+		jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialProd, enumMaterialTipoMovimentacao_Producao));
+	}
 
 	// Por fim anexa o material perdido
-	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialPerda, enumMaterialTipoMovimentacao_Perda));
+	if(materialPerda->peso > 0.0f) {
+		jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialPerda, enumMaterialTipoMovimentacao_Perda));
+	}
+
+	// Mensagem pronta! Agora a enviamos
+	jsonQueue_PutMessage(jqMaterial, rootMsg);
+	jsonQueue_Work(jqMaterial);
+}
+
+// Envia a mensagem informando do cadastro de um material
+void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct strMaterial *materialEntrada)
+{
+	struct jsonMessageElem *rootMsg, *parentMsg;
+
+	// Fila nao existe!! Retorna...
+	if(jqMaterial == NULL || materialSaida == NULL || materialEntrada == NULL) return;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Recebe o cabecalho da mensagem: ID da maquina e usuario conectado
+	rootMsg = monitor_getMsgHeader();
+
+	// Cria o objeto com array de materiais
+	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
+
+	// Agora anexa o material de saida
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(materialSaida, enumMaterialTipoMovimentacao_SaidaAjuste));
+
+	// E entao anexa o material de entrada
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialEntrada, enumMaterialTipoMovimentacao_EntradaAjuste));
 
 	// Mensagem pronta! Agora a enviamos
 	jsonQueue_PutMessage(jqMaterial, rootMsg);

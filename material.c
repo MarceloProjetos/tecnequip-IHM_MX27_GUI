@@ -198,24 +198,33 @@ void material_select(struct strMaterial *material)
 	}
 }
 
+float material_CalculaPeso(struct strMaterial *material, unsigned int tamanho)
+{
+	// Se material for nulo ou tamanho forem zero, nao ha como calcular o peso
+	if(material == NULL || tamanho == 0) return 0.0f;
+
+	// Peso em gramas por metro. Como a medida eh em milimetros e o peso final deve ser em  KG / metro, precisamos dividir por 1000 por duas vezes ou 1.000.000
+	const float pesoGramasPorCm3 = 7.856;
+
+	return (pesoGramasPorCm3 * tamanho  * material->espessura * material->largura) / 1000000.0;
+}
+
 void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tamPeca, unsigned int tamPerda)
 {
 	// Se material for nulo, quantidade ou tamanho forem zero, nao ha como registrar o consumo
 	if(materialConsumido == NULL || materialProduzido == NULL || qtd == 0 || (tamPeca == 0 && tamPerda == 0)) return;
 
-	// Peso em gramas por metro. Como a medida eh em milimetros e o peso final deve ser em  KG / metro, precisamos dividir por 1000 por duas vezes ou 1.000.000
-	const float pesoGramasPorCm3 = 7.856;
-
-	float pesoKgProduzido = (pesoGramasPorCm3 * qtd * tamPeca  * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
-	float pesoKgPerda     = (pesoGramasPorCm3 * qtd * tamPerda * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
+	float pesoKgProduzido = material_CalculaPeso(materialConsumido, qtd * tamPeca);
+	float pesoKgPerda     = material_CalculaPeso(materialConsumido, qtd * tamPerda);
 	float pesoKgConsumido = pesoKgProduzido + pesoKgPerda;
 
 	// TODO: Peso nao pode ficar negativo! Por isso consideramos como peso consumido apenas o que restava de bobina.
 	// Mas de onde veio esse excesso de material?? Precisamos tratar isso futuramente...
 	if(materialConsumido->peso < pesoKgConsumido) {
-		pesoKgConsumido = materialConsumido->peso;
+// Para acompanhar o inicio do monitoramento e afinar, vamos permitir trabalhar com peso negativo
+//		pesoKgConsumido = materialConsumido->peso;
 		// Recalcula a perda para "fechar a conta". Melhor solucao ate o momento...
-		pesoKgPerda = pesoKgConsumido - pesoKgProduzido;
+//		pesoKgPerda = pesoKgConsumido - pesoKgProduzido;
 	}
 
 	// Atualiza as propriedades do material consumido
@@ -231,7 +240,8 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 
 	// Se o material acabou: Desmarca o material, obrigando a utilizacao de um novo material
 	if(materialConsumido->peso <= 0.0) {
-		material_select(NULL);
+// Para acompanhar o inicio do monitoramento e afinar, vamos permitir trabalhar com peso negativo
+//		material_select(NULL);
 	}
 
 	// Agora enviamos a mensagem informando da producao. Devemos trabalhar nos dados para adequar ao esperado pelo sistema
@@ -244,12 +254,78 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 	matProduto.peso       = pesoKgProduzido;
 
 	// Agora adequamos o material consumido.
+	matConsumo.quantidade = matProduto.quantidade;
+	matConsumo.tamanho    = matProduto.tamanho;
 	matConsumo.peso       = pesoKgConsumido;
 
 	// Por ultimo, as perdas.
+	matPerda  .quantidade = matProduto.quantidade;
+	matPerda  .tamanho    = matProduto.tamanho;
 	matPerda  .peso       = pesoKgPerda;
 
 	monitor_enviaMsgMatProducao(&matConsumo, &matProduto, &matPerda);
+}
+
+void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda)
+{/*
+	printf("Registrando consumo. Produzido: %d, Perdido: %d\n", qtd, tamPerda);
+	// Se material for nulo, quantidade ou tamanho forem zero, nao ha como registrar o consumo
+	if(materialConsumido == NULL || materialProduzido == NULL || qtd == 0 || (tamPeca == 0 && tamPerda == 0)) return;
+
+	printf("Variaveis ok!\n");
+	// Peso em gramas por metro. Como a medida eh em milimetros e o peso final deve ser em  KG / metro, precisamos dividir por 1000 por duas vezes ou 1.000.000
+	const float pesoGramasPorCm3 = 7.856;
+
+	float pesoKgProduzido = (pesoGramasPorCm3 * qtd * tamPeca  * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
+	float pesoKgPerda     = (pesoGramasPorCm3 * qtd * tamPerda * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
+	float pesoKgConsumido = pesoKgProduzido + pesoKgPerda;
+
+	// TODO: Peso nao pode ficar negativo! Por isso consideramos como peso consumido apenas o que restava de bobina.
+	// Mas de onde veio esse excesso de material?? Precisamos tratar isso futuramente...
+	if(materialConsumido->peso < pesoKgConsumido) {
+// Para acompanhar o inicio do monitoramento e afinar, vamos permitir trabalhar com peso negativo
+//		pesoKgConsumido = materialConsumido->peso;
+		// Recalcula a perda para "fechar a conta". Melhor solucao ate o momento...
+//		pesoKgPerda = pesoKgConsumido - pesoKgProduzido;
+	}
+
+	// Atualiza as propriedades do material consumido
+	materialConsumido->peso       -= pesoKgConsumido;
+
+	// Atualiza as propriedades do material produzido
+	materialProduzido->quantidade += qtd;
+	materialProduzido->tamanho     = tamPeca;
+	materialProduzido->peso       += pesoKgConsumido;
+
+	GravarMaterial(materialConsumido);
+	GravarMaterial(materialProduzido);
+
+	// Se o material acabou: Desmarca o material, obrigando a utilizacao de um novo material
+	if(materialConsumido->peso <= 0.0) {
+// Para acompanhar o inicio do monitoramento e afinar, vamos permitir trabalhar com peso negativo
+//		material_select(NULL);
+	}
+
+	// Agora enviamos a mensagem informando da producao. Devemos trabalhar nos dados para adequar ao esperado pelo sistema
+	// entao utilizamos novas variaveis para isso.
+	struct strMaterial matProduto = *materialProduzido, matConsumo = *materialConsumido, matPerda = *materialConsumido;
+
+	// Primeiro adequamos o material produzido.
+	// Devemos enviar apenas o que foi produzido nesse momento e nao o total
+	matProduto.quantidade = qtd;
+	matProduto.peso       = pesoKgProduzido;
+
+	// Agora adequamos o material consumido.
+	matConsumo.quantidade = matProduto.quantidade;
+	matConsumo.tamanho    = matProduto.tamanho;
+	matConsumo.peso       = pesoKgConsumido;
+
+	// Por ultimo, as perdas.
+	matPerda  .quantidade = matProduto.quantidade;
+	matPerda  .tamanho    = matProduto.tamanho;
+	matPerda  .peso       = pesoKgPerda;
+
+	monitor_enviaMsgMatProducao(&matConsumo, &matProduto, &matPerda);*/
 }
 
 void ConfigBotoesMaterial(GtkWidget *wdg, struct strMaterial *material)
@@ -373,7 +449,10 @@ void CarregaListaMateriais(GtkWidget *tvw)
 
   // Carrega os materiais do MySQL
   DB_Execute(&mainDB, 1, "select m.id as mID, m.codigo as mCod, m.inUse, m.espessura, m.largura, m.peso, l.codigo as lCod, m.tamanho, m.quantidade, m.tipo, m.idTarefa, md.codigo as modProduto,"
-		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso > 0 or tipo = 3) order by mID");
+// Essa a consulta alterada, carregando inclusive bobinas com peso zerado ou negativo
+		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id order by mID");
+// Essa a consulta original, filtrando pelo peso
+//  	  	  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso > 0 or tipo = 3) order by mID");
   while(DB_GetNextRow(&mainDB, 1)>0)
     {
     valores[0] = (char*)malloc(10);
@@ -439,7 +518,7 @@ gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck)
   } else if(materialExiste) { // Material ja cadastrado!
     msg = "Este material já foi cadastrado!";
   } else if(isFullCheck) {
-	  if(material.peso < 1.0) { // Deve ser múltiplo do passo e maior que zero.
+	  if(!(material.peso > 0.0)) { // Peso deve ser maior que zero.
 		msg = "O peso deve ser maior que zero!";
 	  } else if(material.peso > peso_max) { // Verifica se peso supera o limite
 			sprintf(tmp, "O peso deve ser menor ou igual a %d", (int)peso_max);

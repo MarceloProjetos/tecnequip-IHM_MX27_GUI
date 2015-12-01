@@ -387,6 +387,23 @@
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="lstRegistrarPecaModo">
+    <columns>
+      <!-- column-name gcaRegistrarPecaModo -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Peça Perdida</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Peça Sobrando</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Tamanho Errado</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="lstTarefaCliente">
     <columns>
       <!-- column-name gcaNome -->
@@ -5714,6 +5731,20 @@ Resultado será carregado no campo correspondente.</property>
                       </packing>
                     </child>
                     <child>
+                      <object class="GtkButton" id="btnRegistrarPeca">
+                        <property name="label">Registrar</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <signal name="clicked" handler="cbRegistrarPeca" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">4</property>
+                      </packing>
+                    </child>
+                    <child>
                       <object class="GtkButton" id="btnAbrirMaterial">
                         <property name="label">Material</property>
                         <property name="visible">True</property>
@@ -5724,7 +5755,7 @@ Resultado será carregado no campo correspondente.</property>
                       <packing>
                         <property name="expand">True</property>
                         <property name="fill">True</property>
-                        <property name="position">4</property>
+                        <property name="position">5</property>
                       </packing>
                     </child>
                     <child>
@@ -5739,7 +5770,7 @@ Resultado será carregado no campo correspondente.</property>
                       <packing>
                         <property name="expand">True</property>
                         <property name="fill">True</property>
-                        <property name="position">5</property>
+                        <property name="position">6</property>
                       </packing>
                     </child>
                   </object>
@@ -12775,6 +12806,96 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <child>
                               <placeholder/>
                             </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -15562,6 +15683,169 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
               </object>
               <packing>
                 <property name="position">27</property>
+                <property name="tab_fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkVBox" id="vbox72">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkTable" id="table45">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="n_rows">3</property>
+                    <property name="n_columns">2</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkLabel" id="lblRegistrarPecaQtd">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Quantidade</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="lblRegistrarPecaModo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Modo</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="entRegistrarPecaQtd">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">•</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
+                        <property name="secondary_icon_activatable">False</property>
+                        <property name="primary_icon_sensitive">True</property>
+                        <property name="secondary_icon_sensitive">True</property>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBox" id="cmbRegistrarPecaModo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="model">lstRegistrarPecaModo</property>
+                        <property name="active">0</property>
+                        <signal name="changed" handler="cbRegistrarPecaModoSelecionado" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererText" id="crtRegistrarPecaModo"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="lblRegistrarPecaTam">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Novo Tamanho</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkEntry" id="entRegistrarPecaTam">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="invisible_char">•</property>
+                        <property name="invisible_char_set">True</property>
+                        <property name="primary_icon_stock">gtk-select-font</property>
+                        <property name="primary_icon_activatable">True</property>
+                        <property name="secondary_icon_activatable">False</property>
+                        <property name="primary_icon_sensitive">True</property>
+                        <property name="secondary_icon_sensitive">True</property>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkHBox" id="hbox67">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="homogeneous">True</property>
+                    <child>
+                      <object class="GtkButton" id="btnRegistrarPecaAplicar">
+                        <property name="label">gtk-apply</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="cbRegistrarPecaAplicar" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btnRegistrarPecaVoltar">
+                        <property name="label">gtk-go-back</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="clicked" handler="cbRegistrarPecaVoltar" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">True</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="position">28</property>
+              </packing>
+            </child>
+            <child type="tab">
+              <object class="GtkLabel" id="lblAbaRegistrarPeca">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Registrar Peca</property>
+              </object>
+              <packing>
+                <property name="position">28</property>
                 <property name="tab_fill">False</property>
               </packing>
             </child>

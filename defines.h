@@ -174,6 +174,7 @@ typedef uint16_t u16;
 #define NTB_ABA_PRENSAPF_PROD  25 // Prensa de Passo Fixo - diferente da prensa normal, onde se programam os passos
 #define NTB_ABA_MATERIAL       26
 #define NTB_ABA_MATERIAL_ADD   27
+#define NTB_ABA_REGISTRA_PECA  28
 #define NTB_ABA_NONE           99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
@@ -372,7 +373,9 @@ struct strMaterial * GetMaterialByTask(int idTask);
 int material_getDV(char *strCodigo, enum enumTipoEstoque tipo);
 int material_checaDV(char *strCodigo, int dv, enum enumTipoEstoque tipo);
 void material_select(struct strMaterial *material);
+float material_CalculaPeso(struct strMaterial *material, unsigned int tamanho);
 void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam, unsigned int tamPerda);
+void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda);
 
 // Funcoes de tela
 void CarregaComboLocais(GtkComboBox *cmb);
@@ -391,6 +394,7 @@ extern void monitor_Set_OpMode(unsigned int opmode);
 extern void monitor_Clear_Status(void);
 extern void monitor_enviaMsgMatCadastro(struct strMaterial *material);
 extern void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda);
+extern void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct strMaterial *materialEntrada);
 
 // Funcoes uteis
 extern char *floatToString(char *dst, float val);
