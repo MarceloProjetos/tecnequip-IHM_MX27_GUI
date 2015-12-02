@@ -572,7 +572,7 @@ void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct 
 	struct jsonMessageElem *rootMsg, *parentMsg;
 
 	// Fila nao existe!! Retorna...
-	if(jqMaterial == NULL || materialSaida == NULL || materialEntrada == NULL) return;
+	if(jqMaterial == NULL || (materialSaida == NULL && materialEntrada == NULL)) return;
 
 	/*** Agora montamos a mensagem ***/
 
@@ -582,11 +582,18 @@ void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct 
 	// Cria o objeto com array de materiais
 	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
 
-	// Agora anexa o material de saida
-	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(materialSaida, enumMaterialTipoMovimentacao_SaidaAjuste));
+	if(materialSaida == NULL) {
+		// Anexa apenas o material de entrada
+		jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(materialEntrada, enumMaterialTipoMovimentacao_EntradaAjuste));
+	} else {
+		// Agora anexa o material de saida
+		jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(materialSaida, enumMaterialTipoMovimentacao_SaidaAjuste));
 
-	// E entao anexa o material de entrada
-	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialEntrada, enumMaterialTipoMovimentacao_EntradaAjuste));
+		// E entao anexa o material de entrada (Se nao for nulo)
+		if(materialEntrada != NULL) {
+			jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialEntrada, enumMaterialTipoMovimentacao_EntradaAjuste));
+		}
+	}
 
 	// Mensagem pronta! Agora a enviamos
 	jsonQueue_PutMessage(jqMaterial, rootMsg);

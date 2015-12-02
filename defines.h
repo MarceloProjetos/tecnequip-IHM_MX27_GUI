@@ -376,6 +376,8 @@ void material_select(struct strMaterial *material);
 float material_CalculaPeso(struct strMaterial *material, unsigned int tamanho);
 void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam, unsigned int tamPerda);
 void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda);
+struct strMaterial *material_copiar(struct strMaterial *dst, struct strMaterial *src, int isFullCopy);
+void material_ajustarInventario(struct strMaterial *materialOrigem, struct strMaterial *materialDestino, unsigned int qtd);
 
 // Funcoes de tela
 void CarregaComboLocais(GtkComboBox *cmb);
