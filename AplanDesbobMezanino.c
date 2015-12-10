@@ -1740,6 +1740,9 @@ void cbExecTarefaPrensaPassoFixo(GtkButton *button, gpointer user_data)
     sprintf(msg, "Produzindo com passo de %d mm", maq_param.custom.prensa.passo);
     gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblExecPrensaMsg")), msg);
 
+    // Configura o estado da máquina
+    SetMaqStatus(MAQ_STATUS_PRODUZINDO);
+
     gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecVoltar")), FALSE);
 
     gtk_button_set_label(GTK_BUTTON(wdg), modo_botao[1]);

@@ -74,7 +74,7 @@ struct strMaterial * GetMaterialInUse(void)
   return Item;
 }
 
-// Retorna o material marcado como em uso. Retorna nulo se nenhum estiver marcado
+// Retorna o material com o id da tarefa fornecido. Retorna nulo se nao for encontrado
 struct strMaterial * GetMaterialByTask(int idTask)
 {
   struct strMaterial *Item = lstMaterial, *itemFound = NULL;
@@ -89,6 +89,23 @@ struct strMaterial * GetMaterialByTask(int idTask)
   }
 
   return itemFound;
+}
+
+// Retorna o material com o id fornecido. Retorna nulo se nao for encontrado
+struct strMaterial * GetMaterialByID(int id)
+{
+  struct strMaterial *Item = lstMaterial;
+
+  while(Item != NULL) {
+	  // Se encontrou, retorna o elemento encontrado
+	  if(Item->id == id) {
+		  return Item;
+	  }
+
+	  Item = Item->Next;
+  }
+
+  return NULL;
 }
 
 /*** Funcoes internas de gerenciamento / controle de materiais ***/
@@ -198,6 +215,38 @@ void material_select(struct strMaterial *material)
 	}
 }
 
+// Funcao para copiar uma estrutura de material para outra. Se a flag de Full Copy estiver ativada,
+// mesmo variaveis que sao exclusivas de um material serao copiadas (por exemplo: id)
+struct strMaterial *material_copiar(struct strMaterial *dst, struct strMaterial *src, int isFullCopy)
+{
+	// Se nao possui origem, retorna nulo!
+	if(src == NULL) return NULL;
+
+	// Se nao possui destino, aloca um novo material!
+	if(dst == NULL) {
+		dst = AllocNewMaterial();
+	}
+
+	strcpy(dst->produto    , src->produto  );
+	strcpy(dst->descricao  , src->descricao);
+	strcpy(dst->local      , src->local    );
+	dst       ->espessura  = src->espessura;
+	dst       ->largura    = src->largura;
+	dst       ->tipo       = src->tipo;
+	dst       ->quantidade = src->quantidade;
+	dst       ->tamanho    = src->tamanho;
+	dst       ->idTarefa   = src->idTarefa;
+	dst       ->peso       = src->peso;
+
+	if(isFullCopy) {
+		strcpy(dst->codigo     , src->codigo   );
+		dst       ->id  = src->id;
+		dst       ->inUse  = src->inUse;
+	}
+
+	return dst;
+}
+
 float material_CalculaPeso(struct strMaterial *material, unsigned int tamanho)
 {
 	// Se material for nulo ou tamanho forem zero, nao ha como calcular o peso
@@ -266,72 +315,115 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 	monitor_enviaMsgMatProducao(&matConsumo, &matProduto, &matPerda);
 }
 
-void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda)
-{/*
-	printf("Registrando consumo. Produzido: %d, Perdido: %d\n", qtd, tamPerda);
-	// Se material for nulo, quantidade ou tamanho forem zero, nao ha como registrar o consumo
-	if(materialConsumido == NULL || materialProduzido == NULL || qtd == 0 || (tamPeca == 0 && tamPerda == 0)) return;
+// Registra perda de material. Se for informado o tamanho, desconsidera o peso.
+void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda, float pesoPerda)
+{
+	// Material nulo ou valores zerados! Retorna...
+	if(materialConsumido == NULL || ((qtd == 0 || tamPerda == 0) && pesoPerda == 0)) return;
 
-	printf("Variaveis ok!\n");
-	// Peso em gramas por metro. Como a medida eh em milimetros e o peso final deve ser em  KG / metro, precisamos dividir por 1000 por duas vezes ou 1.000.000
-	const float pesoGramasPorCm3 = 7.856;
+	struct strMaterial *materialPerda = material_copiar(NULL, materialConsumido, TRUE);
 
-	float pesoKgProduzido = (pesoGramasPorCm3 * qtd * tamPeca  * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
-	float pesoKgPerda     = (pesoGramasPorCm3 * qtd * tamPerda * materialConsumido->espessura * materialConsumido->largura) / 1000000.0;
-	float pesoKgConsumido = pesoKgProduzido + pesoKgPerda;
+	materialPerda->id         = 0;
+	materialPerda->quantidade = 0;
+	materialPerda->tamanho    = 0;
+	materialPerda->inUse      = FALSE;
 
-	// TODO: Peso nao pode ficar negativo! Por isso consideramos como peso consumido apenas o que restava de bobina.
-	// Mas de onde veio esse excesso de material?? Precisamos tratar isso futuramente...
-	if(materialConsumido->peso < pesoKgConsumido) {
-// Para acompanhar o inicio do monitoramento e afinar, vamos permitir trabalhar com peso negativo
-//		pesoKgConsumido = materialConsumido->peso;
-		// Recalcula a perda para "fechar a conta". Melhor solucao ate o momento...
-//		pesoKgPerda = pesoKgConsumido - pesoKgProduzido;
+	if(pesoPerda == 0.0) {
+		materialPerda->quantidade = qtd;
+		materialPerda->tamanho    = tamPerda;
+		materialPerda->peso       = material_CalculaPeso(materialPerda, qtd * tamPerda);
+	} else {
+		materialPerda->peso = pesoPerda;
 	}
 
-	// Atualiza as propriedades do material consumido
-	materialConsumido->peso       -= pesoKgConsumido;
-
-	// Atualiza as propriedades do material produzido
-	materialProduzido->quantidade += qtd;
-	materialProduzido->tamanho     = tamPeca;
-	materialProduzido->peso       += pesoKgConsumido;
+	materialConsumido->quantidade -= materialPerda->quantidade;
+	materialConsumido->peso       -= materialPerda->peso;
 
 	GravarMaterial(materialConsumido);
-	GravarMaterial(materialProduzido);
 
-	// Se o material acabou: Desmarca o material, obrigando a utilizacao de um novo material
-	if(materialConsumido->peso <= 0.0) {
-// Para acompanhar o inicio do monitoramento e afinar, vamos permitir trabalhar com peso negativo
-//		material_select(NULL);
+	// Ajusta os valores para a mensagem
+	materialConsumido->quantidade = qtd;
+	materialConsumido->tamanho    = tamPerda;
+	materialConsumido->peso       = materialPerda->peso;
+
+	monitor_enviaMsgMatProducao(materialConsumido, NULL, materialPerda);
+}
+
+void material_ajustarEstoque(struct strMaterial *material, float peso)
+{
+	// Material nulo ou peso menor que zero! Retorna...
+	if(material == NULL || peso < 0.0) return;
+
+	// Altera o peso e grava
+	material->peso = peso;
+	GravarMaterial(material);
+
+	// Envia mensagem para o sistema de monitoramento
+	monitor_enviaMsgAjusteEstoque(material);
+}
+
+/**
+ * Funcao que realiza o ajuste de inventario. Existem 3 operacoes:
+ *
+ * - Entrada de peca (Entrada por ajuste de inventario): quando por algum motivo houver sobrado uma peca, como no caso de uma peca finalizada manualmente
+ * - Saida de peca (Saida por ajuste de inventario): quando for descartada uma ou mais pecas, como o caso de haver erro na furacao, por exemplo...
+ * - Peca produzida com tamanho errado: nesse caso havera tanto entrada como saida de peca. Ocorre quando a maquina errar a medida e produzir uma peca com tamanho errado
+ * 		mas o registro houver sido feito para o tamanho correto, como numa falha de leitura do encoder. Para isso o operador devera informar uma nova etiqueta para
+ * 		registrar as pecas de tamanho diferente ja que elas sao diferentes.
+**/
+void material_ajustarInventario(struct strMaterial *materialOrigem, struct strMaterial *materialDestino, unsigned int qtd)
+{
+	// Se ambos forem nulo, nada a fazer...
+	if(materialOrigem == NULL && materialDestino == NULL) return;
+
+	if(materialDestino == NULL) { // Primeira situacao: Sem destino, apenas saida!!
+		struct strMaterial material;
+
+		materialOrigem->quantidade -= qtd;
+		GravarMaterial(materialOrigem);
+
+		material_copiar(&material, materialOrigem, TRUE);
+		material.quantidade = qtd;
+		material.peso       = material_CalculaPeso(materialOrigem, qtd * materialOrigem->tamanho);
+
+		monitor_enviaMsgAjusteInventario(&material, NULL);
+	} else if(materialOrigem == NULL) { // Segunda situacao: Sem origem, apenas entrada!!
+		struct strMaterial material;
+
+		materialDestino->quantidade += qtd;
+		GravarMaterial(materialDestino);
+
+		material_copiar(&material, materialDestino, TRUE);
+		material.quantidade = qtd;
+		material.peso       = material_CalculaPeso(materialDestino, qtd * materialDestino->tamanho);
+
+		monitor_enviaMsgAjusteInventario(NULL, &material);
+	} else { // Terceira situacao: nenhum nulo e portanto significa divisao de lote. Normalmente tamanho errado de alguma peca!
+		struct strMaterial material;
+
+		materialOrigem ->quantidade -= qtd;
+		materialDestino->quantidade  = qtd;
+
+		materialDestino->peso = material_CalculaPeso(materialDestino, materialDestino->quantidade * materialDestino->tamanho);
+		materialOrigem ->peso = material_CalculaPeso(materialOrigem , materialOrigem ->quantidade * materialOrigem ->tamanho);
+
+		// Grava os materiais atualizados
+		GravarMaterial(materialOrigem );
+		GravarMaterial(materialDestino);
+
+		// Agora ajusta os valores e envia a mensagem de ajuste do inventario
+		material_copiar(&material, materialOrigem, TRUE);
+		material.quantidade = qtd;
+		material.peso       = material_CalculaPeso(materialOrigem, qtd * materialOrigem->tamanho);
+
+		monitor_enviaMsgAjusteInventario(&material, materialDestino);
 	}
-
-	// Agora enviamos a mensagem informando da producao. Devemos trabalhar nos dados para adequar ao esperado pelo sistema
-	// entao utilizamos novas variaveis para isso.
-	struct strMaterial matProduto = *materialProduzido, matConsumo = *materialConsumido, matPerda = *materialConsumido;
-
-	// Primeiro adequamos o material produzido.
-	// Devemos enviar apenas o que foi produzido nesse momento e nao o total
-	matProduto.quantidade = qtd;
-	matProduto.peso       = pesoKgProduzido;
-
-	// Agora adequamos o material consumido.
-	matConsumo.quantidade = matProduto.quantidade;
-	matConsumo.tamanho    = matProduto.tamanho;
-	matConsumo.peso       = pesoKgConsumido;
-
-	// Por ultimo, as perdas.
-	matPerda  .quantidade = matProduto.quantidade;
-	matPerda  .tamanho    = matProduto.tamanho;
-	matPerda  .peso       = pesoKgPerda;
-
-	monitor_enviaMsgMatProducao(&matConsumo, &matProduto, &matPerda);*/
 }
 
 void ConfigBotoesMaterial(GtkWidget *wdg, struct strMaterial *material)
 {
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnMaterialSelect"    )), material != NULL && material->tipo == enumTipoEstoque_MateriaPrima);
-  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnMovimentarMaterial")), material != NULL);
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRegistrarMaterial")), material != NULL);
 }
 
 void CarregaComboLocais(GtkComboBox *cmb)
@@ -450,7 +542,7 @@ void CarregaListaMateriais(GtkWidget *tvw)
   // Carrega os materiais do MySQL
   DB_Execute(&mainDB, 1, "select m.id as mID, m.codigo as mCod, m.inUse, m.espessura, m.largura, m.peso, l.codigo as lCod, m.tamanho, m.quantidade, m.tipo, m.idTarefa, md.codigo as modProduto,"
 // Essa a consulta alterada, carregando inclusive bobinas com peso zerado ou negativo
-		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id order by mID");
+		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso != 0 or m.tipo != 1) order by mID");
 // Essa a consulta original, filtrando pelo peso
 //  	  	  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso > 0 or tipo = 3) order by mID");
   while(DB_GetNextRow(&mainDB, 1)>0)
@@ -838,7 +930,7 @@ void cbMaterialAdd(GtkButton *button, gpointer user_data)
 
 // Funcao para adicionar um novo material
 void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
-{/*
+{
 	char val[20];
 	struct strMaterial *material;
 
@@ -847,7 +939,8 @@ void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
 
 	// E entao seleciona esse material
 	material = GetMaterial(atoi(val) - 1);
-	material_registraConsumo(material, GetMaterialByTask(204), 3, 2500, 10);*/
+
+	AbrirRegistrarPeca(material);
 }
 
 #define NTB_ABA_MATERIAL_MATERIAPRIMA    0

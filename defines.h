@@ -368,6 +368,7 @@ void ClearMaterials(void);
 struct strMaterial * GetMaterial(unsigned int idx);
 struct strMaterial * GetMaterialInUse(void);
 struct strMaterial * GetMaterialByTask(int idTask);
+struct strMaterial * GetMaterialByID(int id);
 
 // Funcoes para trabalhar com os materiais
 int material_getDV(char *strCodigo, enum enumTipoEstoque tipo);
@@ -375,7 +376,10 @@ int material_checaDV(char *strCodigo, int dv, enum enumTipoEstoque tipo);
 void material_select(struct strMaterial *material);
 float material_CalculaPeso(struct strMaterial *material, unsigned int tamanho);
 void material_registraConsumo(struct strMaterial *materialConsumido, struct strMaterial *materialProduzido, unsigned int qtd, unsigned int tam, unsigned int tamPerda);
-void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda);
+void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda, float pesoPerda);
+struct strMaterial *material_copiar(struct strMaterial *dst, struct strMaterial *src, int isFullCopy);
+void material_ajustarInventario(struct strMaterial *materialOrigem, struct strMaterial *materialDestino, unsigned int qtd);
+void material_ajustarEstoque(struct strMaterial *material, float peso);
 
 // Funcoes de tela
 void CarregaComboLocais(GtkComboBox *cmb);
@@ -384,6 +388,7 @@ void CarregaListaMateriais(GtkWidget *tvw);
 void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDetails, int (*fnc)(struct strMaterial, int, int, void *), void *data);
 void GravarMaterial(struct strMaterial *material);
 gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck);
+void AbrirRegistrarPeca(struct strMaterial *materialProduzido);
 
 // Funcoes de Monitoramento
 extern void monitor_Init();
@@ -395,6 +400,7 @@ extern void monitor_Clear_Status(void);
 extern void monitor_enviaMsgMatCadastro(struct strMaterial *material);
 extern void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda);
 extern void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct strMaterial *materialEntrada);
+extern void monitor_enviaMsgAjusteEstoque(struct strMaterial *material);
 
 // Funcoes uteis
 extern char *floatToString(char *dst, float val);

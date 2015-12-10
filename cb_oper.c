@@ -74,6 +74,22 @@ struct strTask * GetTask(unsigned int idx)
   return Task;
 }
 
+// Retorna a tarefa indicada pelo id
+struct strTask * GetTaskByID(unsigned int id)
+{
+  struct strTask *Task = lstTask;
+
+  while(Task != NULL) {
+	  if(Task->ID == id) {
+		  return Task;
+	  }
+
+	  Task = Task->Next;
+  }
+
+  return NULL;
+}
+
 // Definições para o log de produção
 #define LOGPROD_START 0x01
 #define LOGPROD_END   0x02
@@ -626,25 +642,13 @@ int cbRegistrarPecaTamanhoErrado(struct strMaterial material, int dv, int isCanc
 		DB_GetNextRow(&mainDB, 0);
 		strcpy(material.produto, DB_GetData(&mainDB, 0, 0));
 
-		materialTask->quantidade -= material.quantidade;
-
-		material    . peso  = material_CalculaPeso(&material, material    . quantidade * material    . tamanho);
-		materialTask->peso -= material_CalculaPeso(&material, materialTask->quantidade * materialTask->tamanho);
-
-		// Grava os materiais atualizados
-		GravarMaterial(materialTask);
-		GravarMaterial(&material);
-
 		// Atualiza a quantidade da tarefa pois as pecas que estavam com tamanho errado devem ser produzidas novamente
 		Task->QtdProd -= material.quantidade;
 
 		sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd > 0) ? TRF_ESTADO_PARCIAL : TRF_ESTADO_NOVA, Task->ID);
 		DB_Execute(&mainDB, 0, sql);
 
-		// Agora ajusta os valores e envia a mensagem de ajuste do inventario
-		materialTask->quantidade = material.quantidade;
-		materialTask->peso       = material_CalculaPeso(&material, materialTask->quantidade * materialTask->tamanho);
-		monitor_enviaMsgAjusteInventario(materialTask, &material);
+		material_ajustarInventario(materialTask, &material, material.quantidade);
 
 		// Tudo finalizado. Carrega a lista de tarefas e retorna
 		CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
@@ -665,35 +669,78 @@ void cbRegistrarPecaModoSelecionado(GtkComboBox *combobox, gpointer user_data)
 	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblRegistrarPecaTam")), (modo == 2) ? TRUE : FALSE);
 }
 
+void cbRegistrarPecaModoMaterialSelecionado(GtkComboBox *combobox, gpointer user_data)
+{
+	unsigned int modo = gtk_combo_box_get_active(combobox);
+
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "entRegistrarPecaPeso"       )), (modo > 0) ? TRUE : FALSE);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblRegistrarPecaPeso"       )), (modo > 0) ? TRUE : FALSE);
+
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblRegistrarPecaOU"         )), (modo > 1) ? TRUE : FALSE);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblRegistrarPecaVazio"      )), (modo > 1) ? TRUE : FALSE);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "entRegistrarPecaTamMaterial")), (modo > 1) ? TRUE : FALSE);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblRegistrarPecaTamMaterial")), (modo > 1) ? TRUE : FALSE);
+}
+
+// Abre a tela de registro de pecas, considerando o material passado como parametro onde devem ser creditadas / debitadas as pecas conforme a opcao escolhida
+void AbrirRegistrarPeca(struct strMaterial *materialProduzido)
+{
+	char *campos[] = {
+		"entRegistrarPecaQtd",
+		"entRegistrarPecaTam",
+		"entRegistrarPecaPeso",
+		"entRegistrarPecaTamMaterial",
+		""
+	};
+
+	char *valor[] = {
+		"",
+		"",
+		"",
+		"",
+	};
+
+	// Se nao receber o material de referencia, cancela!
+	if(materialProduzido == NULL) return;
+
+	GravarValoresWidgets(campos, valor);
+
+	char tmp[100];
+	sprintf(tmp, "%d", materialProduzido->id);
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblRegistrarPecaTarefaID")), tmp);
+
+	int aba;
+	switch(materialProduzido->tipo) {
+	default:
+	case enumTipoEstoque_MateriaPrima     :
+		gtk_combo_box_set_active              (GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModoMaterial")), 0);
+		cbRegistrarPecaModoMaterialSelecionado(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModoMaterial")), NULL);
+
+		aba = 0;
+		break;
+	case enumTipoEstoque_ProdutoEmProcesso:
+		gtk_combo_box_set_active      (GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModo")), 0);
+		cbRegistrarPecaModoSelecionado(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModo")), NULL);
+
+		aba = 1;
+		break;
+	}
+
+    gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbRegistrarPeca")), aba);
+
+	WorkAreaGoTo(NTB_ABA_REGISTRA_PECA);
+}
+
 void cbRegistrarPeca(GtkButton *button, gpointer user_data)
 {
-	struct strMaterial *material = NULL;
+	char tmp[10];
+	struct strTask *Task;
 
-	if(MaqConfigCurrent->UseMaterial) {
-	  material = GetMaterialInUse();
+	TV_GetSelected(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), 0, tmp);
+	Task = GetTask(atoi(tmp)-1);
 
-	  if(material == NULL) {
-		ShowMessageBox("Nenhum material selecionado!", FALSE);
-		return;
-	  }
-
-	  char *campos[] =
-	    {
-	    "entRegistrarPecaQtd",
-	    "entRegistrarPecaTam",
-	    ""
-	    };
-	  char *valor[] =
-	    {
-	    "",
-	    "",
-	    };
-	  GravarValoresWidgets(campos, valor);
-
-	  gtk_combo_box_set_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModo")), 0);
-	  cbRegistrarPecaModoSelecionado(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModo")), NULL);
-
-	  WorkAreaGoTo(NTB_ABA_REGISTRA_PECA);
+	if(Task != NULL) {
+		AbrirRegistrarPeca(GetMaterialByTask(Task->ID));
 	}
 }
 
@@ -705,60 +752,91 @@ void cbRegistrarPecaVoltar(GtkButton *button, gpointer user_data)
 void cbRegistrarPecaAplicar(GtkButton *button, gpointer user_data)
 {
   int tam;
-  struct strTask *Task;
-  char tmp[10], sql[500];
+  float peso;
+  char sql[500];
   unsigned int qtd, modo;
-  struct strMaterial *materialConsumo, *materialProduto;
+  struct strMaterial *materialProduto;
 
-  TV_GetSelected(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")), 0, tmp);
-  Task = GetTask(atoi(tmp)-1);
+  materialProduto = GetMaterialByID(atoi(gtk_label_get_text(GTK_LABEL(gtk_builder_get_object(builder, "lblRegistrarPecaTarefaID")))));
+  if(materialProduto == NULL) return;
 
-  materialConsumo = GetMaterialInUse();
-  materialProduto = GetMaterialByTask(Task->ID);
+  if(materialProduto->tipo == enumTipoEstoque_ProdutoEmProcesso) {
+	  // Identifica a tarefa que gerou este produto. Pode nao existir, como no caso em que cadastra-se manualmente uma peca que estava sobrando
+	  struct strTask *Task = GetTaskByID(materialProduto->idTarefa);
 
-  qtd  = atoi(LerValorWidget("entRegistrarPecaQtd"));
-  tam  = atoi(LerValorWidget("entRegistrarPecaTam"));
-  modo = gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModo")));
+	  qtd  = atoi(LerValorWidget("entRegistrarPecaQtd"));
+	  tam  = atoi(LerValorWidget("entRegistrarPecaTam"));
 
-  if(modo == 0) { // Peca perdida
-	  if(qtd > Task->QtdProd) {
-		  MessageBox("Quantidade a descartar excede quantidade produzida!");
-	  } else {
-		  material_registraPerda(materialProduto, qtd, Task->Tamanho);
-		  Task->QtdProd -= qtd;
+	  modo = gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModo")));
 
-		  sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd > 0) ? TRF_ESTADO_PARCIAL : TRF_ESTADO_NOVA, Task->ID);
-		  DB_Execute(&mainDB, 0, sql);
+	  if(modo == 0) { // Peca perdida
+		  if(Task && qtd > Task->QtdProd) {
+			  MessageBox("Quantidade a descartar excede quantidade produzida!");
+		  } else if(qtd > materialProduto->quantidade) {
+			  MessageBox("Quantidade a descartar excede quantidade cadastrada!");
+		  } else {
+			  material_ajustarInventario(materialProduto, NULL, qtd);
+
+			  if(Task != NULL) {
+				  Task->QtdProd -= qtd;
+
+				  sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd > 0) ? TRF_ESTADO_PARCIAL : TRF_ESTADO_NOVA, Task->ID);
+				  DB_Execute(&mainDB, 0, sql);
+			  }
+		  }
+	  } else if(modo == 1) { // Peca sobrando
+		  material_ajustarInventario(NULL, materialProduto, qtd);
+
+		  if(Task != NULL) {
+			  Task->QtdProd += qtd;
+
+			  sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd >= Task->Qtd) ? TRF_ESTADO_FINAL : TRF_ESTADO_PARCIAL, Task->ID);
+			  DB_Execute(&mainDB, 0, sql);
+		  }
+	  } else { // Tamanho errado
+		  if(Task == NULL) {
+			  MessageBox("Este produto nao esta associado a uma tarefa!");
+		  } else if(tam <= 0) {
+			  MessageBox("Novo tamanho deve ser maior que zero!");
+		  } else if(qtd > Task->QtdProd) {
+			  MessageBox("Quantidade a registrar excede quantidade produzida!");
+		  } else if(qtd > materialProduto->quantidade) {
+			  MessageBox("Quantidade a registrar excede quantidade cadastrada!");
+		  } else {
+			  struct strMaterial *material = material_copiar(NULL, materialProduto, FALSE);
+			  material->idTarefa   = 0;
+			  material->quantidade = qtd;
+			  material->tamanho    = tam;
+
+			  AbrirCadastroMaterial(material, FALSE, FALSE, cbRegistrarPecaTamanhoErrado, Task);
+
+			  return;
+		  }
 	  }
-  } else if(modo == 1) { // Peca sobrando
-	  if(materialConsumo->espessura != materialProduto->espessura || materialConsumo->largura != materialProduto->largura) {
-		  MessageBox("Material selecionado invalido!");
-	  } else {
-		  material_registraConsumo(materialConsumo, materialProduto, qtd, Task->Tamanho, 0);
-		  Task->QtdProd += qtd;
+  } else {
+	  peso = atof(LerValorWidget("entRegistrarPecaPeso"));
+	  tam  = atoi(LerValorWidget("entRegistrarPecaTamMaterial"));
 
-		  sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd >= Task->Qtd) ? TRF_ESTADO_FINAL : TRF_ESTADO_PARCIAL, Task->ID);
-		  DB_Execute(&mainDB, 0, sql);
-	  }
-  } else { // Tamanho errado
-	  if(tam <= 0) {
-		  MessageBox("Novo tamanho deve ser maior que zero!");
-	  } else if(qtd > Task->QtdProd) {
-		  MessageBox("Quantidade a registrar excede quantidade produzida!");
-	  } else {
-		  struct strMaterial *material = AllocNewMaterial();
-		  strcpy(material->produto    , materialProduto->produto  );
-		  strcpy(material->descricao  , materialProduto->descricao);
-		  strcpy(material->local      , materialProduto->local    );
-		  material       ->espessura  = materialProduto->espessura;
-		  material       ->largura    = materialProduto->largura;
-		  material       ->tipo       = materialProduto->tipo;
-		  material       ->quantidade = qtd;
-		  material       ->tamanho    = tam;
+	  modo = gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbRegistrarPecaModoMaterial")));
 
-		  AbrirCadastroMaterial(material, FALSE, FALSE, cbRegistrarPecaTamanhoErrado, Task);
-
-		  return;
+	  if(modo == 0 || modo == 1) { // Bobina finalizada ou Indicar peso da bobina!
+		  if(peso < 0.0) {
+			  MessageBox("Peso nao pode ser negativo!");
+		  } else {
+			  material_ajustarEstoque(materialProduto, peso);
+		  }
+	  } else { // Perda de material
+		  if(peso != 0.0 && tam != 0) {
+			  MessageBox("Preencher apenas peso ou tamanho! Nao preencher os dois!");
+		  } else if(peso == 0.0 && tam == 0) {
+				  MessageBox("Preenche peso ou tamanho do material perdido!");
+		  } else if(tam < 0) {
+			  MessageBox("Tamanho deve ser maior que zero!");
+		  } else if(peso < 0.0) {
+			  MessageBox("Peso deve ser maior que zero!");
+		  } else {
+			  material_registraPerda(materialProduto, 1, tam, peso);
+		  }
 	  }
   }
 
