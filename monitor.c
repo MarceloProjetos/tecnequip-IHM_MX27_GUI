@@ -74,9 +74,9 @@ enum enumValueUnit {
 };
 
 union uniValor {
-	long   lVal;
-	float  fVal;
-	char  *sVal;
+	long    lVal;
+	double  fVal;
+	char   *sVal;
 };
 
 struct strValor {
@@ -98,7 +98,8 @@ enum enumMaterialTipoMovimentacao {
 	enumMaterialTipoMovimentacao_Producao           ,
 	enumMaterialTipoMovimentacao_Recebimento        ,
 	enumMaterialTipoMovimentacao_SaidaAjuste        ,
-	enumMaterialTipoMovimentacao_AjusteEstoque      ,
+	enumMaterialTipoMovimentacao_AjusteInvOriginal  ,
+	enumMaterialTipoMovimentacao_AjusteInvNovo      ,
 };
 
 // Estrutura com os dados de monitoramento da maquina
@@ -328,7 +329,8 @@ struct jsonMessageElem * monitor_getMsgMaterial(struct strMaterial *material, en
 	case enumMaterialTipoMovimentacao_Producao          : tmpMov = "PR"; break;
 	case enumMaterialTipoMovimentacao_Recebimento       : tmpMov = "RE"; break;
 	case enumMaterialTipoMovimentacao_SaidaAjuste       : tmpMov = "SI"; break;
-	case enumMaterialTipoMovimentacao_AjusteEstoque     : tmpMov = "AI"; break;
+	case enumMaterialTipoMovimentacao_AjusteInvOriginal : tmpMov = "A1"; break;
+	case enumMaterialTipoMovimentacao_AjusteInvNovo     : tmpMov = "A2"; break;
 	}
 	jsonMessage_DataSetString(jsonMessage_ElemGetData(rootMsg), tmpMov);
 
@@ -603,12 +605,12 @@ void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct 
 }
 
 // Envia a mensagem informando do ajuste de estoque (quando houver diferenca de peso entre o calculado e real)
-void monitor_enviaMsgAjusteEstoque(struct strMaterial *material)
+void monitor_enviaMsgAjusteEstoque(struct strMaterial *materialOriginal, struct strMaterial *material)
 {
 	struct jsonMessageElem *rootMsg, *parentMsg;
 
 	// Fila nao existe ou material nulo!! Retorna...
-	if(jqMaterial == NULL || material == NULL) return;
+	if(jqMaterial == NULL || materialOriginal == NULL || material == NULL) return;
 
 	/*** Agora montamos a mensagem ***/
 
@@ -618,8 +620,38 @@ void monitor_enviaMsgAjusteEstoque(struct strMaterial *material)
 	// Cria o objeto com array de materiais
 	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
 
-	// Anexa apenas o material de entrada
-	jsonMessage_DataSetObject(jsonMessage_ElemGetData(parentMsg), monitor_getMsgMaterial(material, enumMaterialTipoMovimentacao_AjusteEstoque));
+	// Anexa o material original
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData      (parentMsg), monitor_getMsgMaterial(materialOriginal, enumMaterialTipoMovimentacao_AjusteInvOriginal));
+
+	// Anexa o material ajustado
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(material        , enumMaterialTipoMovimentacao_AjusteInvNovo    ));
+
+	// Mensagem pronta! Agora a enviamos
+	jsonQueue_PutMessage(jqMaterial, rootMsg);
+	jsonQueue_Work(jqMaterial);
+}
+
+// Envia a mensagem de movimentacao de materiais entre depositos (localizacao fisica)
+void monitor_enviaMsgTransferencia(struct strMaterial *materialOrigem, struct strMaterial *materialDestino)
+{
+	struct jsonMessageElem *rootMsg, *parentMsg;
+
+	// Fila nao existe ou material nulo!! Retorna...
+	if(jqMaterial == NULL || materialOrigem == NULL || materialDestino == NULL) return;
+
+	/*** Agora montamos a mensagem ***/
+
+	// Recebe o cabecalho da mensagem: ID da maquina e usuario conectado
+	rootMsg = monitor_getMsgHeader();
+
+	// Cria o objeto com array de materiais
+	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
+
+	// Anexa o material de origem
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData      (parentMsg), monitor_getMsgMaterial(materialOrigem , enumMaterialTipoMovimentacao_SaidaMovEntreDep));
+
+	// Anexa o material de destino
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialDestino, enumMaterialTipoMovimentacao_EntradaMovEntreDep));
 
 	// Mensagem pronta! Agora a enviamos
 	jsonQueue_PutMessage(jqMaterial, rootMsg);

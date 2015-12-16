@@ -247,13 +247,13 @@ struct strMaterial *material_copiar(struct strMaterial *dst, struct strMaterial 
 	return dst;
 }
 
-float material_CalculaPeso(struct strMaterial *material, unsigned int tamanho)
+double material_CalculaPeso(struct strMaterial *material, unsigned int tamanho)
 {
 	// Se material for nulo ou tamanho forem zero, nao ha como calcular o peso
 	if(material == NULL || tamanho == 0) return 0.0f;
 
 	// Peso em gramas por metro. Como a medida eh em milimetros e o peso final deve ser em  KG / metro, precisamos dividir por 1000 por duas vezes ou 1.000.000
-	const float pesoGramasPorCm3 = 7.856;
+	const double pesoGramasPorCm3 = 7.856;
 
 	return (pesoGramasPorCm3 * tamanho  * material->espessura * material->largura) / 1000000.0;
 }
@@ -263,9 +263,9 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 	// Se material for nulo, quantidade ou tamanho forem zero, nao ha como registrar o consumo
 	if(materialConsumido == NULL || materialProduzido == NULL || qtd == 0 || (tamPeca == 0 && tamPerda == 0)) return;
 
-	float pesoKgProduzido = material_CalculaPeso(materialConsumido, qtd * tamPeca);
-	float pesoKgPerda     = material_CalculaPeso(materialConsumido, qtd * tamPerda);
-	float pesoKgConsumido = pesoKgProduzido + pesoKgPerda;
+	double pesoKgProduzido = material_CalculaPeso(materialConsumido, qtd * tamPeca);
+	double pesoKgPerda     = material_CalculaPeso(materialConsumido, qtd * tamPerda);
+	double pesoKgConsumido = pesoKgProduzido + pesoKgPerda;
 
 	// TODO: Peso nao pode ficar negativo! Por isso consideramos como peso consumido apenas o que restava de bobina.
 	// Mas de onde veio esse excesso de material?? Precisamos tratar isso futuramente...
@@ -316,7 +316,7 @@ void material_registraConsumo(struct strMaterial *materialConsumido, struct strM
 }
 
 // Registra perda de material. Se for informado o tamanho, desconsidera o peso.
-void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda, float pesoPerda)
+void material_registraPerda(struct strMaterial *materialConsumido, unsigned int qtd, unsigned int tamPerda, double pesoPerda)
 {
 	// Material nulo ou valores zerados! Retorna...
 	if(materialConsumido == NULL || ((qtd == 0 || tamPerda == 0) && pesoPerda == 0)) return;
@@ -336,30 +336,39 @@ void material_registraPerda(struct strMaterial *materialConsumido, unsigned int 
 		materialPerda->peso = pesoPerda;
 	}
 
-	materialConsumido->quantidade -= materialPerda->quantidade;
-	materialConsumido->peso       -= materialPerda->peso;
+	// Ajusta os valores para a mensagem
+	if(materialConsumido->tipo != enumTipoEstoque_MateriaPrima) {
+		materialConsumido->quantidade -= materialPerda->quantidade;
+	}
+	materialConsumido->peso -= materialPerda->peso;
 
 	GravarMaterial(materialConsumido);
 
 	// Ajusta os valores para a mensagem
-	materialConsumido->quantidade = qtd;
-	materialConsumido->tamanho    = tamPerda;
+	if(materialConsumido->tipo != enumTipoEstoque_MateriaPrima) {
+		materialConsumido->quantidade = qtd;
+		materialConsumido->tamanho    = tamPerda;
+	}
 	materialConsumido->peso       = materialPerda->peso;
 
 	monitor_enviaMsgMatProducao(materialConsumido, NULL, materialPerda);
 }
 
-void material_ajustarEstoque(struct strMaterial *material, float peso)
+void material_ajustarEstoque(struct strMaterial *material, double peso)
 {
+	struct strMaterial *materialOriginal;
 	// Material nulo ou peso menor que zero! Retorna...
 	if(material == NULL || peso < 0.0) return;
+
+	// Faz copia do material original para enviar na mensagem
+	materialOriginal = material_copiar(NULL, material, TRUE);
 
 	// Altera o peso e grava
 	material->peso = peso;
 	GravarMaterial(material);
 
 	// Envia mensagem para o sistema de monitoramento
-	monitor_enviaMsgAjusteEstoque(material);
+	monitor_enviaMsgAjusteEstoque(materialOriginal, material);
 }
 
 /**
@@ -423,7 +432,8 @@ void material_ajustarInventario(struct strMaterial *materialOrigem, struct strMa
 void ConfigBotoesMaterial(GtkWidget *wdg, struct strMaterial *material)
 {
   gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnMaterialSelect"    )), material != NULL && material->tipo == enumTipoEstoque_MateriaPrima);
-  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRegistrarMaterial")), material != NULL);
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnRegistrarMaterial" )), material != NULL);
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnMovimentarMaterial")), material != NULL);
 }
 
 void CarregaComboLocais(GtkComboBox *cmb)
@@ -432,34 +442,19 @@ void CarregaComboLocais(GtkComboBox *cmb)
   CarregaCombo(&mainDB, cmb, 2, NULL);
 }
 
-void CarregaComboTipos(GtkComboBox *cmb)
+void CarregaComboTipos(GtkComboBox *cmb, enum enumTipoEstoque tipo)
 {
-	static int first = TRUE;
-
-	if(first) {
-		// Essa lista eh fixa. Itens nunca mudam! Carrega apenas na primeira vez
-		first = FALSE;
-
-		// Limpa os itens atuais
-		gtk_list_store_clear(GTK_LIST_STORE(gtk_combo_box_get_model(cmb)));
-
-		// Carrega os tipos existentes
-		CarregaItemCombo(cmb, "0 - Mercadoria Para Revenda");
-		CarregaItemCombo(cmb, "1 - Matéria Prima"          );
-		CarregaItemCombo(cmb, "2 - Embalagem"              );
-		CarregaItemCombo(cmb, "3 - Produto"                );
-		CarregaItemCombo(cmb, "4 - Produto Acabado"        );
-		CarregaItemCombo(cmb, "5 - Sucata"                 );
-//		CarregaItemCombo(cmb, "6 - Produto Intermediário"  );
-//		CarregaItemCombo(cmb, "7 - Material Uso e Consumo" );
-//		CarregaItemCombo(cmb, "8 - Ativo Imobilizado"      );
-//		CarregaItemCombo(cmb, "9 - Serviços"               );
-//		CarregaItemCombo(cmb, "10 - Outros Insumos"        );
-//		CarregaItemCombo(cmb, "99 - Outros"                );
+	// Tipo de estoque
+	int idx;
+	switch(tipo) {
+		default:
+		case enumTipoEstoque_MateriaPrima     : idx = 0; break;
+		case enumTipoEstoque_ProdutoEmProcesso: idx = 1; break;
+		case enumTipoEstoque_Subproduto       : idx = 2; break;
 	}
 
-	// Configura o tipo Materia Prima como padrao
-	gtk_combo_box_set_active(cmb, 1);
+	// Configura o item selecionado para o tipo passado como parametro
+	gtk_combo_box_set_active(cmb, idx);
 }
 
 struct strMaterial *InsertMaterial(void)
@@ -526,12 +521,21 @@ void GravarMaterial(struct strMaterial *material)
 
 void CarregaListaMateriais(GtkWidget *tvw)
 {
-  int i, ItemIndex = 1;
+  int i, ItemIndex = 1, qtdLista = 0;
   const int tam = 7;
   char *valores[tam+1];
   struct strMaterial *material;
+  enum enumTipoEstoque tipoLista;
 
   valores[tam] = NULL;
+
+  // Carrega o tipo de material a exibir
+  switch(gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbListaMaterialTipo")))) {
+  default:
+  case 0: tipoLista = enumTipoEstoque_MateriaPrima     ; break;
+  case 1: tipoLista = enumTipoEstoque_ProdutoEmProcesso; break;
+  case 2: tipoLista = enumTipoEstoque_Subproduto       ; break;
+  }
 
   // Limpa a lista anterior
   ClearMaterials();
@@ -541,8 +545,8 @@ void CarregaListaMateriais(GtkWidget *tvw)
 
   // Carrega os materiais do MySQL
   DB_Execute(&mainDB, 1, "select m.id as mID, m.codigo as mCod, m.inUse, m.espessura, m.largura, m.peso, l.codigo as lCod, m.tamanho, m.quantidade, m.tipo, m.idTarefa, md.codigo as modProduto,"
-// Essa a consulta alterada, carregando inclusive bobinas com peso zerado ou negativo
-		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso != 0 or m.tipo != 1) order by mID");
+// Essa a consulta alterada, carregando inclusive bobinas com peso negativo
+		  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso != 0 or m.tipo != 1) order by l.id asc, mID desc");
 // Essa a consulta original, filtrando pelo peso
 //  	  	  " md.nome as modNome from material as m, local as l, tarefas as t, modelos as md where l.id = m.idLocal and m.idTarefa = t.id and t.id_modelo = md.id and (m.peso > 0 or tipo = 3) order by mID");
   while(DB_GetNextRow(&mainDB, 1)>0)
@@ -570,8 +574,9 @@ void CarregaListaMateriais(GtkWidget *tvw)
     // Insere um novo material a partir do registro atual
     material = InsertMaterial();
 
-    // Adicionar na lista apenas se for materia prima
-    if(material != NULL && material->tipo == enumTipoEstoque_MateriaPrima) {
+    // Adicionar na lista apenas se for o tipo solicitado
+    if(material != NULL && material->tipo == tipoLista && qtdLista < 50) {
+    	qtdLista++;
     	TV_Adicionar(tvw, valores);
     }
 
@@ -589,12 +594,12 @@ gboolean ChecarMaterial(struct strMaterial material, int dv, int isFullCheck)
   char *msg = NULL;
 
   // Limites
-  const float peso_max      = 5500.0;
-  const int   largura_min   = 10 , largura_max   = 500;
-  const float espessura_min = 1.0, espessura_max = 5.0;
+  const double peso_max      = 5500.0;
+  const int    largura_min   = 10 , largura_max   = 500;
+  const double espessura_min = 1.0, espessura_max = 5.0;
 
   // Verifica se o material ja existe
-  sprintf(sql, "select id from material where codigo='%s' and tipo=%d and (idTarefa = 0 or id != %d)", material.codigo, material.tipo, material.id);
+  sprintf(sql, "select id from material where codigo='%s' and tipo=%d and id != %d", material.codigo, material.tipo, material.id);
   DB_Execute(&mainDB, 1, sql);
   if(DB_GetNextRow(&mainDB, 1) > 0) {
 	  materialExiste = TRUE;
@@ -682,7 +687,7 @@ void IniciarDadosMaterial()
 	LimparDadosMaterial();
 
 	CarregaComboLocais(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbCadMaterialLocal")));
-	CarregaComboTipos (GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbCadMaterialTipo" )));
+	CarregaComboTipos (GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbCadMaterialTipo" )), enumTipoEstoque_MateriaPrima);
 }
 
 int AplicarMaterial()
@@ -830,16 +835,12 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 			free(valor[i]);
 		}
 
-		// Tipo de estoque
-		int index = material->tipo;
-
-		// Converte o tipo para o indice no combo
-		if(index == enumTipoEstoque_Outros) {
-			index = enumTipoEstoque_OutrosInsumos + 1;
-		}
-
 		// Configura o combo para o tipo solicitado
-		gtk_combo_box_set_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbCadMaterialTipo")), index);
+		CarregaComboTipos(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbCadMaterialTipo")), material->tipo);
+
+		// Configura o combo para o local selecionado
+		GtkComboBox *cmb = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbCadMaterialLocal"));
+		gtk_combo_box_set_active(cmb, AchaIndiceCombo(cmb, material->local));
 	}
 
 	// Configura os campos para edicao ou nao
@@ -862,6 +863,37 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 }
 
 /*** Callbacks ***/
+
+#define NTB_ABA_MATERIAL_MATERIAPRIMA    0
+#define NTB_ABA_MATERIAL_PRODUTOPROCESSO 1
+
+void cbCadMaterialTipoAlterado(GtkComboBox *combobox, gpointer user_data)
+{
+	int tipo, aba;
+	char strval[100];
+
+	if(gtk_combo_box_get_active(combobox)<0)
+	return;
+
+	tipo = atoi(LerComboAtivo(combobox));
+
+	sprintf(strval, "%02d -", tipo);
+
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblCadMaterialCodigoTipo")), strval);
+
+	switch(tipo) {
+	default:
+	case enumTipoEstoque_MateriaPrima     : aba = NTB_ABA_MATERIAL_MATERIAPRIMA   ; break;
+	case enumTipoEstoque_ProdutoEmProcesso: aba = NTB_ABA_MATERIAL_PRODUTOPROCESSO; break;
+	}
+
+	gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbCadMaterial")), aba);
+}
+
+void cbListaMaterialTipoAlterado(GtkComboBox *combobox, gpointer user_data)
+{
+	CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
+}
 
 void cbMaterialSelecionado(GtkTreeView *treeview, gpointer user_data)
 {
@@ -903,6 +935,7 @@ void cbCadMaterialVoltar(GtkButton *button, gpointer user_data)
 // Funcao para abrir a tela de materiais
 void cbAbrirMaterial(GtkButton *button, gpointer user_data)
 {
+	CarregaComboTipos(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbListaMaterialTipo")), enumTipoEstoque_MateriaPrima);
 	CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
 	WorkAreaGoTo(NTB_ABA_MATERIAL);
 }
@@ -928,7 +961,108 @@ void cbMaterialAdd(GtkButton *button, gpointer user_data)
 	AbrirCadastroMaterial(NULL, TRUE, TRUE, NULL, NULL);
 }
 
-// Funcao para adicionar um novo material
+int cbMaterialMovimentarFinalizar(struct strMaterial material, int dv, int isCancel, void *data)
+{
+	struct strMaterial *matOrigem, *matDestino;
+	struct strMaterial *materialOriginal = (struct strMaterial *)data;
+
+	// Se a operacao foi cancelada, retorna para a tela inicial
+	if(isCancel) {
+		WorkAreaGoTo(MaqConfigCurrent->AbaHome);
+		return FALSE;
+	}
+
+	// Checa se os dados são válidos.
+	if(!ChecarMaterial(material, dv, FALSE)) {
+		return FALSE;
+	}
+
+	// Copiamos os materiais para gerar a mensagem de transferencia
+	matOrigem  = material_copiar(NULL, materialOriginal, TRUE);
+	matDestino = material_copiar(NULL, materialOriginal, TRUE);
+
+	// Ajusta os valores para a mensagem
+	matOrigem ->quantidade = material.quantidade;
+	matDestino->quantidade = material.quantidade;
+
+	matOrigem ->peso = material_CalculaPeso(matOrigem , matOrigem ->quantidade * matOrigem ->tamanho);
+	matDestino->peso = material_CalculaPeso(matDestino, matDestino->quantidade * matDestino->tamanho);
+
+	strcpy(matDestino->local, material.local);
+
+	// Envia a mensagem informando da transferencia
+	monitor_enviaMsgTransferencia(matOrigem, matDestino);
+
+	if(materialOriginal->quantidade != material.quantidade) {
+		// Transferencia parcial. Subtrair a quantidade transferida do material original e gravar tambem o material de destino
+		materialOriginal->quantidade -= material.quantidade;
+		materialOriginal->peso = material_CalculaPeso(materialOriginal, materialOriginal->quantidade * materialOriginal->tamanho);
+
+		// Aqui atualizamos os dados de destino para poder criar a nova etiqueta
+		matDestino->id = 0;
+		strcpy(matDestino->codigo, material.codigo);
+		GravarMaterial(matDestino);
+	} else {
+		// Local mudou! Como a transferencia eh total, precisamos alterar o local do material original
+		strcpy(materialOriginal->local, material.local);
+	}
+
+	GravarMaterial(materialOriginal);
+
+	// Material alterado! Lista precisa ser recarregada.
+	return TRUE;
+}
+
+int cbMaterialMovimentarAplicar(struct strMaterial material, int dv, int isCancel, void *data)
+{
+	char *msg = NULL;
+	struct strMaterial *materialOriginal;
+
+	// Se a operacao foi cancelada, retorna para a tela anterior
+	if(isCancel) {
+		WorkAreaGoPrevious();
+		return FALSE;
+	}
+
+	// Checa se os dados são válidos.
+	if(!ChecarMaterial(material, dv, FALSE)) {
+		return FALSE;
+	}
+
+	// Carrega o codigo original para identificar se o codigo foi alterado (o que nao eh permitido) e se o local foi alterado (o que eh esperado).
+	materialOriginal = GetMaterialByID(material.id);
+
+	if(strcmp(materialOriginal->codigo, material.codigo) || materialOriginal->tipo != material.tipo) {
+		// Codigo mudou! Devemos gerar erro e retornar...
+		msg = "Codigo e tipo nao podem ser alterados ao movimentar o material!";
+	} else if(materialOriginal->quantidade < material.quantidade) {
+		// Tentando transferir quantidade superior a existente...
+		msg = "Tentando transferir quantidade superior a existente!";
+	} else if(!strcmp(materialOriginal->local, material.local)) {
+		// Local nao foi alterado...
+		msg = "Escolha o novo local!";
+	} else {
+		if(materialOriginal->quantidade == material.quantidade) { // Transferencia Total
+			return cbMaterialMovimentarFinalizar(material, dv, isCancel, materialOriginal);
+		} else { // Transferencia Parcial
+			  struct strMaterial *matDestino = material_copiar(NULL, materialOriginal, FALSE);
+			  matDestino->idTarefa   = 0;
+			  matDestino->quantidade = material.quantidade;
+			  strcpy(matDestino->local, material.local);
+
+			  AbrirCadastroMaterial(matDestino, FALSE, FALSE, cbMaterialMovimentarFinalizar, materialOriginal);
+		}
+	}
+
+	if(msg != NULL) {
+		MessageBox(msg);
+	}
+
+	// Nada a fazer... Retorna falso pois nao queremos que a tela de cadastro de materiais execute acao nenhuma.
+	return FALSE;
+}
+
+// Funcao para transferir o material para outro local fisico
 void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
 {
 	char val[20];
@@ -940,31 +1074,20 @@ void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
 	// E entao seleciona esse material
 	material = GetMaterial(atoi(val) - 1);
 
-	AbrirRegistrarPeca(material);
+	AbrirCadastroMaterial(material, TRUE, TRUE, cbMaterialMovimentarAplicar, NULL);
 }
 
-#define NTB_ABA_MATERIAL_MATERIAPRIMA    0
-#define NTB_ABA_MATERIAL_PRODUTOPROCESSO 1
-
-void cbCadMaterialTipoAlterado(GtkComboBox *combobox, gpointer user_data)
+// Funcao para registrar peca perdida / sobrando / tamanho errado em um material
+void cbMaterialRegistrar(GtkButton *button, gpointer user_data)
 {
-	int tipo, aba;
-	char strval[100];
+	char val[20];
+	struct strMaterial *material;
 
-	if(gtk_combo_box_get_active(combobox)<0)
-	return;
+	// Identifica o material selecionado
+	TV_GetSelected(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")), 0, val);
 
-	tipo = atoi(LerComboAtivo(combobox));
+	// E entao seleciona esse material
+	material = GetMaterial(atoi(val) - 1);
 
-	sprintf(strval, "%02d -", tipo);
-
-	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblCadMaterialCodigoTipo")), strval);
-
-	switch(tipo) {
-	default:
-	case enumTipoEstoque_MateriaPrima     : aba = NTB_ABA_MATERIAL_MATERIAPRIMA   ; break;
-	case enumTipoEstoque_ProdutoEmProcesso: aba = NTB_ABA_MATERIAL_PRODUTOPROCESSO; break;
-	}
-
-	gtk_notebook_set_current_page(GTK_NOTEBOOK(gtk_builder_get_object(builder, "ntbCadMaterial")), aba);
+	AbrirRegistrarPeca(material);
 }

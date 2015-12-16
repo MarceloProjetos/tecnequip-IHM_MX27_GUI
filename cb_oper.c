@@ -167,6 +167,9 @@ gboolean tmrExec(gpointer data)
     // Atualiza a tarefa com a quantidade produzida
     Task->QtdProd = qtdprod;
 
+    // Saiu da producao. Desmarca o material atual pois a bobina pode ter acabado e ele continua a usar ela depois!
+    material_select(NULL);
+
     if(qtdprod >= qtd) // Quantidade produzida maior ou igual ao total
       status = TRF_ESTADO_FINAL;
     else if(qtdprod) // Quantidade produzida diferente de zero
@@ -626,27 +629,30 @@ void cbRemoverTarefa(GtkButton *button, gpointer user_data)
 
 int cbRegistrarPecaTamanhoErrado(struct strMaterial material, int dv, int isCancel, void *data)
 {
-	struct strTask *Task = (struct strTask *)data;
+	struct strMaterial *materialTask = (struct strMaterial *)data;
 
 	// Se a operacao nao foi cancelada, executa o procedimento
 	if(!isCancel) {
-		struct strMaterial *materialTask = GetMaterialByTask(Task->ID);
+		struct strTask *Task = GetTaskByID(materialTask->idTarefa);
+
 		// Checa se os dados são válidos.
 		if(!ChecarMaterial(material, dv, FALSE)) {
 			return FALSE;
 		}
 
 		char sql[500];
-		sprintf(sql, "select M.codigo from modelos as M, tarefas as T where T.id='%d' and T.ID_Modelo = M.id", Task->ID);
+		sprintf(sql, "select M.codigo from modelos as M, tarefas as T where T.id='%d' and T.ID_Modelo = M.id", (Task != NULL) ? Task->ID : 0);
 		DB_Execute(&mainDB, 0, sql);
 		DB_GetNextRow(&mainDB, 0);
 		strcpy(material.produto, DB_GetData(&mainDB, 0, 0));
 
 		// Atualiza a quantidade da tarefa pois as pecas que estavam com tamanho errado devem ser produzidas novamente
-		Task->QtdProd -= material.quantidade;
+		if(Task != NULL) {
+			Task->QtdProd -= material.quantidade;
 
-		sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd > 0) ? TRF_ESTADO_PARCIAL : TRF_ESTADO_NOVA, Task->ID);
-		DB_Execute(&mainDB, 0, sql);
+			sprintf(sql, "update tarefas set QtdProd=%d, Estado=%d where ID=%d", Task->QtdProd, (Task->QtdProd > 0) ? TRF_ESTADO_PARCIAL : TRF_ESTADO_NOVA, Task->ID);
+			DB_Execute(&mainDB, 0, sql);
+		}
 
 		material_ajustarInventario(materialTask, &material, material.quantidade);
 
@@ -794,11 +800,9 @@ void cbRegistrarPecaAplicar(GtkButton *button, gpointer user_data)
 			  DB_Execute(&mainDB, 0, sql);
 		  }
 	  } else { // Tamanho errado
-		  if(Task == NULL) {
-			  MessageBox("Este produto nao esta associado a uma tarefa!");
-		  } else if(tam <= 0) {
+		  if(tam <= 0) {
 			  MessageBox("Novo tamanho deve ser maior que zero!");
-		  } else if(qtd > Task->QtdProd) {
+		  } else if(Task && qtd > Task->QtdProd) {
 			  MessageBox("Quantidade a registrar excede quantidade produzida!");
 		  } else if(qtd > materialProduto->quantidade) {
 			  MessageBox("Quantidade a registrar excede quantidade cadastrada!");
@@ -808,7 +812,7 @@ void cbRegistrarPecaAplicar(GtkButton *button, gpointer user_data)
 			  material->quantidade = qtd;
 			  material->tamanho    = tam;
 
-			  AbrirCadastroMaterial(material, FALSE, FALSE, cbRegistrarPecaTamanhoErrado, Task);
+			  AbrirCadastroMaterial(material, FALSE, FALSE, cbRegistrarPecaTamanhoErrado, materialProduto);
 
 			  return;
 		  }
@@ -829,7 +833,7 @@ void cbRegistrarPecaAplicar(GtkButton *button, gpointer user_data)
 		  if(peso != 0.0 && tam != 0) {
 			  MessageBox("Preencher apenas peso ou tamanho! Nao preencher os dois!");
 		  } else if(peso == 0.0 && tam == 0) {
-				  MessageBox("Preenche peso ou tamanho do material perdido!");
+				  MessageBox("Preencher peso ou tamanho do material perdido!");
 		  } else if(tam < 0) {
 			  MessageBox("Tamanho deve ser maior que zero!");
 		  } else if(peso < 0.0) {
@@ -840,7 +844,9 @@ void cbRegistrarPecaAplicar(GtkButton *button, gpointer user_data)
 	  }
   }
 
-  CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
+  CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
+  CarregaListaTarefas  (GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas" )));
+
   WorkAreaGoTo(NTB_ABA_OPERAR);
 }
 

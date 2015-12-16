@@ -18,6 +18,7 @@ extern void  CarregaCombo        (struct strDB *sDB, GtkComboBox *, guint, char 
 extern void  CarregaItemCombo    (GtkComboBox *cmb, char *txt);
 extern char *LerComboAtivo       (GtkComboBox *cmb);
 extern void  ExcluiItemCombo     (GtkComboBox *cmb, guint pos);
+extern int   AchaIndiceCombo     (GtkComboBox *cmb, char *valor);
 extern char *LerValorWidget      (char *nome);
 extern int   LerValoresWidgets   (char **lst_wdg, char **lst_val);
 extern void  GravarValorWidget   (char *nome, char *valor);

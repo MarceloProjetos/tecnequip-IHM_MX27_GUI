@@ -704,11 +704,11 @@ void Board_Init(BoardStatus *bs)
 }
 
 // Funcao que converte float para string, trocando a virgula do separador por ponto
-char *floatToString(char *dst, float val)
+char *floatToString(char *dst, double val)
 {
     char *pos_comma;
 
-    sprintf(dst, "%f", val);
+    sprintf(dst, "%.9lf", val);
     pos_comma = strchr(dst, ',');
     if(pos_comma != NULL) *pos_comma = '.';
 
@@ -716,9 +716,9 @@ char *floatToString(char *dst, float val)
 }
 
 // Funcao que converte float para string, trocando a virgula do separador por ponto
-float StringToFloat(char *val)
+double StringToFloat(char *val)
 {
-	float result;
+	double result;
     char *pos_comma;
 
     // Se string nula, retorna zero

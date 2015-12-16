@@ -311,6 +311,23 @@
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="lstListaMaterialTipo">
+    <columns>
+      <!-- column-name gcaTipo -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">1 - Matéria Prima</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">3 - Produto</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">5 - Sucata</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="lstLogFiltro">
     <columns>
       <!-- column-name gcaName -->
@@ -12985,6 +13002,78 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <child>
                               <placeholder/>
                             </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -15089,6 +15178,48 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <child>
+                  <object class="GtkHBox" id="hbox80">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <child>
+                      <object class="GtkLabel" id="label8">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="label" translatable="yes">Tipo de Material</property>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBox" id="cmbListaMaterialTipo">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="model">lstListaMaterialTipo</property>
+                        <signal name="changed" handler="cbListaMaterialTipoAlterado" swapped="no"/>
+                        <child>
+                          <object class="GtkCellRendererText" id="crtListaMaterialTipo"/>
+                          <attributes>
+                            <attribute name="text">0</attribute>
+                          </attributes>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="expand">True</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
                   <object class="GtkScrolledWindow" id="scrolledwindow1">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -15104,7 +15235,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                   <packing>
                     <property name="expand">True</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
@@ -15149,12 +15280,26 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">True</property>
-                        <signal name="clicked" handler="cbMaterialMovimentar" swapped="no"/>
+                        <signal name="clicked" handler="cbMaterialRegistrar" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">True</property>
                         <property name="position">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="btnMovimentarMaterial">
+                        <property name="label">Movimentar</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <signal name="clicked" handler="cbMaterialMovimentar" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">3</property>
                       </packing>
                     </child>
                     <child>
@@ -15169,14 +15314,14 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                       <packing>
                         <property name="expand">True</property>
                         <property name="fill">True</property>
-                        <property name="position">3</property>
+                        <property name="position">4</property>
                       </packing>
                     </child>
                   </object>
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
+                    <property name="position">2</property>
                   </packing>
                 </child>
               </object>
@@ -15338,8 +15483,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                           <object class="GtkComboBox" id="cmbCadMaterialTipo">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="model">lstCadMaterialTipo</property>
-                            <property name="active">0</property>
+                            <property name="model">lstListaMaterialTipo</property>
                             <signal name="changed" handler="cbCadMaterialTipoAlterado" swapped="no"/>
                             <child>
                               <object class="GtkCellRendererText" id="crtCadMaterialTipo"/>
