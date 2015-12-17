@@ -632,7 +632,7 @@ void monitor_enviaMsgAjusteEstoque(struct strMaterial *materialOriginal, struct 
 }
 
 // Envia a mensagem de movimentacao de materiais entre depositos (localizacao fisica)
-void monitor_enviaMsgTransferencia(struct strMaterial *materialOrigem, struct strMaterial *materialDestino)
+void monitor_enviaMsgTransferencia(struct strMaterial *materialOrigem, struct strMaterial *materialDestino, struct strMaterial *materialNovaOrigem)
 {
 	struct jsonMessageElem *rootMsg, *parentMsg;
 
@@ -648,10 +648,15 @@ void monitor_enviaMsgTransferencia(struct strMaterial *materialOrigem, struct st
 	parentMsg = jsonMessage_ElemAppend(rootMsg, jsonMessage_ElemNewFull(MSG_NAME_MATCAD_MATERIAL, TRUE));
 
 	// Anexa o material de origem
-	jsonMessage_DataSetObject(jsonMessage_ElemGetData      (parentMsg), monitor_getMsgMaterial(materialOrigem , enumMaterialTipoMovimentacao_SaidaMovEntreDep));
+	jsonMessage_DataSetObject(jsonMessage_ElemGetData      (parentMsg), monitor_getMsgMaterial(materialOrigem    , enumMaterialTipoMovimentacao_SaidaMovEntreDep  ));
 
 	// Anexa o material de destino
-	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialDestino, enumMaterialTipoMovimentacao_EntradaMovEntreDep));
+	jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialDestino   , enumMaterialTipoMovimentacao_EntradaMovEntreDep));
+
+	if(materialNovaOrigem != NULL) {
+		// Anexa o material que representa a nova etiqueta de origem. Utilizado para movimentacao parcial
+		jsonMessage_DataSetObject(jsonMessage_ElemAppendDataNew(parentMsg), monitor_getMsgMaterial(materialNovaOrigem, enumMaterialTipoMovimentacao_EntradaMovEntreDep));
+	}
 
 	// Mensagem pronta! Agora a enviamos
 	jsonQueue_PutMessage(jqMaterial, rootMsg);

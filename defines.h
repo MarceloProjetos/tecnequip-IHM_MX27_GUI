@@ -401,7 +401,7 @@ extern void monitor_enviaMsgMatCadastro(struct strMaterial *material);
 extern void monitor_enviaMsgMatProducao(struct strMaterial *material, struct strMaterial *materialProd, struct strMaterial *materialPerda);
 extern void monitor_enviaMsgAjusteInventario(struct strMaterial *materialSaida, struct strMaterial *materialEntrada);
 extern void monitor_enviaMsgAjusteEstoque(struct strMaterial *materialOriginal, struct strMaterial *material);
-extern void monitor_enviaMsgTransferencia(struct strMaterial *materialOrigem, struct strMaterial *materialDestino);
+extern void monitor_enviaMsgTransferencia(struct strMaterial *materialOrigem, struct strMaterial *materialDestino, struct strMaterial *materialNovaOrigem);
 
 // Funcoes uteis
 extern char   *floatToString(char *dst, double val);

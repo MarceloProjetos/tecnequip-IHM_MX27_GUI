@@ -656,8 +656,9 @@ int cbRegistrarPecaTamanhoErrado(struct strMaterial material, int dv, int isCanc
 
 		material_ajustarInventario(materialTask, &material, material.quantidade);
 
-		// Tudo finalizado. Carrega a lista de tarefas e retorna
+		// Tudo finalizado. Carrega a lista de tarefas, de materiais e retorna
 		CarregaListaTarefas(GTK_WIDGET(gtk_builder_get_object(builder, "tvwTarefas")));
+		CarregaListaMateriais(NULL); // Nulo, carrega na listview padrao
 	}
 
 	// Recarrega a tela de tarefas
@@ -1048,6 +1049,9 @@ int cbExecutar(struct strMaterial material, int dv, int isCancel, void *data)
 
 	gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnExecParar" )), TRUE);
 	WorkAreaGoTo(NTB_ABA_EXECUTAR);
+
+	// Carrega a lista de materiais
+	CarregaListaMateriais(NULL);
 
 	// Retorna falso pois nao queremos que a tela de cadastro de materiais execute acao nenhuma.
 	return FALSE;

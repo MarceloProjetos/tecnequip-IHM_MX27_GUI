@@ -527,6 +527,11 @@ void CarregaListaMateriais(GtkWidget *tvw)
   struct strMaterial *material;
   enum enumTipoEstoque tipoLista;
 
+  // Se treeview estiver nula, carrega a treeview padrao
+  if(tvw == NULL) {
+	  tvw = GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial"));
+  }
+
   valores[tam] = NULL;
 
   // Carrega o tipo de material a exibir
@@ -761,7 +766,6 @@ int AplicarMaterial()
 	  }
   } else {
 	  ret = (*userAplicarMaterial)(material, atoi(valores[7]), FALSE, userData);
-	  CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
   }
 
   return ret;
@@ -963,7 +967,7 @@ void cbMaterialAdd(GtkButton *button, gpointer user_data)
 
 int cbMaterialMovimentarFinalizar(struct strMaterial material, int dv, int isCancel, void *data)
 {
-	struct strMaterial *matOrigem, *matDestino;
+	struct strMaterial *matOrigem, *matDestino, *matNovaOrigem = NULL;
 	struct strMaterial *materialOriginal = (struct strMaterial *)data;
 
 	// Se a operacao foi cancelada, retorna para a tela inicial
@@ -982,32 +986,30 @@ int cbMaterialMovimentarFinalizar(struct strMaterial material, int dv, int isCan
 	matDestino = material_copiar(NULL, materialOriginal, TRUE);
 
 	// Ajusta os valores para a mensagem
-	matOrigem ->quantidade = material.quantidade;
 	matDestino->quantidade = material.quantidade;
+	matDestino->peso       = material_CalculaPeso(matDestino, matDestino->quantidade * matDestino->tamanho);
+	strcpy(matDestino->local , material.local );
 
-	matOrigem ->peso = material_CalculaPeso(matOrigem , matOrigem ->quantidade * matOrigem ->tamanho);
-	matDestino->peso = material_CalculaPeso(matDestino, matDestino->quantidade * matDestino->tamanho);
-
-	strcpy(matDestino->local, material.local);
-
-	// Envia a mensagem informando da transferencia
-	monitor_enviaMsgTransferencia(matOrigem, matDestino);
-
+	// Se a movimentacao for parcial, cria o material representando a nova etiqueta de origem
 	if(materialOriginal->quantidade != material.quantidade) {
-		// Transferencia parcial. Subtrair a quantidade transferida do material original e gravar tambem o material de destino
-		materialOriginal->quantidade -= material.quantidade;
-		materialOriginal->peso = material_CalculaPeso(materialOriginal, materialOriginal->quantidade * materialOriginal->tamanho);
+		matNovaOrigem = material_copiar(NULL, materialOriginal, FALSE);
+		strcpy(matNovaOrigem->codigo, material.codigo);
 
-		// Aqui atualizamos os dados de destino para poder criar a nova etiqueta
-		matDestino->id = 0;
-		strcpy(matDestino->codigo, material.codigo);
+		// Transferencia parcial. Subtrair a quantidade transferida do material original e recalcular o peso
+		matNovaOrigem->quantidade -= material.quantidade;
+		matNovaOrigem->peso        = material_CalculaPeso(matNovaOrigem, matNovaOrigem->quantidade * matNovaOrigem->tamanho);
+
+		// Agora salvamos o material de destino e a nova origem (nova etiqueta)
 		GravarMaterial(matDestino);
+		GravarMaterial(matNovaOrigem);
 	} else {
-		// Local mudou! Como a transferencia eh total, precisamos alterar o local do material original
+		// Local mudou! Como a transferencia eh total, precisamos apenas alterar o local do material original
 		strcpy(materialOriginal->local, material.local);
+		GravarMaterial(materialOriginal);
 	}
 
-	GravarMaterial(materialOriginal);
+	// Envia a mensagem informando da transferencia
+	monitor_enviaMsgTransferencia(matOrigem, matDestino, matNovaOrigem);
 
 	// Material alterado! Lista precisa ser recarregada.
 	return TRUE;
