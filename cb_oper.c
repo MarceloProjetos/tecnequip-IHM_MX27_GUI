@@ -828,6 +828,11 @@ void cbRegistrarPecaAplicar(GtkButton *button, gpointer user_data)
 		  if(peso < 0.0) {
 			  MessageBox("Peso nao pode ser negativo!");
 		  } else {
+			  // Se ajustando a ultima bobina em uso, desmarca para permitir o uso de uma nova bobina
+			  if(atol(materialProduto->codigo) == system_last_in_use) {
+				  system_last_in_use = 0;
+			  }
+
 			  material_ajustarEstoque(materialProduto, peso);
 		  }
 	  } else { // Perda de material

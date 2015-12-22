@@ -175,6 +175,7 @@ typedef uint16_t u16;
 #define NTB_ABA_MATERIAL       26
 #define NTB_ABA_MATERIAL_ADD   27
 #define NTB_ABA_REGISTRA_PECA  28
+#define NTB_ABA_MOVIMENTAR     29
 #define NTB_ABA_NONE           99
 
 #define NTB_ABA_CONFIG_DIAGONAL 1
@@ -291,6 +292,9 @@ extern uint32_t OnPowerDown;
 
 // Variavel com a hora de desligamento anterior
 extern time_t system_Shutdown;
+
+// Ultimo material selecionado como em uso
+extern long   system_last_in_use;
 
 // Prototipos de Funcoes
 void AbrirData  (GtkEntry *entry, GCallback cb);

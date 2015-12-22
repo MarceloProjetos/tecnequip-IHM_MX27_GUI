@@ -22,7 +22,8 @@ struct MODBUS_Device mbdev;
 struct strDB         mainDB;
 extern int idUser; // Indica usuário que logou se for diferente de zero.
 
-time_t system_Shutdown; // Variavel com a hora de desligamento da maquina
+time_t system_Shutdown;    // Variavel com a hora de desligamento da maquina
+long   system_last_in_use; // Ultimo material selecionado como em uso
 
 // Flag indicando se a maquina deve ser reinicializada ao finalizar. Se nao precisar, a maquina sera desligada!
 // Por padrao a IHM reinicializa pois ela deve ficar sempre ligada. Apenas desliga se escolhida essa opcao na tela de manutencao
@@ -739,7 +740,8 @@ double StringToFloat(char *val)
 
 /*** Funcoes para ler e gravar parametros do sistema ***/
 
-#define PARAM_SHUTDOWN "shutdown"
+#define PARAM_SHUTDOWN             "shutdown"
+#define PARAM_LAST_MATERIAL_IN_USE "lastInUse"
 
 void lerParamSistema(void)
 {
@@ -750,7 +752,9 @@ void lerParamSistema(void)
   while(DB_GetNextRow(&mainDB, 0)>0) {
 	  nomeParam = DB_GetData(&mainDB, 0, 0);
 	  if(!strcmp(nomeParam, PARAM_SHUTDOWN)) {
-		  system_Shutdown = atol(DB_GetData(&mainDB, 0, 1));
+		  system_Shutdown    = atol(DB_GetData(&mainDB, 0, 1));
+	  } else if(!strcmp(nomeParam, PARAM_SHUTDOWN)) {
+		  system_last_in_use = atol(DB_GetData(&mainDB, 0, 1));
 	  }
   }
 }
@@ -1644,6 +1648,9 @@ uint32_t IHM_Init(int argc, char *argv[])
   char host[NI_MAXHOST];
   MaqGetIpAddress("eth0", host);
   gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblIpAddress")), host);
+
+  gtk_widget_set_sensitive(GTK_WIDGET(gtk_builder_get_object(builder, "btnLoginMovimentar")), (MaqConfigCurrent && MaqConfigCurrent->UseMaterial) ? TRUE : FALSE);
+  CarregaListaMateriais(NULL);
 
   if(MaqInit()) {
     gtk_main(); //Inicia o loop principal de eventos (GTK MainLoop)

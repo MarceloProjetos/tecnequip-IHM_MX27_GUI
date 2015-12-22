@@ -108,6 +108,23 @@ struct strMaterial * GetMaterialByID(int id)
   return NULL;
 }
 
+// Retorna o material com o id fornecido. Retorna nulo se nao for encontrado
+struct strMaterial * GetMaterialByCode(enum enumTipoEstoque tipo, char *codigo)
+{
+  struct strMaterial *Item = lstMaterial;
+
+  while(Item != NULL) {
+	  // Se encontrou, retorna o elemento encontrado
+	  if(Item->tipo == tipo && !strcmp(Item->codigo, codigo)) {
+		  return Item;
+	  }
+
+	  Item = Item->Next;
+  }
+
+  return NULL;
+}
+
 /*** Funcoes internas de gerenciamento / controle de materiais ***/
 int material_calcModulo10(char *val, int count)
 {
@@ -866,6 +883,60 @@ void AbrirCadastroMaterial(struct strMaterial *material, int canEdit, int showDe
 	WorkAreaGoTo(NTB_ABA_MATERIAL_ADD);
 }
 
+/*** Funcoes de movimentacao de materiais ***/
+
+void cbMovMatTipoMovimentacaoAlterado(GtkComboBox *combobox, gpointer user_data);
+
+void LimparDadosMovMaterial()
+{
+  char *campos[] =
+    {
+	"entMovMaterialQtd",
+	"entMovMaterialCodigo",
+	"entMovMaterialCodigoDV",
+	"entMovMaterialNovoCodigo",
+	"entMovMaterialNovoCodigoDV",
+    ""
+    };
+  char *valor[] =
+    {
+    "",
+    "",
+    "",
+    "",
+    "",
+    };
+
+  GravarValoresWidgets(campos, valor);
+
+  CarregaComboLocais(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMovMaterialLocal")));
+
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMovMaterialCodigoErro"    )), FALSE);
+  gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMovMaterialNovoCodigoErro")), FALSE);
+
+  gtk_combo_box_set_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMovMatTipoMovimentacao")), 0);
+  cbMovMatTipoMovimentacaoAlterado(NULL, NULL);
+}
+
+void AbrirMovimentarMateriais(struct strMaterial *materialOrigem)
+{
+	GtkComboBox *cmbTipo  = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMovMaterialTipo" ));
+	GtkComboBox *cmbLocal = GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMovMaterialLocal"));
+
+	// Primeiro limpa/prepara todos os campos
+	LimparDadosMovMaterial();
+
+	if(materialOrigem != NULL) {
+		CarregaComboTipos(cmbTipo, materialOrigem->tipo);
+		gtk_combo_box_set_active(cmbLocal, AchaIndiceCombo(cmbLocal, materialOrigem->local));
+		GravarValorWidget("entMovMaterialCodigo", materialOrigem->codigo);
+	} else {
+		CarregaComboTipos(cmbTipo, enumTipoEstoque_MateriaPrima);
+	}
+
+	WorkAreaGoTo(NTB_ABA_MOVIMENTAR);
+}
+
 /*** Callbacks ***/
 
 #define NTB_ABA_MATERIAL_MATERIAPRIMA    0
@@ -948,12 +1019,22 @@ void cbAbrirMaterial(GtkButton *button, gpointer user_data)
 void cbMaterialSelect(GtkButton *button, gpointer user_data)
 {
 	char val[20];
+	struct strMaterial *material;
 
 	// Identifica o material selecionado
 	TV_GetSelected(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")), 0, val);
+	material = GetMaterial(atoi(val) - 1);
+	if(material == NULL) return;
+
+	// Verifica se o material anterior teve a baixa registrada
+	if(system_last_in_use && atol(material->codigo) != system_last_in_use) {
+		ShowMessageBox("Registre a bobina anterior antes de alterar para outra!", FALSE);
+		return;
+	}
 
 	// E entao seleciona esse material
-	material_select(GetMaterial(atoi(val) - 1));
+	material_select(material);
+	system_last_in_use = atol(material->codigo);
 
 	// Por fim, atualiza a lista de materiais
 	CarregaListaMateriais(GTK_WIDGET(gtk_builder_get_object(builder, "tvwMaterial")));
@@ -965,103 +1046,97 @@ void cbMaterialAdd(GtkButton *button, gpointer user_data)
 	AbrirCadastroMaterial(NULL, TRUE, TRUE, NULL, NULL);
 }
 
-int cbMaterialMovimentarFinalizar(struct strMaterial material, int dv, int isCancel, void *data)
+void cbMaterialMovimentarAplicar(GtkButton *button, gpointer user_data)
 {
-	struct strMaterial *matOrigem, *matDestino, *matNovaOrigem = NULL;
-	struct strMaterial *materialOriginal = (struct strMaterial *)data;
-
-	// Se a operacao foi cancelada, retorna para a tela inicial
-	if(isCancel) {
-		WorkAreaGoTo(MaqConfigCurrent->AbaHome);
-		return FALSE;
-	}
-
-	// Checa se os dados são válidos.
-	if(!ChecarMaterial(material, dv, FALSE)) {
-		return FALSE;
-	}
-
-	// Copiamos os materiais para gerar a mensagem de transferencia
-	matOrigem  = material_copiar(NULL, materialOriginal, TRUE);
-	matDestino = material_copiar(NULL, materialOriginal, TRUE);
-
-	// Ajusta os valores para a mensagem
-	matDestino->quantidade = material.quantidade;
-	matDestino->peso       = material_CalculaPeso(matDestino, matDestino->quantidade * matDestino->tamanho);
-	strcpy(matDestino->local , material.local );
-
-	// Se a movimentacao for parcial, cria o material representando a nova etiqueta de origem
-	if(materialOriginal->quantidade != material.quantidade) {
-		matNovaOrigem = material_copiar(NULL, materialOriginal, FALSE);
-		strcpy(matNovaOrigem->codigo, material.codigo);
-
-		// Transferencia parcial. Subtrair a quantidade transferida do material original e recalcular o peso
-		matNovaOrigem->quantidade -= material.quantidade;
-		matNovaOrigem->peso        = material_CalculaPeso(matNovaOrigem, matNovaOrigem->quantidade * matNovaOrigem->tamanho);
-
-		// Agora salvamos o material de destino e a nova origem (nova etiqueta)
-		GravarMaterial(matDestino);
-		GravarMaterial(matNovaOrigem);
-	} else {
-		// Local mudou! Como a transferencia eh total, precisamos apenas alterar o local do material original
-		strcpy(materialOriginal->local, material.local);
-		GravarMaterial(materialOriginal);
-	}
-
-	// Envia a mensagem informando da transferencia
-	monitor_enviaMsgTransferencia(matOrigem, matDestino, matNovaOrigem);
-
-	// Material alterado! Lista precisa ser recarregada.
-	return TRUE;
-}
-
-int cbMaterialMovimentarAplicar(struct strMaterial material, int dv, int isCancel, void *data)
-{
-	char *msg = NULL;
+	char *msg = NULL, *novoLocal, *novoCodigo;
+	int erroCodigoOrigem = FALSE, erroCodigoNovo = FALSE, quantidade, isTotal;
 	struct strMaterial *materialOriginal;
 
-	// Se a operacao foi cancelada, retorna para a tela anterior
-	if(isCancel) {
-		WorkAreaGoPrevious();
-		return FALSE;
-	}
+	// Carrega o codigo original para identificar se o codigo existe e se o local foi alterado (o que eh esperado).
+	materialOriginal = GetMaterialByCode(atoi(LerValorWidget("cmbMovMaterialTipo")), LerValorWidget("entMovMaterialCodigo"));
+
+	quantidade = atoi(LerValorWidget("entMovMaterialQtd"       ));
+	novoLocal  =      LerValorWidget("cmbMovMaterialLocal"     ) ;
+	novoCodigo =      LerValorWidget("entMovMaterialNovoCodigo") ;
+	isTotal    = (gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMovMatTipoMovimentacao"))) == 0);
 
 	// Checa se os dados são válidos.
-	if(!ChecarMaterial(material, dv, FALSE)) {
-		return FALSE;
-	}
-
-	// Carrega o codigo original para identificar se o codigo foi alterado (o que nao eh permitido) e se o local foi alterado (o que eh esperado).
-	materialOriginal = GetMaterialByID(material.id);
-
-	if(strcmp(materialOriginal->codigo, material.codigo) || materialOriginal->tipo != material.tipo) {
-		// Codigo mudou! Devemos gerar erro e retornar...
-		msg = "Codigo e tipo nao podem ser alterados ao movimentar o material!";
-	} else if(materialOriginal->quantidade < material.quantidade) {
+	if(materialOriginal == NULL) {
+		// O material de origem nao existe
+		msg = "Codigo inexistente!";
+		erroCodigoOrigem = TRUE;
+	} else if(!ChecarMaterial(*materialOriginal, atoi(LerValorWidget("entMovMaterialCodigoDV")), FALSE)) {
+		// Nao gerar mensagem aqui pois a funcao de ChecarMaterial ja exibiu as mensagens necessarias
+		erroCodigoOrigem = TRUE;
+	} else if(materialOriginal->quantidade < quantidade) {
 		// Tentando transferir quantidade superior a existente...
 		msg = "Tentando transferir quantidade superior a existente!";
-	} else if(!strcmp(materialOriginal->local, material.local)) {
+	} else if(!strcmp(materialOriginal->local, novoLocal)) {
 		// Local nao foi alterado...
 		msg = "Escolha o novo local!";
+	} else if(!isTotal && quantidade <= 0) {
+		// Quantidade deve ser maior que zero...
+		msg = "Quantidade deve ser maior que zero!";
+	} else if(!isTotal && quantidade == materialOriginal->quantidade) {
+		// Se a transferencia eh parcial, quantidade deve ser inferior a quantidade total
+		msg = "Quantidade transferida deve ser menor que a quantidade total!";
 	} else {
-		if(materialOriginal->quantidade == material.quantidade) { // Transferencia Total
-			return cbMaterialMovimentarFinalizar(material, dv, isCancel, materialOriginal);
-		} else { // Transferencia Parcial
-			  struct strMaterial *matDestino = material_copiar(NULL, materialOriginal, FALSE);
-			  matDestino->idTarefa   = 0;
-			  matDestino->quantidade = material.quantidade;
-			  strcpy(matDestino->local, material.local);
-
-			  AbrirCadastroMaterial(matDestino, FALSE, FALSE, cbMaterialMovimentarFinalizar, materialOriginal);
+		// Se for transferencia total, utiliza quantidade do material
+		if(isTotal) {
+			quantidade = materialOriginal->quantidade;
 		}
+
+		/*** A partir desse ponto executamos a transferencia em si ***/
+		struct strMaterial *matOrigem, *matDestino, *matNovaOrigem = NULL;
+
+		// Copiamos os materiais para gerar a mensagem de transferencia
+		matOrigem  = material_copiar(NULL, materialOriginal, TRUE);
+		matDestino = material_copiar(NULL, materialOriginal, TRUE);
+
+		// Ajusta os valores para a mensagem
+		matDestino->quantidade = quantidade;
+		matDestino->peso       = material_CalculaPeso(matDestino, matDestino->quantidade * matDestino->tamanho);
+		strcpy(matDestino->local, novoLocal);
+
+		// Se a movimentacao for parcial, cria o material representando a nova etiqueta de origem
+		if(!isTotal) {
+			matNovaOrigem = material_copiar(NULL, materialOriginal, FALSE);
+			strcpy(matNovaOrigem->codigo, novoCodigo);
+
+			if(!ChecarMaterial(*matNovaOrigem, atoi(LerValorWidget("entMovMaterialNovoCodigoDV")), FALSE)) {
+				// Nao gerar mensagem aqui pois a funcao de ChecarMaterial ja exibiu as mensagens necessarias
+				erroCodigoNovo = TRUE;
+			} else {
+				// Transferencia parcial. Subtrair a quantidade transferida do material original e recalcular o peso
+				matNovaOrigem->quantidade -= quantidade;
+				matNovaOrigem->peso        = material_CalculaPeso(matNovaOrigem, matNovaOrigem->quantidade * matNovaOrigem->tamanho);
+
+				// Agora salvamos o material de destino e a nova origem (nova etiqueta)
+				GravarMaterial(matDestino);
+				GravarMaterial(matNovaOrigem);
+			}
+		} else {
+			// Local mudou! Como a transferencia eh total, precisamos apenas alterar o local do material original
+			strcpy(materialOriginal->local, novoLocal);
+			GravarMaterial(materialOriginal);
+		}
+
+		// Tudo OK! Envia a mensagem informando da transferencia e retorna para a tela anterior
+		if(!erroCodigoNovo) {
+			monitor_enviaMsgTransferencia(matOrigem, matDestino, matNovaOrigem);
+			WorkAreaGoPrevious();
+		}
+
+		// Operacao finalizada. Devemos recarregar a lista de materiais mesmo que nao houve movimentacao pois foram alocados materiais temporarios
+		CarregaListaMateriais(NULL);
 	}
+
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMovMaterialCodigoErro"    )), erroCodigoOrigem);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "imgMovMaterialNovoCodigoErro")), erroCodigoNovo  );
 
 	if(msg != NULL) {
-		MessageBox(msg);
+		ShowMessageBox(msg, FALSE);
 	}
-
-	// Nada a fazer... Retorna falso pois nao queremos que a tela de cadastro de materiais execute acao nenhuma.
-	return FALSE;
 }
 
 // Funcao para transferir o material para outro local fisico
@@ -1076,7 +1151,45 @@ void cbMaterialMovimentar(GtkButton *button, gpointer user_data)
 	// E entao seleciona esse material
 	material = GetMaterial(atoi(val) - 1);
 
-	AbrirCadastroMaterial(material, TRUE, TRUE, cbMaterialMovimentarAplicar, NULL);
+	AbrirMovimentarMateriais(material);
+}
+
+// Funcao para transferir o material para outro local fisico (Iniciado a partir da tela de login, usuario desconectado
+void cbLoginMovimentar(GtkButton *button, gpointer user_data)
+{
+	AbrirMovimentarMateriais(NULL);
+}
+
+// Callback de cancelamento da transferencia
+void cbMovimentarVoltar(GtkButton *button, gpointer user_data)
+{
+	WorkAreaGoPrevious();
+}
+
+// Tipo de material alterado
+void cbMovMaterialTipoAlterado(GtkComboBox *combobox, gpointer user_data)
+{
+	int tipo;
+	char strval[100];
+
+	if(gtk_combo_box_get_active(combobox)<0)
+	return;
+
+	tipo = atoi(LerComboAtivo(combobox));
+
+	sprintf(strval, "%02d -", tipo);
+
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblMovMaterialTipo"    )), strval);
+	gtk_label_set_text(GTK_LABEL(gtk_builder_get_object(builder, "lblMovMaterialTipoNovo")), strval);
+}
+
+void cbMovMatTipoMovimentacaoAlterado(GtkComboBox *combobox, gpointer user_data)
+{
+	int isTotal = gtk_combo_box_get_active(GTK_COMBO_BOX(gtk_builder_get_object(builder, "cmbMovMatTipoMovimentacao"))) == 0;
+
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "frmMovMaterialNovaEtiqueta")), !isTotal);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "entMovMaterialQtd"         )), !isTotal);
+	gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "lblMovMatQtd"              )), !isTotal);
 }
 
 // Funcao para registrar peca perdida / sobrando / tamanho errado em um material
