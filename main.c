@@ -1234,15 +1234,27 @@ gboolean tmrGtkUpdate(gpointer data)
     	  system_Shutdown = now;
     	  gravarParamSistema();
       }
-    } else if(ciclos == 4 && MaqConfigCurrent->NeedMaqInit) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
-      val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
-      if(val != estado_init) {
-        estado_init = val;
-        for(i=0; lista_botoes[i][0] != 0; i++) {
-          wdg = GTK_WIDGET(gtk_builder_get_object(builder, lista_botoes[i]));
-          gtk_widget_set_sensitive(wdg, estado_init);
-        }
-      }
+    } else if(ciclos == 4) { // Divide as tarefas nos diversos ciclos para nao sobrecarregar
+		static long timeIdle = 0;
+		long now = time(NULL);
+
+		if(CurrentStatus != MAQ_STATUS_PARADA || timeIdle == 0) {
+			timeIdle = now;
+		} else if((now - timeIdle) > 3600 && MaqConfigCurrent->UseChaveGeral) {  // Se ficar em modo de maquina parada por 1 hora, desliga!
+			printf("Maquina ociosa por muito tempo! Desligando a energia...\n");
+			MaqConfigChaveGeral(0);
+		}
+
+		if(MaqConfigCurrent->NeedMaqInit) {
+			val = MaqLerEstado() & MAQ_STATUS_INITOK ? TRUE : FALSE;
+			if(val != estado_init) {
+				estado_init = val;
+				for(i=0; lista_botoes[i][0] != 0; i++) {
+					wdg = GTK_WIDGET(gtk_builder_get_object(builder, lista_botoes[i]));
+					gtk_widget_set_sensitive(wdg, estado_init);
+				}
+			}
+		}
     }
   }
 
@@ -1326,7 +1338,7 @@ void * ihm_update(void *args)
     usleep(500);
 
     /*** Loop de checagem de mensagens vindas da CPU OMAP ***/
-    if(espera_BoardUpdate++ > 1000) {
+    if(espera_BoardUpdate++ > 5000) {
     	espera_BoardUpdate = 0;
     	Board_Update(newbs);
     }

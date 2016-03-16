@@ -13174,6 +13174,24 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                             <child>
                               <placeholder/>
                             </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -16477,6 +16495,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                         <property name="secondary_icon_sensitive">True</property>
                         <property name="primary_icon_tooltip_text" translatable="yes">Abrir Teclado</property>
                         <property name="primary_icon_tooltip_markup" translatable="yes">Abrir Teclado</property>
+                        <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -16577,6 +16596,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                     <property name="secondary_icon_sensitive">True</property>
                                     <property name="primary_icon_tooltip_text" translatable="yes">Abrir Teclado</property>
                                     <property name="primary_icon_tooltip_markup" translatable="yes">Abrir Teclado</property>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -16615,6 +16635,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                     <property name="secondary_icon_sensitive">True</property>
                                     <property name="primary_icon_tooltip_text" translatable="yes">Abrir Teclado</property>
                                     <property name="primary_icon_tooltip_markup" translatable="yes">Abrir Teclado</property>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -16736,6 +16757,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                     <property name="secondary_icon_sensitive">True</property>
                                     <property name="primary_icon_tooltip_text" translatable="yes">Abrir Teclado</property>
                                     <property name="primary_icon_tooltip_markup" translatable="yes">Abrir Teclado</property>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -16774,6 +16796,7 @@ Pressione o botão 1 e depois o botão 2 para liberar</property>
                                     <property name="secondary_icon_sensitive">True</property>
                                     <property name="primary_icon_tooltip_text" translatable="yes">Abrir Teclado</property>
                                     <property name="primary_icon_tooltip_markup" translatable="yes">Abrir Teclado</property>
+                                    <signal name="icon-press" handler="cbIconPress" swapped="no"/>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
