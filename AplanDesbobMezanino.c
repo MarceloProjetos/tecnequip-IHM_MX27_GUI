@@ -1389,105 +1389,105 @@ int ProgPrensa_Init(void)
     GtkWidget *widget = GTK_WIDGET(gtk_builder_get_object(builder, "dwaPrensa"));
     gtk_widget_get_allocation(widget, &allocation);
 
-    // Imagem 00 - Tampa fechada, desbobinador desativado
-    CriarTelaIHM(&maq[0], offset,
-        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                                { "images/maq-desbob.png"                 , 504,  42, 1, 1 },
-                                { "images/maq-aplan-dir-corpo.png"        , 240, 153, 1, 1 },
-                                { "images/maq-aplan-dir-prol-baixo.png"   , 469, 209, 1, 1 },
-                                { "images/maq-aplan-dir-ext-baixo.png"    , 448, 184, 1, 1 },
-                                { "images/maq-aplan-dir-tampa-fechada.png", 292, 136, 1, 1 },
-                                { "images/maq-prs-corpo.png"              ,  20, -42, 1, 1 },
-                                { "images/maq-prs-martelo.png"            ,  63, -42, 1, 1 },
-                                { "images/maq-prs-cobertura.png"          ,  54, -52, 1, 1 },
-                                { NULL, 0, 0, 0, 0 } },
-
-        (struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-						        { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-						        { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-						        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-						        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-						        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-						        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
-						        { 0, 0, 0, 0, NULL, NULL } }
-        );
-
-    // Imagem 10 - Tampa fechada, desbobinador ativado
-    CriarTelaIHM(&maq[2], offset,
-        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                                { "images/maq-desbob.png"                 , 504,  42, 1, 1 },
-                                { "images/maq-aplan-dir-corpo.png"        , 240, 153, 1, 1 },
-                                { "images/maq-aplan-dir-prol-baixo.png"   , 469, 209, 1, 1 },
-                                { "images/maq-aplan-dir-ext-baixo.png"    , 448, 184, 1, 1 },
-                                { "images/maq-aplan-dir-tampa-fechada.png", 292, 136, 1, 1 },
-                                { "images/maq-prs-corpo.png"              ,  20, -42, 1, 1 },
-                                { "images/maq-prs-martelo.png"            ,  63, -42, 1, 1 },
-                                { "images/maq-prs-cobertura.png"          ,  54, -52, 1, 1 },
-                                { NULL, 0, 0, 0, 0 } },
-
-        (struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-                                { 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-                                { 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-                                { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-                                { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-                                { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-                                { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-                                { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
-                                { 0, 0, 0, 0, NULL, NULL } }
-        );
-
-    // Imagem 01 - Tampa aberta, desbobinador desativado
-    CriarTelaIHM(&maq[1], offset,
-        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                                { "images/maq-desbob.png"                , 504,  42, 1, 1 },
-                                { "images/maq-aplan-dir-corpo.png"       , 240, 153, 1, 1 },
-                                { "images/maq-aplan-dir-prol-baixo.png"  , 469, 209, 1, 1 },
-                                { "images/maq-aplan-dir-ext-baixo.png"   , 448, 184, 1, 1 },
-                                { "images/maq-aplan-dir-tampa-aberta.png", 286, 106, 1, 1 },
-                                { "images/maq-prs-corpo.png"             ,  20, -42, 1, 1 },
-                                { "images/maq-prs-martelo.png"           ,  63, -42, 1, 1 },
-                                { "images/maq-prs-cobertura.png"         ,  54, -52, 1, 1 },
-                                { NULL, 0, 0, 0, 0 } },
-
-        (struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-						        { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-						        { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-						        { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
-						        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-						        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-						        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-						        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
-                                { 0, 0, 0, 0, NULL, NULL } }
-        );
-
-    // Imagem 11 - Tampa aberta, desbobinador ativado
-    CriarTelaIHM(&maq[3], offset,
-        (struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
-                                { "images/maq-desbob.png"                , 504,  42, 1, 1 },
-                                { "images/maq-aplan-dir-corpo.png"       , 240, 153, 1, 1 },
-                                { "images/maq-aplan-dir-prol-baixo.png"  , 469, 209, 1, 1 },
-                                { "images/maq-aplan-dir-ext-baixo.png"   , 448, 184, 1, 1 },
-                                { "images/maq-aplan-dir-tampa-aberta.png", 286, 106, 1, 1 },
-                                { "images/maq-prs-corpo.png"             ,  20, -42, 1, 1 },
-                                { "images/maq-prs-martelo.png"           ,  63, -42, 1, 1 },
-                                { "images/maq-prs-cobertura.png"         ,  54, -52, 1, 1 },
-                                { NULL, 0, 0, 0, 0 } },
-
-        (struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
-						        { 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
-						        { 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
-						        { 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
-						        { 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
-						        { 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
-						        { 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
-						        { 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
-						        { 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
-                                { 0, 0, 0, 0, NULL, NULL } }
-        );
-
     if(MAQ_ID_IS(MAQ_ID_APLAN_MEZANINO)) {
+		// Imagem 00 - Tampa fechada, desbobinador desativado
+		CriarTelaIHM(&maq[0], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob.png"                 , 504,  42, 1, 1 },
+									{ "images/maq-aplan-dir-corpo.png"        , 240, 153, 1, 1 },
+									{ "images/maq-aplan-dir-prol-baixo.png"   , 469, 209, 1, 1 },
+									{ "images/maq-aplan-dir-ext-baixo.png"    , 448, 184, 1, 1 },
+									{ "images/maq-aplan-dir-tampa-fechada.png", 292, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              ,  20, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            ,  63, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          ,  54, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+									{ 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+									{ 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+									{ 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+									{ 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+									{ 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 10 - Tampa fechada, desbobinador ativado
+		CriarTelaIHM(&maq[2], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob.png"                 , 504,  42, 1, 1 },
+									{ "images/maq-aplan-dir-corpo.png"        , 240, 153, 1, 1 },
+									{ "images/maq-aplan-dir-prol-baixo.png"   , 469, 209, 1, 1 },
+									{ "images/maq-aplan-dir-ext-baixo.png"    , 448, 184, 1, 1 },
+									{ "images/maq-aplan-dir-tampa-fechada.png", 292, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              ,  20, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            ,  63, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          ,  54, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+									{ 252,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+									{ 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+									{ 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+									{ 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+									{ 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 01 - Tampa aberta, desbobinador desativado
+		CriarTelaIHM(&maq[1], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob.png"                , 504,  42, 1, 1 },
+									{ "images/maq-aplan-dir-corpo.png"       , 240, 153, 1, 1 },
+									{ "images/maq-aplan-dir-prol-baixo.png"  , 469, 209, 1, 1 },
+									{ "images/maq-aplan-dir-ext-baixo.png"   , 448, 184, 1, 1 },
+									{ "images/maq-aplan-dir-tampa-aberta.png", 286, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             ,  20, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           ,  63, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         ,  54, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+									{ 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+									{ 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
+									{ 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+									{ 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+									{ 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+									{ 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"     },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 11 - Tampa aberta, desbobinador ativado
+		CriarTelaIHM(&maq[3], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob.png"                , 504,  42, 1, 1 },
+									{ "images/maq-aplan-dir-corpo.png"       , 240, 153, 1, 1 },
+									{ "images/maq-aplan-dir-prol-baixo.png"  , 469, 209, 1, 1 },
+									{ "images/maq-aplan-dir-ext-baixo.png"   , 448, 184, 1, 1 },
+									{ "images/maq-aplan-dir-tampa-aberta.png", 286, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"             ,  20, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"           ,  63, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"         ,  54, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-avanca.png"},
+									{ 225,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-recua.png" },
+									{ 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir.png"  },
+									{ 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar.png" },
+									{ 150, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir.png"        },
+									{ 150, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer.png"       },
+									{ 540, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir.png"    },
+									{ 540, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer.png"   },
+									{ 702,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"      },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
     	// Configura os nomes dos labels para a aplanadora de mezanino
     	gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta1")), "Estampo"   );
         gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta2")), "Guilhotina");
@@ -1497,7 +1497,105 @@ int ProgPrensa_Init(void)
         gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "ckbPrensaProgPorta4")), FALSE);
         gtk_widget_set_visible(GTK_WIDGET(gtk_builder_get_object(builder, "ckbPrensaProgPorta5")), FALSE);
     } else {
-        gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta1")), "Porta 1");
+		// Imagem 00 - Tampa fechada, desbobinador desativado
+		CriarTelaIHM(&maq[0], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob-esq.png"             ,   4,  42, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 270, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 248, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 256, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 305, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 560, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 603, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 594, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"  },
+									{ 252,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png"   },
+									{ 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir-esq.png"},
+									{ 540, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir-esq.png"      },
+									{ 540, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer-esq.png"     },
+									{ 170, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir-esq.png"  },
+									{ 170, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer-esq.png" },
+									{  15,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"       },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 10 - Tampa fechada, desbobinador ativado
+		CriarTelaIHM(&maq[2], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob-esq.png"             ,   4,  42, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 270, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 248, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 256, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-fechada.png", 305, 136, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 560, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 603, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 594, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 422,  70,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"  },
+									{ 252,  70,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png"   },
+									{ 337,  70,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir-esq.png"},
+									{ 540, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir-esq.png"      },
+									{ 540, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer-esq.png"     },
+									{ 170, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir-esq.png"  },
+									{ 170, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer-esq.png" },
+									{  15,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"        },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 01 - Tampa aberta, desbobinador desativado
+		CriarTelaIHM(&maq[1], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob-esq.png"             ,   4,  42, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 270, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 248, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 256, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png" , 305, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 560, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 603, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 594, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"    },
+									{ 225,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png"     },
+									{ 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir-esq.png"  },
+									{ 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar-esq.png" },
+									{ 540, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir-esq.png"        },
+									{ 540, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer-esq.png"       },
+									{ 170, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir-esq.png"    },
+									{ 170, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer-esq.png"   },
+									{  15,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-off.png"         },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		// Imagem 11 - Tampa aberta, desbobinador ativado
+		CriarTelaIHM(&maq[3], offset,
+			(struct strImgIHM  []){ { "images/bg01.png", allocation.width, allocation.height, 1, 1 },
+									{ "images/maq-desbob-esq.png"             ,   4,  42, 1, 1 },
+									{ "images/maq-aplan-esq-corpo.png"        , 270, 153, 1, 1 },
+									{ "images/maq-aplan-esq-prol-baixo.png"   , 248, 209, 1, 1 },
+									{ "images/maq-aplan-esq-ext-baixo.png"    , 256, 184, 1, 1 },
+									{ "images/maq-aplan-esq-tampa-aberta.png" , 305, 106, 1, 1 },
+									{ "images/maq-prs-corpo.png"              , 560, -42, 1, 1 },
+									{ "images/maq-prs-martelo.png"            , 603, -42, 1, 1 },
+									{ "images/maq-prs-cobertura.png"          , 594, -52, 1, 1 },
+									{ NULL, 0, 0, 0, 0 } },
+
+			(struct strCoordIHM[]){ { 485,  50,  70,  55, cbManAplanAvancar , "images/cmd-aplan-perfil-avanca.png"    },
+									{ 225,  50,  70,  55, cbManAplanRecuar  , "images/cmd-aplan-perfil-recua.png"     },
+									{ 400,  50,  70,  55, cbManAplanAbrir   , "images/cmd-aplan-tampa-abrir-esq.png"  },
+									{ 310,  50,  70,  55, cbManAplanFechar  , "images/cmd-aplan-tampa-fechar-esq.png" },
+									{ 540, 135,  70,  55, cbManAplanSubir   , "images/cmd-aplan-subir-esq.png"        },
+									{ 540, 205,  70,  55, cbManAplanDescer  , "images/cmd-aplan-descer-esq.png"       },
+									{ 170, 135,  70,  55, cbManMesaSubir    , "images/cmd-aplan-ext-subir-esq.png"    },
+									{ 170, 205,  70,  55, cbManMesaDescer   , "images/cmd-aplan-ext-descer-esq.png"   },
+									{  15,   7,  70,  55, cbManDesbob       , "images/ihm-ent-desbob-on.png"          },
+									{ 0, 0, 0, 0, NULL, NULL } }
+			);
+
+		gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta1")), "Porta 1");
         gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta2")), "Porta 2");
         gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta3")), "Porta 3");
         gtk_button_set_label(GTK_BUTTON(gtk_builder_get_object(builder, "ckbPrensaProgPorta4")), "Porta 4");
