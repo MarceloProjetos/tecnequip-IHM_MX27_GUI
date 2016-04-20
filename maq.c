@@ -754,7 +754,7 @@ MaqIOMap MaqIOMapPPNormal = {
   },
 };
 
-// Funcoes de parametros de maquinas. IP da maquina = IP do CLP + 1
+// Funcoes de parametros de maquinas. IP da IHM = IP do CLP + 1
 MaqConfig MaqConfigList[] = {
     { // Porta-Palete Pesado
         .ID               = MAQ_ID_PERF_PP_PESADO,
